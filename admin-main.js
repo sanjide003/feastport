@@ -80,7 +80,9 @@ function showToast(msg, type = 'success') {
   if (!el) return;
   el.textContent = msg;
   el.className = `fixed bottom-5 right-5 z-[110] rounded-lg border px-4 py-3 text-xs font-semibold shadow-lg ${
-    type === 'error' ? 'border-red-700 bg-red-700 text-white' : 'border-slate-800 bg-slate-900 text-white'
+    type === 'error'
+      ? 'border-red-700 bg-red-700 text-white dark:border-red-600 dark:bg-red-700'
+      : 'border-slate-800 bg-slate-900 text-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100'
   }`;
   el.classList.remove('hidden');
   setTimeout(() => el.classList.add('hidden'), 3200);
@@ -101,12 +103,12 @@ function confirmAction(msg, { title = 'Confirm Action', okLabel = 'Confirm', can
     okBtn.textContent = okLabel;
     cancelBtn.textContent = cancelLabel;
     okBtn.className = tone === 'primary'
-      ? 'rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800'
-      : 'rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700';
+      ? 'rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500'
+      : 'rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500';
     if (iconBox) {
       iconBox.className = tone === 'primary'
-        ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700'
-        : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700';
+        ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800/70 dark:bg-blue-950/60 dark:text-blue-400'
+        : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 dark:border-red-800/70 dark:bg-red-950/60 dark:text-red-400';
     }
 
     const cleanup = (result) => {
@@ -346,11 +348,11 @@ function renderOverview() {
   const pendingReqs = state.registrationRequests.filter((r) => r.status === 'pending').length;
 
   byId('admin-readiness').innerHTML = `
-    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2"><span>Teams Configured</span><strong class="font-mono-num">${state.teams.length}</strong></div>
-    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2"><span>Events without Judges</span><strong class="font-mono-num ${withoutJudge ? 'text-amber-600' : 'text-emerald-700'}">${withoutJudge}</strong></div>
-    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2"><span>Unscheduled Events</span><strong class="font-mono-num ${unscheduled ? 'text-amber-600' : 'text-emerald-700'}">${unscheduled}</strong></div>
-    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2"><span>Pending Student Requests</span><strong class="font-mono-num">${pendingReqs}</strong></div>
-    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2"><span>Submitted Judge Sheets Awaiting Publish</span><strong class="font-mono-num text-blue-700">${submittedCount}</strong></div>
+    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300"><span>Teams Configured</span><strong class="font-mono-num text-slate-900 dark:text-slate-100">${state.teams.length}</strong></div>
+    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300"><span>Events without Judges</span><strong class="font-mono-num ${withoutJudge ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}">${withoutJudge}</strong></div>
+    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300"><span>Unscheduled Events</span><strong class="font-mono-num ${unscheduled ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}">${unscheduled}</strong></div>
+    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300"><span>Pending Student Requests</span><strong class="font-mono-num text-slate-900 dark:text-slate-100">${pendingReqs}</strong></div>
+    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300"><span>Submitted Judge Sheets Awaiting Publish</span><strong class="font-mono-num text-blue-700 dark:text-blue-400">${submittedCount}</strong></div>
   `;
 
   const ledger = buildTeamScoreLedger(published, () => '', state.events);
@@ -360,11 +362,11 @@ function renderOverview() {
   const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
 
   byId('overview-standings').innerHTML = ranked.length ? ranked.map(([team, pts], i) => `
-    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-      <span class="font-semibold text-slate-900">#${i + 1} ${h(state.teamDisplayNames?.[team] || team)}</span>
-      <span class="font-mono-num font-bold text-blue-700">${pts} pts</span>
+    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/40">
+      <span class="font-semibold text-slate-900 dark:text-slate-100">#${i + 1} ${h(state.teamDisplayNames?.[team] || team)}</span>
+      <span class="font-mono-num font-bold text-blue-700 dark:text-blue-400">${pts} pts</span>
     </div>
-  `).join('') : '<p class="text-slate-400">No teams configured yet.</p>';
+  `).join('') : '<p class="text-slate-400 dark:text-slate-500">No teams configured yet.</p>';
 
   const pages = [
     ['index.html', 'Public Home'],
@@ -377,57 +379,57 @@ function renderOverview() {
     ['login.html', 'Staff Sign In']
   ];
   byId('portal-links-grid').innerHTML = pages.map(([url, label]) => `
-    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs">
-      <a href="${h(url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-slate-800 hover:text-blue-700">${h(label)}</a>
-      <button type="button" data-admin-action="copy-link" data-url="${h(url)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-100">Copy</button>
+    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs dark:border-slate-800 dark:bg-slate-800/60">
+      <a href="${h(url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-slate-800 hover:text-blue-700 dark:text-slate-200 dark:hover:text-blue-400">${h(label)}</a>
+      <button type="button" data-admin-action="copy-link" data-url="${h(url)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">Copy</button>
     </div>
   `).join('');
 }
 
 function renderSetupLists() {
   byId('created-teams-list').innerHTML = state.teams.length ? state.teams.map((t) => `
-    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs">
+    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800 dark:bg-slate-800/40">
       <div class="flex items-center gap-2 min-w-0">
-        <span class="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-300" style="background:${h(state.teamColors?.[t] || '#1D4ED8')}"></span>
-        <span class="font-bold text-slate-900 truncate">${h(teamName(t))}</span>
-        <span class="font-mono-num text-[11px] text-slate-400">Key: ${h(t)}</span>
+        <span class="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-300 dark:border-slate-600" style="background:${h(state.teamColors?.[t] || '#1D4ED8')}"></span>
+        <span class="font-bold text-slate-900 dark:text-slate-100 truncate">${h(teamName(t))}</span>
+        <span class="font-mono-num text-[11px] text-slate-400 dark:text-slate-400">Key: ${h(t)}</span>
       </div>
       <div class="flex items-center gap-1.5 shrink-0">
-        <button type="button" data-admin-action="edit-team" data-team="${h(t)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
-        <button type="button" data-admin-action="remove-team" data-team="${h(t)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Remove</button>
+        <button type="button" data-admin-action="edit-team" data-team="${h(t)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
+        <button type="button" data-admin-action="remove-team" data-team="${h(t)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Remove</button>
       </div>
     </div>
-  `).join('') : '<p class="text-xs text-slate-400">No teams added yet.</p>';
+  `).join('') : '<p class="text-xs text-slate-400 dark:text-slate-500">No teams added yet.</p>';
 
   byId('created-categories-list').innerHTML = state.categories.length ? state.categories.map((c) => `
-    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs">
+    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800 dark:bg-slate-800/40">
       <div class="flex items-center gap-2 min-w-0">
-        <span class="font-bold text-slate-900 truncate">${h(categoryName(c))}</span>
-        <span class="font-mono-num text-[11px] text-slate-400">Key: ${h(c)}</span>
+        <span class="font-bold text-slate-900 dark:text-slate-100 truncate">${h(categoryName(c))}</span>
+        <span class="font-mono-num text-[11px] text-slate-400 dark:text-slate-400">Key: ${h(c)}</span>
       </div>
       <div class="flex items-center gap-1.5 shrink-0">
-        <button type="button" data-admin-action="edit-category" data-cat="${h(c)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
-        <button type="button" data-admin-action="remove-category" data-cat="${h(c)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Remove</button>
+        <button type="button" data-admin-action="edit-category" data-cat="${h(c)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
+        <button type="button" data-admin-action="remove-category" data-cat="${h(c)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Remove</button>
       </div>
     </div>
-  `).join('') : '<p class="text-xs text-slate-400">No categories added yet.</p>';
+  `).join('') : '<p class="text-xs text-slate-400 dark:text-slate-500">No categories added yet.</p>';
 
   byId('created-stages-days').innerHTML = (state.stages.length || state.days.length) ? `
     ${state.stages.map((s) => `
-      <span class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 font-semibold text-blue-900">
+      <span class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 font-semibold text-blue-900 dark:border-blue-800/70 dark:bg-blue-950/50 dark:text-blue-200">
         <span>Stage: ${h(s)}</span>
-        <button type="button" data-admin-action="edit-stage" data-stage="${h(s)}" class="text-blue-700 hover:underline">Edit</button>
-        <button type="button" data-admin-action="remove-stage" data-stage="${h(s)}" class="text-red-600 hover:text-red-800" aria-label="Remove stage">✕</button>
+        <button type="button" data-admin-action="edit-stage" data-stage="${h(s)}" class="text-blue-700 hover:underline dark:text-blue-400">Edit</button>
+        <button type="button" data-admin-action="remove-stage" data-stage="${h(s)}" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" aria-label="Remove stage">✕</button>
       </span>
     `).join('')}
     ${state.days.map((d, idx) => `
-      <span class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-900">
+      <span class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-900 dark:border-emerald-800/70 dark:bg-emerald-950/50 dark:text-emerald-200">
         <span>Day: ${h(d.label && d.label !== d.date ? `${d.label} (${d.date})` : (d.date || d))}</span>
-        <button type="button" data-admin-action="edit-day" data-day-index="${idx}" class="text-emerald-700 hover:underline">Edit</button>
-        <button type="button" data-admin-action="remove-day" data-date="${h(d.date || d)}" class="text-red-600 hover:text-red-800" aria-label="Remove day">✕</button>
+        <button type="button" data-admin-action="edit-day" data-day-index="${idx}" class="text-emerald-700 hover:underline dark:text-emerald-400">Edit</button>
+        <button type="button" data-admin-action="remove-day" data-date="${h(d.date || d)}" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" aria-label="Remove day">✕</button>
       </span>
     `).join('')}
-  ` : '<p class="text-xs text-slate-400">No stages or festival days added yet.</p>';
+  ` : '<p class="text-xs text-slate-400 dark:text-slate-500">No stages or festival days added yet.</p>';
 }
 
 function renderStudents() {
@@ -444,18 +446,18 @@ function renderStudents() {
 
   byId('std-count-label').textContent = `${filtered.length} students`;
   byId('students-tbody').innerHTML = filtered.length ? filtered.map((s) => `
-    <tr class="hover:bg-slate-50">
-      <td class="px-3 py-2.5 font-mono-num font-bold text-slate-900">${h(s.chestNo || '—')}</td>
-      <td class="px-3 py-2.5 font-semibold text-slate-900">${h(s.name)}</td>
-      <td class="px-3 py-2.5">${h(teamName(s.team))}</td>
-      <td class="px-3 py-2.5">${h(categoryName(s.category))}</td>
-      <td class="px-3 py-2.5">${h(s.gender || 'Boys')}</td>
+    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+      <td class="px-3 py-2.5 font-mono-num font-bold text-slate-900 dark:text-slate-100">${h(s.chestNo || '—')}</td>
+      <td class="px-3 py-2.5 font-semibold text-slate-900 dark:text-slate-100">${h(s.name)}</td>
+      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(teamName(s.team))}</td>
+      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(categoryName(s.category))}</td>
+      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(s.gender || 'Boys')}</td>
       <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
-        <button type="button" data-admin-action="edit-student" data-id="${h(s.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
-        <button type="button" data-admin-action="delete-student" data-id="${h(s.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Delete</button>
+        <button type="button" data-admin-action="edit-student" data-id="${h(s.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
+        <button type="button" data-admin-action="delete-student" data-id="${h(s.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Delete</button>
       </td>
     </tr>
-  `).join('') : '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">No students match this filter.</td></tr>';
+  `).join('') : '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">No students match this filter.</td></tr>';
 }
 
 function renderEvents() {
@@ -472,18 +474,18 @@ function renderEvents() {
 
   byId('ev-count-label').textContent = `${filtered.length} events`;
   byId('events-tbody').innerHTML = filtered.length ? filtered.map((e) => `
-    <tr class="hover:bg-slate-50">
-      <td class="px-3 py-2.5 font-semibold text-slate-900">${h(e.name)}${e.status && e.status !== 'active' ? ` <span class="text-[10px] font-bold uppercase text-amber-700">(${h(e.status)})</span>` : ''}</td>
-      <td class="px-3 py-2.5">${h(categoryName(e.category || 'General'))}</td>
-      <td class="px-3 py-2.5">${h(e.gender || 'Both')}</td>
-      <td class="px-3 py-2.5 font-mono-num">${h(e.type || 'Single')} (${e.limit || 1}×${e.groupSize || 1})</td>
-      <td class="px-3 py-2.5">${h(e.stage || 'On-Stage')}</td>
+    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+      <td class="px-3 py-2.5 font-semibold text-slate-900 dark:text-slate-100">${h(e.name)}${e.status && e.status !== 'active' ? ` <span class="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">(${h(e.status)})</span>` : ''}</td>
+      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(categoryName(e.category || 'General'))}</td>
+      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(e.gender || 'Both')}</td>
+      <td class="px-3 py-2.5 font-mono-num text-slate-700 dark:text-slate-300">${h(e.type || 'Single')} (${e.limit || 1}×${e.groupSize || 1})</td>
+      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(e.stage || 'On-Stage')}</td>
       <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
-        <button type="button" data-admin-action="edit-event" data-id="${h(e.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
-        <button type="button" data-admin-action="delete-event" data-id="${h(e.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Delete</button>
+        <button type="button" data-admin-action="edit-event" data-id="${h(e.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
+        <button type="button" data-admin-action="delete-event" data-id="${h(e.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Delete</button>
       </td>
     </tr>
-  `).join('') : '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">No events match this filter.</td></tr>';
+  `).join('') : '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">No events match this filter.</td></tr>';
 }
 
 function renderRegistrations() {
@@ -497,73 +499,73 @@ function renderRegistrations() {
   byId('admin-registrations-list').innerHTML = targetEvents.length ? targetEvents.map((ev) => {
     const evRegs = regs.filter((r) => r.eventId === ev.id);
     return `
-      <article class="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+      <article class="rounded-xl border border-slate-200 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
         <div class="flex items-start justify-between gap-2">
           <div>
-            <h3 class="font-display text-sm font-bold text-slate-900">${h(ev.name)}</h3>
-            <p class="text-[11px] text-slate-500">${h(categoryName(ev.category || ''))} • ${h(ev.gender || 'Both')} • ${h(ev.type || 'Single')}</p>
+            <h3 class="font-display text-sm font-bold text-slate-900 dark:text-slate-100">${h(ev.name)}</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">${h(categoryName(ev.category || ''))} • ${h(ev.gender || 'Both')} • ${h(ev.type || 'Single')}</p>
           </div>
-          <button type="button" data-admin-action="open-admin-reg" data-event-id="${h(ev.id)}" class="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 whitespace-nowrap">+ Add Entry</button>
+          <button type="button" data-admin-action="open-admin-reg" data-event-id="${h(ev.id)}" class="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 whitespace-nowrap dark:bg-blue-950/60 dark:text-blue-400 dark:hover:bg-blue-950">+ Add Entry</button>
         </div>
         <div class="space-y-1.5 text-xs">
           ${evRegs.length ? evRegs.map((r) => {
             const names = (r.studentIds || []).map((sid) => state.students.find((s) => s.id === sid)?.name || sid);
             return `
-              <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
-                <span class="truncate"><strong>${h(teamName(r.team))}</strong> #${r.slotIndex || 1}: ${h(names.join(', ') || 'Empty')}</span>
+              <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
+                <span class="truncate"><strong class="text-slate-900 dark:text-slate-100">${h(teamName(r.team))}</strong> #${r.slotIndex || 1}: ${h(names.join(', ') || 'Empty')}</span>
                 <div class="flex items-center gap-2 shrink-0">
-                  <button type="button" data-admin-action="edit-reg" data-id="${h(r.id)}" class="text-blue-700 font-semibold hover:underline">Edit</button>
-                  <button type="button" data-admin-action="delete-reg" data-id="${h(r.id)}" class="text-red-600 font-semibold hover:underline">Remove</button>
+                  <button type="button" data-admin-action="edit-reg" data-id="${h(r.id)}" class="text-blue-700 font-semibold hover:underline dark:text-blue-400">Edit</button>
+                  <button type="button" data-admin-action="delete-reg" data-id="${h(r.id)}" class="text-red-600 font-semibold hover:underline dark:text-red-400">Remove</button>
                 </div>
               </div>
             `;
-          }).join('') : '<p class="text-slate-400">No teams registered yet.</p>'}
+          }).join('') : '<p class="text-slate-400 dark:text-slate-500">No teams registered yet.</p>'}
         </div>
       </article>
     `;
-  }).join('') : '<p class="col-span-full text-center text-xs text-slate-400">No events found.</p>';
+  }).join('') : '<p class="col-span-full text-center text-xs text-slate-400 dark:text-slate-500">No events found.</p>';
 
   const pending = state.registrationRequests.filter((r) => r.status === 'pending');
   byId('admin-requests-list').innerHTML = pending.length ? pending.map((r) => {
     const evNames = (r.eventIds || []).map((id) => state.events.find((e) => e.id === id)?.name || id);
     return `
-      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs space-y-2">
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs space-y-2 text-slate-800 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-200">
         <div class="flex items-center justify-between">
           <strong>${h(r.name)} (${h(teamName(r.team))})</strong>
-          <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">PENDING</span>
+          <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/70 dark:text-amber-300">PENDING</span>
         </div>
-        <p class="text-slate-600">${h(evNames.join(', '))}</p>
+        <p class="text-slate-600 dark:text-slate-400">${h(evNames.join(', '))}</p>
         <div class="flex justify-end gap-2">
-          <button type="button" data-admin-action="reject-req" data-id="${h(r.id)}" class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700 hover:bg-red-50">Reject</button>
-          <button type="button" data-admin-action="approve-req" data-id="${h(r.id)}" class="rounded bg-blue-700 px-2.5 py-1 font-semibold text-white hover:bg-blue-800">Approve</button>
+          <button type="button" data-admin-action="reject-req" data-id="${h(r.id)}" class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Reject</button>
+          <button type="button" data-admin-action="approve-req" data-id="${h(r.id)}" class="rounded bg-blue-700 px-2.5 py-1 font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Approve</button>
         </div>
       </div>
     `;
-  }).join('') : '<p class="text-xs text-slate-400">No pending student self-registration requests.</p>';
+  }).join('') : '<p class="text-xs text-slate-400 dark:text-slate-500">No pending student self-registration requests.</p>';
 }
 
 function renderSchedule() {
   const stageOpts = (selected) => `<option value="">Select Stage</option>` + [...new Set(['Main Stage', ...state.stages])].map((s) => `<option value="${h(s)}" ${selected === s ? 'selected' : ''}>${h(s)}</option>`).join('');
   byId('schedule-builder-body').innerHTML = state.events.filter((e) => !['draft', 'archived'].includes(e.status)).map((e) => `
-    <tr data-sched-row="${h(e.id)}" class="hover:bg-slate-50">
-      <td class="px-3 py-2 font-semibold text-slate-900">${h(e.name)}<br><span class="text-[11px] font-normal text-slate-500">${h(categoryName(e.category || ''))} • ${h(e.gender || '')}</span></td>
-      <td class="px-3 py-2"><input data-sched-date="${h(e.id)}" type="date" value="${h(e.scheduleDate || '')}" class="rounded border border-slate-200 px-2 py-1 text-xs"></td>
-      <td class="px-3 py-2"><select data-sched-stage="${h(e.id)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-xs">${stageOpts(e.scheduleStage || e.stage || '')}</select></td>
-      <td class="px-3 py-2"><input data-sched-time="${h(e.id)}" type="time" value="${h(e.time || '')}" class="rounded border border-slate-200 px-2 py-1 text-xs"></td>
-      <td class="px-3 py-2"><input data-sched-dur="${h(e.id)}" type="number" min="5" max="300" value="${Number(e.scheduleDuration || e.duration || 30)}" class="w-16 rounded border border-slate-200 px-2 py-1 font-mono-num text-xs"></td>
-      <td class="px-3 py-2 text-right"><button type="button" data-admin-action="save-schedule-row" data-id="${h(e.id)}" class="rounded bg-blue-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-blue-800">Save</button></td>
+    <tr data-sched-row="${h(e.id)}" class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+      <td class="px-3 py-2 font-semibold text-slate-900 dark:text-slate-100">${h(e.name)}<br><span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">${h(categoryName(e.category || ''))} • ${h(e.gender || '')}</span></td>
+      <td class="px-3 py-2"><input data-sched-date="${h(e.id)}" type="date" value="${h(e.scheduleDate || '')}" class="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></td>
+      <td class="px-3 py-2"><select data-sched-stage="${h(e.id)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">${stageOpts(e.scheduleStage || e.stage || '')}</select></td>
+      <td class="px-3 py-2"><input data-sched-time="${h(e.id)}" type="time" value="${h(e.time || '')}" class="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></td>
+      <td class="px-3 py-2"><input data-sched-dur="${h(e.id)}" type="number" min="5" max="300" value="${Number(e.scheduleDuration || e.duration || 30)}" class="w-16 rounded border border-slate-200 bg-white px-2 py-1 font-mono-num text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></td>
+      <td class="px-3 py-2 text-right"><button type="button" data-admin-action="save-schedule-row" data-id="${h(e.id)}" class="rounded bg-blue-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Save</button></td>
     </tr>
   `).join('');
 
   byId('breaks-list').innerHTML = state.scheduleBreaks.length ? state.scheduleBreaks.map((b) => `
-    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-      <span><strong>${h(b.title)}</strong> • ${h(b.date)} (${h(b.startTime)} – ${h(b.endTime)})</span>
+    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
+      <span><strong class="text-slate-900 dark:text-slate-100">${h(b.title)}</strong> • ${h(b.date)} (${h(b.startTime)} – ${h(b.endTime)})</span>
       <div class="flex items-center gap-2 shrink-0">
-        <button type="button" data-admin-action="edit-break" data-id="${h(b.id)}" class="text-blue-700 font-semibold hover:underline">Edit</button>
-        <button type="button" data-admin-action="delete-break" data-id="${h(b.id)}" class="text-red-600 font-semibold hover:underline">Remove</button>
+        <button type="button" data-admin-action="edit-break" data-id="${h(b.id)}" class="text-blue-700 font-semibold hover:underline dark:text-blue-400">Edit</button>
+        <button type="button" data-admin-action="delete-break" data-id="${h(b.id)}" class="text-red-600 font-semibold hover:underline dark:text-red-400">Remove</button>
       </div>
     </div>
-  `).join('') : '<p class="text-slate-400">No schedule breaks configured.</p>';
+  `).join('') : '<p class="text-slate-400 dark:text-slate-500">No schedule breaks configured.</p>';
 }
 
 function renderAccessList() {
@@ -577,23 +579,23 @@ function renderAccessList() {
     const docId = u.authUid || u.docId || u.id;
     const active = u.active !== false;
     return `
-      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs space-y-2">
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs space-y-2 dark:border-slate-800 dark:bg-slate-800/60">
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
-            <p class="truncate font-bold text-slate-900">${h(u.displayName || u.username)}</p>
-            <p class="text-[11px] text-slate-600">${h(u.role)} ${u.team ? `• ${h(teamName(u.team))} (${h(u.genderScope || 'Both')})` : ''}</p>
-            <p class="truncate text-[11px] text-slate-400">${h(u.email || u.username || '')}</p>
+            <p class="truncate font-bold text-slate-900 dark:text-slate-100">${h(u.displayName || u.username)}</p>
+            <p class="text-[11px] text-slate-600 dark:text-slate-300">${h(u.role)} ${u.team ? `• ${h(teamName(u.team))} (${h(u.genderScope || 'Both')})` : ''}</p>
+            <p class="truncate text-[11px] text-slate-400 dark:text-slate-400">${h(u.email || u.username || '')}</p>
           </div>
-          <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${active ? 'Active' : 'Inactive'}</span>
+          <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-950/70 dark:text-red-300'}">${active ? 'Active' : 'Inactive'}</span>
         </div>
         <div class="flex flex-wrap gap-1.5">
-          <button type="button" data-admin-action="edit-access" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
-          <button type="button" data-admin-action="toggle-access" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-100">${active ? 'Deactivate' : 'Activate'}</button>
-          <button type="button" data-admin-action="delete-access" data-id="${h(docId)}" class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700 hover:bg-red-50">Delete</button>
+          <button type="button" data-admin-action="edit-access" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
+          <button type="button" data-admin-action="toggle-access" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">${active ? 'Deactivate' : 'Activate'}</button>
+          <button type="button" data-admin-action="delete-access" data-id="${h(docId)}" class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Delete</button>
         </div>
       </div>
     `;
-  }).join('') : '<p class="text-xs text-slate-400">No staff accounts created yet.</p>';
+  }).join('') : '<p class="text-xs text-slate-400 dark:text-slate-500">No staff accounts created yet.</p>';
 }
 
 function renderAll() {
@@ -641,13 +643,23 @@ async function createAccessAuthUser(email, password) {
   }
 }
 
+function setFieldLockedStyle(el, locked) {
+  if (!el) return;
+  el.disabled = locked;
+  if (locked) {
+    el.classList.remove('bg-white', 'text-slate-900', 'dark:bg-slate-800', 'dark:text-slate-100');
+    el.classList.add('bg-slate-100', 'text-slate-500', 'dark:bg-slate-950/70', 'dark:text-slate-400', 'cursor-not-allowed');
+  } else {
+    el.classList.remove('bg-slate-100', 'text-slate-500', 'dark:bg-slate-950/70', 'dark:text-slate-400', 'cursor-not-allowed');
+    el.classList.add('bg-white', 'text-slate-900', 'dark:bg-slate-800', 'dark:text-slate-100');
+  }
+}
+
 function resetStaffForm() {
   byId('access-edit-uid').value = '';
   byId('access-uid').value = '';
-  byId('access-identifier').disabled = false;
-  byId('access-identifier').classList.remove('bg-slate-100', 'text-slate-500');
-  byId('access-password').disabled = false;
-  byId('access-password').classList.remove('bg-slate-100', 'text-slate-500');
+  setFieldLockedStyle(byId('access-identifier'), false);
+  setFieldLockedStyle(byId('access-password'), false);
   ['access-name', 'access-identifier', 'access-password', 'access-title', 'access-phone'].forEach((id) => {
     const el = byId(id);
     if (el) el.value = '';
@@ -670,11 +682,9 @@ function loadStaffIntoForm(docId) {
   byId('access-role').value = u.role || 'teamLeader';
   byId('access-name').value = u.displayName || u.username || '';
   byId('access-identifier').value = u.email || u.username || '';
-  byId('access-identifier').disabled = true;
-  byId('access-identifier').classList.add('bg-slate-100', 'text-slate-500');
+  setFieldLockedStyle(byId('access-identifier'), true);
   byId('access-password').value = '';
-  byId('access-password').disabled = true;
-  byId('access-password').classList.add('bg-slate-100', 'text-slate-500');
+  setFieldLockedStyle(byId('access-password'), true);
   byId('access-team').value = u.team || '';
   byId('access-gender').value = u.genderScope || 'Both';
   byId('access-title').value = u.title || '';
@@ -807,15 +817,15 @@ async function openAdminRegModal(eventId, regId = '') {
   byId('admin-reg-modal-sub').textContent = `${categoryName(ev.category)} • ${ev.gender} • ${ev.type}`;
 
   byId('admin-reg-modal-body').innerHTML = `
-    <label class="block text-xs font-semibold text-slate-700">Team
-      <select id="admin-reg-team" ${isEditing ? 'disabled' : ''} class="mt-1 w-full rounded-lg border border-slate-200 ${isEditing ? 'bg-slate-100 text-slate-600' : 'bg-white'} px-3 py-2 text-xs">
+    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Team
+      <select id="admin-reg-team" ${isEditing ? 'disabled' : ''} class="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 ${isEditing ? 'bg-slate-100 text-slate-600 dark:bg-slate-800/70 dark:text-slate-400 cursor-not-allowed' : 'bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100'} px-3 py-2 text-xs">
         ${state.teams.map((t) => `<option value="${h(t)}">${h(teamName(t))}</option>`).join('')}
       </select>
     </label>
-    <div id="admin-reg-students" class="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2 text-xs"></div>
+    <div id="admin-reg-students" class="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-800 dark:bg-slate-950/40"></div>
     <div class="flex justify-end gap-2">
-      <button id="btn-cancel-admin-reg" type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
-      <button id="btn-save-admin-reg" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">${isEditing ? 'Update Entry' : 'Save Entry'}</button>
+      <button id="btn-cancel-admin-reg" type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+      <button id="btn-save-admin-reg" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">${isEditing ? 'Update Entry' : 'Save Entry'}</button>
     </div>
   `;
 
@@ -826,11 +836,11 @@ async function openAdminRegModal(eventId, regId = '') {
     const team = byId('admin-reg-team').value;
     const list = state.students.filter((s) => s.team === team && (!ev.category || ev.category === 'All' || ev.category === 'General' || s.category === ev.category) && (!ev.gender || ev.gender === 'Both' || s.gender === ev.gender));
     byId('admin-reg-students').innerHTML = list.length ? list.map((s) => `
-      <label class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-slate-50 cursor-pointer">
-        <span class="flex items-center gap-2"><input type="checkbox" name="admin-reg-pick" value="${h(s.id)}" ${preselectedIds.has(s.id) ? 'checked' : ''}><strong>${h(s.name)}</strong></span>
-        <span class="font-mono-num text-slate-500">${h(s.chestNo || '')}</span>
+      <label class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-slate-50 cursor-pointer text-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/60">
+        <span class="flex items-center gap-2"><input type="checkbox" name="admin-reg-pick" value="${h(s.id)}" ${preselectedIds.has(s.id) ? 'checked' : ''} class="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-800"><strong>${h(s.name)}</strong></span>
+        <span class="font-mono-num text-slate-500 dark:text-slate-400">${h(s.chestNo || '')}</span>
       </label>
-    `).join('') : '<p class="p-3 text-center text-slate-400">No eligible students in this team.</p>';
+    `).join('') : '<p class="p-3 text-center text-slate-400 dark:text-slate-500">No eligible students in this team.</p>';
   };
 
   byId('admin-reg-team').addEventListener('change', renderChecklist);
@@ -916,6 +926,8 @@ async function safeResetScope(scopeName) {
 function bindEvents() {
   initImageUploads(document);
   sidebarShell = initCollapsibleSidebar();
+  byId('btn-admin-theme')?.addEventListener('click', () => window.feastportAdminTheme?.toggleTheme?.());
+  window.feastportAdminTheme?.syncToggleButton?.();
   ['edit-team-modal', 'edit-category-modal', 'edit-stage-modal', 'edit-day-modal', 'edit-student-modal', 'edit-event-modal', 'edit-break-modal', 'edit-assignment-modal', 'admin-reg-modal'].forEach((id) => {
     byId(id)?.addEventListener('click', (e) => { if (e.target === byId(id)) closeModal(id); });
   });
@@ -1672,6 +1684,7 @@ initAdminAuth({
     byId('app-loader')?.classList.add('hide');
     byId('app-layout')?.classList.remove('hidden');
     byId('app-layout')?.classList.add('flex');
+    window.feastportAdminTheme?.syncToggleButton?.();
     window.lucide?.createIcons?.();
   }
 });

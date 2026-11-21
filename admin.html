@@ -3,38 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#F8FAFC">
+  <meta name="color-scheme" content="light dark">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Admin Console — Feastport</title>
+  <script src="./admin-theme.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Malayalam:wght@400;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest" defer></script>
   <style>
-    body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: #F8FAFC; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    :root {
+      --admin-bg: #F8FAFC;
+      --admin-surface: #FFFFFF;
+      --admin-surface-subtle: #F1F5F9;
+      --admin-border: #E2E8F0;
+      --admin-text: #0F172A;
+      --admin-text-muted: #64748B;
+    }
+    html.dark {
+      --admin-bg: #0B1120;
+      --admin-surface: #0F172A;
+      --admin-surface-subtle: #1E293B;
+      --admin-border: #334155;
+      --admin-text: #F1F5F9;
+      --admin-text-muted: #94A3B8;
+    }
+    body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: var(--admin-bg); color: var(--admin-text); -webkit-font-smoothing: antialiased; }
+    html.dark body { background: #0B1120; color: #F1F5F9; }
     h1, h2, h3, h4, .font-display { font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; }
+    html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark .font-display { letter-spacing: -0.015em; }
     .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
     .hide { display: none !important; }
     .nav-btn[aria-selected="true"] { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
+    html.dark .nav-btn[aria-selected="true"] { background: rgba(30, 58, 138, 0.35); color: #93C5FD; border-color: rgba(59, 130, 246, 0.45); }
     .subtab-btn[aria-selected="true"] { background: #FFFFFF; color: #1D4ED8; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
+    html.dark .subtab-btn[aria-selected="true"] { background: #1E293B; color: #93C5FD; box-shadow: 0 1px 2px rgba(2, 6, 23, 0.45); }
+    html.dark ::placeholder { color: #64748B; }
+    html.dark select option { background: #0F172A; color: #F1F5F9; }
+    html.dark ::-webkit-scrollbar { width: 8px; height: 8px; }
+    html.dark ::-webkit-scrollbar-track { background: #0B1120; }
+    html.dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    html.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
     @media print {
       .no-print { display: none !important; }
-      body { background: #FFF !important; }
+      body, html.dark body { background: #FFF !important; color: #0F172A !important; }
     }
   </style>
 </head>
-<body class="min-h-screen antialiased">
-  <div id="toast" class="fixed bottom-5 right-5 z-[110] hidden rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-lg"></div>
+<body class="min-h-screen antialiased bg-[#F8FAFC] text-slate-900 dark:bg-[#0B1120] dark:text-slate-100">
+  <div id="toast" class="fixed bottom-5 right-5 z-[110] hidden rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></div>
 
   <!-- Branded Admin Loader -->
-  <div id="app-loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8FAFC] p-6">
-    <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+  <div id="app-loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8FAFC] p-6 dark:bg-[#0B1120]">
+    <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <img id="admin-loader-logo" class="hidden h-full w-full object-cover" alt="Logo" referrerpolicy="no-referrer">
-      <span id="admin-loader-logo-fallback" class="font-display text-sm font-extrabold text-blue-700">FM</span>
+      <span id="admin-loader-logo-fallback" class="font-display text-sm font-extrabold text-blue-700 dark:text-blue-400">FM</span>
     </div>
-    <p id="admin-loader-fest-name" class="mt-3 font-display text-base font-bold text-slate-900">Feastport Admin</p>
-    <p class="mt-1 text-xs font-medium text-slate-500">Verifying administrator credentials…</p>
+    <p id="admin-loader-fest-name" class="mt-3 font-display text-base font-bold text-slate-900 dark:text-slate-100">Feastport Admin</p>
+    <p class="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">Verifying administrator credentials…</p>
   </div>
 
   <!-- App Layout -->
@@ -42,56 +71,56 @@
     <div id="sidebar-backdrop" data-app-sidebar-backdrop class="no-print hidden"></div>
 
     <!-- Sidebar -->
-    <aside id="sidebar" data-app-sidebar class="no-print flex flex-col border-r border-slate-200 bg-white">
-      <div data-sidebar-header class="flex h-16 items-center justify-between gap-2 border-b border-slate-200 px-4">
+    <aside id="sidebar" data-app-sidebar class="no-print flex flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div data-sidebar-header class="flex h-16 items-center justify-between gap-2 border-b border-slate-200 px-4 dark:border-slate-800">
         <div class="flex min-w-0 items-center gap-3">
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
             <img id="admin-sidebar-logo" class="hidden h-full w-full object-cover" alt="Logo" referrerpolicy="no-referrer">
-            <span id="admin-sidebar-logo-fallback" class="font-display text-xs font-extrabold text-blue-700">FM</span>
+            <span id="admin-sidebar-logo-fallback" class="font-display text-xs font-extrabold text-blue-700 dark:text-blue-400">FM</span>
           </div>
           <div data-sidebar-hide-collapsed class="min-w-0">
-            <p id="admin-sidebar-fest-name" class="truncate font-display text-sm font-bold text-slate-900">Admin Console</p>
-            <p id="admin-user-label" class="truncate text-xs font-medium text-slate-500">Administrator</p>
+            <p id="admin-sidebar-fest-name" class="truncate font-display text-sm font-bold text-slate-900 dark:text-slate-100">Admin Console</p>
+            <p id="admin-user-label" class="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Administrator</p>
           </div>
         </div>
-        <button type="button" data-sidebar-close class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden" aria-label="Close menu">
+        <button type="button" data-sidebar-close class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 lg:hidden" aria-label="Close menu">
           <i data-lucide="x" class="h-4 w-4"></i>
         </button>
       </div>
 
       <nav data-sidebar-nav class="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Admin sections">
-        <button type="button" data-tab="overview" data-sidebar-item aria-selected="true" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button type="button" data-tab="overview" data-sidebar-item aria-selected="true" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
           <i data-lucide="layout-dashboard" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Overview</span>
         </button>
-        <button type="button" data-tab="setup" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button type="button" data-tab="setup" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
           <i data-lucide="sliders-horizontal" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Festival Setup</span>
         </button>
-        <button type="button" data-tab="students" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button type="button" data-tab="students" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
           <i data-lucide="users" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Students</span>
         </button>
-        <button type="button" data-tab="events" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button type="button" data-tab="events" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
           <i data-lucide="calendar-check" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Events</span>
         </button>
-        <button type="button" data-tab="registrations" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button type="button" data-tab="registrations" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
           <i data-lucide="clipboard-list" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Registrations</span>
         </button>
-        <button type="button" data-tab="schedule" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button type="button" data-tab="schedule" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
           <i data-lucide="clock" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Schedule</span>
         </button>
-        <button type="button" data-tab="results" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center justify-between gap-2 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button type="button" data-tab="results" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center justify-between gap-2 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
           <span class="flex min-w-0 items-center gap-2.5"><i data-lucide="award" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Judging & Results</span></span>
-          <span id="badge-submitted-sheets" data-sidebar-badge class="hidden rounded bg-blue-700 px-1.5 py-0.5 font-mono-num text-[11px] font-bold text-white">0</span>
+          <span id="badge-submitted-sheets" data-sidebar-badge class="hidden rounded bg-blue-700 px-1.5 py-0.5 font-mono-num text-[11px] font-bold text-white dark:bg-blue-600">0</span>
         </button>
-        <button type="button" data-tab="system" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button type="button" data-tab="system" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
           <i data-lucide="shield-check" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Staff, TV & Reset</span>
         </button>
       </nav>
 
-      <div data-sidebar-footer class="border-t border-slate-200 p-3 space-y-2">
-        <a href="tv-control.html" data-sidebar-item class="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+      <div data-sidebar-footer class="border-t border-slate-200 p-3 space-y-2 dark:border-slate-800">
+        <a href="tv-control.html" data-sidebar-item class="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:border dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
           <i data-lucide="tv" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">TV Control Room</span>
         </a>
-        <button id="admin-logout-button" type="button" data-sidebar-item class="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100">
+        <button id="admin-logout-button" type="button" data-sidebar-item class="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">
           <i data-lucide="log-out" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Sign Out</span>
         </button>
       </div>
@@ -99,23 +128,27 @@
 
     <!-- Main Area -->
     <div class="flex min-w-0 flex-1 flex-col">
-      <header class="no-print sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:px-6">
+      <header class="no-print sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:px-6">
         <div class="flex items-center gap-3 min-w-0">
-          <button id="btn-mobile-sidebar" type="button" data-sidebar-toggle class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" aria-label="Toggle sidebar">
+          <button id="btn-mobile-sidebar" type="button" data-sidebar-toggle class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" aria-label="Toggle sidebar">
             <i data-lucide="menu" class="h-4 w-4 lg:hidden"></i>
             <i data-lucide="panel-left-close" data-toggle-icon-desktop class="hidden h-4 w-4 lg:block"></i>
           </button>
           <div class="min-w-0">
-            <h1 id="admin-page-title" class="truncate font-display text-lg font-bold text-slate-900">Operational Overview</h1>
-            <p id="admin-sync-status" class="truncate text-xs text-slate-500">Ready</p>
+            <h1 id="admin-page-title" class="truncate font-display text-lg font-bold text-slate-900 dark:text-slate-100">Operational Overview</h1>
+            <p id="admin-sync-status" class="truncate text-xs text-slate-500 dark:text-slate-400">Ready</p>
           </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-          <button id="btn-admin-refresh" type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <button id="btn-admin-theme" type="button" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode" class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+            <span data-theme-icon-wrap class="inline-flex items-center justify-center"><i data-lucide="moon" class="h-3.5 w-3.5 shrink-0"></i></span>
+            <span data-theme-label class="hidden sm:inline">Dark Mode</span>
+          </button>
+          <button id="btn-admin-refresh" type="button" class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
             <i data-lucide="refresh-cw" class="h-3.5 w-3.5"></i>
             <span class="hidden sm:inline">Refresh</span>
           </button>
-          <a href="index.html" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800">
+          <a href="index.html" target="_blank" rel="noopener noreferrer" class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">
             <i data-lucide="external-link" class="h-3.5 w-3.5"></i>
             <span class="hidden sm:inline">Public Portal</span>
           </a>
@@ -127,43 +160,43 @@
 
           <!-- TAB 1: OVERVIEW -->
           <section id="view-overview" class="admin-view space-y-6">
-            <div id="admin-setup-required" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900">
+            <div id="admin-setup-required" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/50 dark:text-amber-200">
               Festival setup is incomplete. Configure festival name, teams, and categories in <strong>Festival Setup</strong>.
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div class="rounded-xl border border-slate-200 bg-white p-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Students</p>
-                <p id="kpi-students" class="mt-2 font-mono-num text-3xl font-bold text-slate-900">0</p>
+              <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Students</p>
+                <p id="kpi-students" class="mt-2 font-mono-num text-3xl font-bold text-slate-900 dark:text-slate-100">0</p>
               </div>
-              <div class="rounded-xl border border-slate-200 bg-white p-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Active Events</p>
-                <p id="kpi-events" class="mt-2 font-mono-num text-3xl font-bold text-slate-900">0</p>
+              <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active Events</p>
+                <p id="kpi-events" class="mt-2 font-mono-num text-3xl font-bold text-slate-900 dark:text-slate-100">0</p>
               </div>
-              <div class="rounded-xl border border-slate-200 bg-white p-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Registrations</p>
-                <p id="kpi-registrations" class="mt-2 font-mono-num text-3xl font-bold text-blue-700">0</p>
+              <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Registrations</p>
+                <p id="kpi-registrations" class="mt-2 font-mono-num text-3xl font-bold text-blue-700 dark:text-blue-400">0</p>
               </div>
-              <div class="rounded-xl border border-slate-200 bg-white p-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Published Results</p>
-                <p id="kpi-published" class="mt-2 font-mono-num text-3xl font-bold text-emerald-700">0</p>
+              <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Published Results</p>
+                <p id="kpi-published" class="mt-2 font-mono-num text-3xl font-bold text-emerald-700 dark:text-emerald-400">0</p>
               </div>
             </div>
 
             <div class="grid gap-6 lg:grid-cols-2">
-              <div class="rounded-xl border border-slate-200 bg-white p-5">
-                <h2 class="font-display text-base font-bold text-slate-900">Operational Readiness</h2>
+              <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Operational Readiness</h2>
                 <div id="admin-readiness" class="mt-4 space-y-2 text-xs"></div>
               </div>
-              <div class="rounded-xl border border-slate-200 bg-white p-5">
-                <h2 class="font-display text-base font-bold text-slate-900">Team Standings Snapshot</h2>
+              <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Team Standings Snapshot</h2>
                 <div id="overview-standings" class="mt-4 space-y-2 text-xs"></div>
               </div>
             </div>
 
-            <div id="admin-page-directory" class="rounded-xl border border-slate-200 bg-white p-5">
-              <h2 class="font-display text-base font-bold text-slate-900">Portal Quick Links</h2>
-              <p class="mt-0.5 text-xs text-slate-500">Open or copy direct links for students, team leaders, judges, and live TV.</p>
+            <div id="admin-page-directory" class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+              <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Portal Quick Links</h2>
+              <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Open or copy direct links for students, team leaders, judges, and live TV.</p>
               <div id="portal-links-grid" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
             </div>
           </section>
@@ -171,77 +204,77 @@
           <!-- TAB 2: FESTIVAL SETUP -->
           <section id="view-setup" class="admin-view hidden space-y-6">
             <!-- Branding & Gallery -->
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
               <div class="flex items-center justify-between">
                 <div>
-                  <h2 class="font-display text-base font-bold text-slate-900">Festival Identity & Gallery</h2>
-                  <p class="text-xs text-slate-500">Displayed across the public landing page, results, and portals.</p>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Festival Identity & Gallery</h2>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Displayed across the public landing page, results, and portals.</p>
                 </div>
-                <button id="btn-save-branding" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Save Identity</button>
+                <button id="btn-save-branding" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Save Identity</button>
               </div>
               <div class="grid gap-4 md:grid-cols-2">
-                <label class="text-xs font-semibold text-slate-700">Festival Name (Line 1)<input id="public-home-name1" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
-                <label class="text-xs font-semibold text-slate-700">Subtitle / Edition (Line 2)<input id="public-home-name2" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
-                <label class="md:col-span-2 text-xs font-semibold text-slate-700">Tagline<input id="public-home-tagline" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
-                <label class="text-xs font-semibold text-slate-700">About Heading<input id="public-home-about-sub" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
-                <label class="text-xs font-semibold text-slate-700">Footer Text<input id="public-home-footer" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
-                <label class="md:col-span-2 text-xs font-semibold text-slate-700">About Description<textarea id="public-home-about-text" rows="2" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></textarea></label>
+                <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Festival Name (Line 1)<input id="public-home-name1" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Subtitle / Edition (Line 2)<input id="public-home-name2" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="md:col-span-2 text-xs font-semibold text-slate-700 dark:text-slate-300">Tagline<input id="public-home-tagline" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">About Heading<input id="public-home-about-sub" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Footer Text<input id="public-home-footer" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="md:col-span-2 text-xs font-semibold text-slate-700 dark:text-slate-300">About Description<textarea id="public-home-about-text" rows="2" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></textarea></label>
 
                 <div class="space-y-2">
-                  <label class="block text-xs font-semibold text-slate-700">Festival Logo (auto-compressed &le; 200 KB)
-                    <input id="public-home-logo-file" type="file" accept="image/*" data-image-file data-image-value="public-home-logo-link" data-image-preview="public-home-logo-preview" data-image-error="public-home-logo-error" class="mt-1 block w-full text-xs text-slate-600">
+                  <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Festival Logo (auto-compressed &le; 200 KB)
+                    <input id="public-home-logo-file" type="file" accept="image/*" data-image-file data-image-value="public-home-logo-link" data-image-preview="public-home-logo-preview" data-image-error="public-home-logo-error" class="mt-1 block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200">
                   </label>
                   <input id="public-home-logo-link" type="hidden">
                   <div id="public-home-logo-preview" class="flex flex-wrap gap-2"></div>
-                  <p id="public-home-logo-error" class="text-[11px] text-red-600"></p>
+                  <p id="public-home-logo-error" class="text-[11px] text-red-600 dark:text-red-400"></p>
                 </div>
 
                 <div class="space-y-2">
-                  <label class="block text-xs font-semibold text-slate-700">Gallery Images
-                    <input id="public-home-gallery-file" type="file" accept="image/*" multiple data-image-file data-image-value="public-home-gallery" data-image-preview="public-home-gallery-preview" data-image-error="public-home-gallery-error" class="mt-1 block w-full text-xs text-slate-600">
+                  <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Gallery Images
+                    <input id="public-home-gallery-file" type="file" accept="image/*" multiple data-image-file data-image-value="public-home-gallery" data-image-preview="public-home-gallery-preview" data-image-error="public-home-gallery-error" class="mt-1 block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200">
                   </label>
                   <input id="public-home-gallery" type="hidden">
                   <div id="public-home-gallery-preview" class="flex flex-wrap gap-2"></div>
-                  <p id="public-home-gallery-error" class="text-[11px] text-red-600"></p>
+                  <p id="public-home-gallery-error" class="text-[11px] text-red-600 dark:text-red-400"></p>
                 </div>
               </div>
             </div>
 
             <!-- Teams & Categories & Stages -->
             <div class="grid gap-6 lg:grid-cols-2">
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
                 <div>
-                  <h2 class="font-display text-base font-bold text-slate-900">Teams / Houses</h2>
-                  <p class="mt-0.5 text-[11px] text-slate-500">Team Key is permanent once created; Display Name and color can be updated anytime.</p>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Teams / Houses</h2>
+                  <p class="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Team Key is permanent once created; Display Name and color can be updated anytime.</p>
                 </div>
                 <div class="grid gap-2 sm:grid-cols-[1fr_1fr_56px_auto]">
-                  <input id="inp-new-team" placeholder="Team Key * (e.g. Red)" class="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                  <input id="inp-new-team-label" placeholder="Display Name (e.g. Red House)" class="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                  <input id="inp-new-team-color" type="color" value="#1D4ED8" class="h-9 w-full rounded-lg border border-slate-200 p-0.5">
-                  <button id="btn-add-team" type="button" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap">Add</button>
+                  <input id="inp-new-team" placeholder="Team Key * (e.g. Red)" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <input id="inp-new-team-label" placeholder="Display Name (e.g. Red House)" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <input id="inp-new-team-color" type="color" value="#1D4ED8" class="h-9 w-full rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-800">
+                  <button id="btn-add-team" type="button" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap dark:bg-blue-600 dark:hover:bg-blue-500">Add</button>
                 </div>
                 <div id="created-teams-list" class="space-y-2"></div>
               </div>
 
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
                 <div>
-                  <h2 class="font-display text-base font-bold text-slate-900">Categories, Stages & Days</h2>
-                  <p class="mt-0.5 text-[11px] text-slate-500">Category Key is permanent once created; Display Name updates across all portals.</p>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Categories, Stages & Days</h2>
+                  <p class="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Category Key is permanent once created; Display Name updates across all portals.</p>
                 </div>
                 <div class="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                  <input id="inp-new-category" placeholder="Category Key * (e.g. Junior)" class="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                  <input id="inp-new-category-label" placeholder="Display Name (e.g. Junior Wing)" class="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                  <button id="btn-add-category" type="button" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap">Add</button>
+                  <input id="inp-new-category" placeholder="Category Key * (e.g. Junior)" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <input id="inp-new-category-label" placeholder="Display Name (e.g. Junior Wing)" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <button id="btn-add-category" type="button" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap dark:bg-blue-600 dark:hover:bg-blue-500">Add</button>
                 </div>
                 <div id="created-categories-list" class="space-y-2"></div>
-                <div class="grid gap-2 sm:grid-cols-2 pt-2 border-t border-slate-100">
+                <div class="grid gap-2 sm:grid-cols-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div class="flex gap-2">
-                    <input id="setup-stage-name" placeholder="Add Stage (e.g. Main Stage)" class="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                    <button id="btn-add-stage" type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50">Add</button>
+                    <input id="setup-stage-name" placeholder="Add Stage (e.g. Main Stage)" class="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <button id="btn-add-stage" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Add</button>
                   </div>
                   <div class="flex gap-2">
-                    <input id="setup-day-date" type="date" class="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                    <button id="btn-add-day" type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50">Add Day</button>
+                    <input id="setup-day-date" type="date" class="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <button id="btn-add-day" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Add Day</button>
                   </div>
                 </div>
                 <div id="created-stages-days" class="flex flex-wrap gap-2 text-xs"></div>
@@ -250,59 +283,59 @@
 
             <!-- Registration & Scoring Rules -->
             <div class="grid gap-6 lg:grid-cols-2">
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex items-center justify-between">
-                  <h2 class="font-display text-base font-bold text-slate-900">Registration Policy & Limits</h2>
-                  <button id="btn-save-reg-config" type="button" class="rounded-lg bg-blue-700 px-3.5 py-2 text-xs font-semibold text-white">Save Policy</button>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Registration Policy & Limits</h2>
+                  <button id="btn-save-reg-config" type="button" class="rounded-lg bg-blue-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Save Policy</button>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2 text-xs">
-                  <label class="font-semibold text-slate-700">Self-Registration Mode
-                    <select id="reg-cfg-status" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Self-Registration Mode
+                    <select id="reg-cfg-status" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                       <option value="open">Open</option>
                       <option value="unfilled_only">Unfilled Events Only</option>
                       <option value="waitlist_only">Waitlist Only</option>
                       <option value="closed">Closed</option>
                     </select>
                   </label>
-                  <label class="font-semibold text-slate-700">Global Registration Lock Time
-                    <input id="schedule-registration-lock" type="datetime-local" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Global Registration Lock Time
+                    <input id="schedule-registration-lock" type="datetime-local" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                   </label>
-                  <label class="font-semibold text-slate-700">Single Limit / Student (0 = unlimited)
-                    <input id="limit-single" type="number" min="0" max="50" value="0" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Single Limit / Student (0 = unlimited)
+                    <input id="limit-single" type="number" min="0" max="50" value="0" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                   </label>
-                  <label class="font-semibold text-slate-700">Group Limit / Student (0 = unlimited)
-                    <input id="limit-group" type="number" min="0" max="50" value="0" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Group Limit / Student (0 = unlimited)
+                    <input id="limit-group" type="number" min="0" max="50" value="0" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                   </label>
-                  <label class="font-semibold text-slate-700">Total Limit / Student (0 = unlimited)
-                    <input id="limit-total" type="number" min="0" max="50" value="0" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Total Limit / Student (0 = unlimited)
+                    <input id="limit-total" type="number" min="0" max="50" value="0" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                   </label>
-                  <label class="flex items-center gap-2 pt-5 font-semibold text-slate-700">
-                    <input id="reg-cfg-enabled" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-blue-700">
+                  <label class="flex items-center gap-2 pt-5 font-semibold text-slate-700 dark:text-slate-300">
+                    <input id="reg-cfg-enabled" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-600 dark:bg-slate-800">
                     Enable Student Self-Registration Portal
                   </label>
                 </div>
               </div>
 
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex items-center justify-between">
-                  <h2 class="font-display text-base font-bold text-slate-900">Scoring & Points Configuration</h2>
-                  <button id="btn-save-scoring" type="button" class="rounded-lg bg-blue-700 px-3.5 py-2 text-xs font-semibold text-white">Save Scoring</button>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Scoring & Points Configuration</h2>
+                  <button id="btn-save-scoring" type="button" class="rounded-lg bg-blue-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Save Scoring</button>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-3 text-xs">
-                  <label class="font-semibold text-slate-700">Single 1st Pts<input id="pts-single-1" type="number" value="5" class="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 font-mono-num"></label>
-                  <label class="font-semibold text-slate-700">Single 2nd Pts<input id="pts-single-2" type="number" value="3" class="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 font-mono-num"></label>
-                  <label class="font-semibold text-slate-700">Single 3rd Pts<input id="pts-single-3" type="number" value="1" class="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 font-mono-num"></label>
-                  <label class="font-semibold text-slate-700">Group 1st Pts<input id="pts-group-1" type="number" value="10" class="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 font-mono-num"></label>
-                  <label class="font-semibold text-slate-700">Group 2nd Pts<input id="pts-group-2" type="number" value="7" class="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 font-mono-num"></label>
-                  <label class="font-semibold text-slate-700">Group 3rd Pts<input id="pts-group-3" type="number" value="5" class="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 font-mono-num"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Single 1st Pts<input id="pts-single-1" type="number" value="5" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono-num text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Single 2nd Pts<input id="pts-single-2" type="number" value="3" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono-num text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Single 3rd Pts<input id="pts-single-3" type="number" value="1" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono-num text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Group 1st Pts<input id="pts-group-1" type="number" value="10" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono-num text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Group 2nd Pts<input id="pts-group-2" type="number" value="7" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono-num text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Group 3rd Pts<input id="pts-group-3" type="number" value="5" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono-num text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
                 </div>
-                <div class="grid gap-3 sm:grid-cols-2 text-xs pt-2 border-t border-slate-100">
-                  <label class="flex items-center gap-2 font-semibold text-slate-700">
-                    <input id="score-enable-grades" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-blue-700">
+                <div class="grid gap-3 sm:grid-cols-2 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <label class="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-300">
+                    <input id="score-enable-grades" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-600 dark:bg-slate-800">
                     Award Percentage Grades (A/B/C)
                   </label>
-                  <label class="font-semibold text-slate-700">Multi-Judge Method
-                    <select id="policy-multi-judge" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Multi-Judge Method
+                    <select id="policy-multi-judge" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                       <option value="average">Average Score</option>
                       <option value="trim_extremes">Trim High/Low (5+ judges)</option>
                       <option value="weighted">Weighted Average</option>
@@ -316,32 +349,32 @@
           <!-- TAB 3: STUDENTS -->
           <section id="view-students" class="admin-view hidden space-y-6">
             <div class="no-print flex flex-wrap items-center justify-between gap-3">
-              <div role="tablist" aria-label="Students mode" class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+              <div role="tablist" aria-label="Students mode" class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
                 <button type="button" role="tab" aria-selected="true" data-subtab-group="students" data-subtab="single"
-                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                   Single Entry &amp; Roster
                 </button>
                 <button type="button" role="tab" aria-selected="false" data-subtab-group="students" data-subtab="excel"
-                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                   Excel Import / Export
                 </button>
               </div>
-              <span class="text-xs text-slate-500">Switch to Excel Import / Export for template download &amp; live sheet editing</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Switch to Excel Import / Export for template download &amp; live sheet editing</span>
             </div>
 
             <div id="students-subview-single" class="space-y-6">
-              <form id="form-student" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+              <form id="form-student" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                  <h2 class="font-display text-base font-bold text-slate-900">Add Student</h2>
-                  <button id="btn-gen-chest" type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Auto Chest No.</button>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Add Student</h2>
+                  <button id="btn-gen-chest" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Auto Chest No.</button>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 text-xs">
-                  <label class="font-semibold text-slate-700">Full Name *<input id="inp-std-name" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
-                  <label class="font-semibold text-slate-700">Chest No. *<input id="inp-std-chest" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-                  <label class="font-semibold text-slate-700">Team *<select id="inp-std-team" required class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
-                  <label class="font-semibold text-slate-700">Category *<select id="inp-std-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
-                  <label class="font-semibold text-slate-700">Gender *
-                    <select id="inp-std-gender" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Full Name *<input id="inp-std-name" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Chest No. *<input id="inp-std-chest" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Team *<select id="inp-std-team" required class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Category *<select id="inp-std-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Gender *
+                    <select id="inp-std-gender" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                       <option value="Boys">Boys</option>
                       <option value="Girls">Girls</option>
                     </select>
@@ -349,30 +382,30 @@
                 </div>
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div class="flex items-center gap-3">
-                    <input id="inp-std-photo-file" type="file" accept="image/*" data-image-file data-image-value="inp-std-photo-data" data-image-preview="inp-std-photo-preview" data-image-error="inp-std-photo-error" class="text-xs text-slate-600">
+                    <input id="inp-std-photo-file" type="file" accept="image/*" data-image-file data-image-value="inp-std-photo-data" data-image-preview="inp-std-photo-preview" data-image-error="inp-std-photo-error" class="text-xs text-slate-600 dark:text-slate-300 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200">
                     <input id="inp-std-photo-data" type="hidden">
                     <div id="inp-std-photo-preview" class="flex gap-2"></div>
-                    <span id="inp-std-photo-error" class="text-[11px] text-red-600"></span>
+                    <span id="inp-std-photo-error" class="text-[11px] text-red-600 dark:text-red-400"></span>
                   </div>
-                  <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Add Student</button>
+                  <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Add Student</button>
                 </div>
               </form>
 
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div class="flex flex-wrap gap-2">
-                    <input id="filter-std-search" type="search" placeholder="Search name or chest no…" class="w-56 rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                    <select id="filter-std-team" class="select-team-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Teams</option></select>
-                    <select id="filter-std-cat" class="select-cat-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Categories</option></select>
+                    <input id="filter-std-search" type="search" placeholder="Search name or chest no…" class="w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <select id="filter-std-team" class="select-team-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="">All Teams</option></select>
+                    <select id="filter-std-cat" class="select-cat-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="">All Categories</option></select>
                   </div>
-                  <span id="std-count-label" class="font-mono-num text-xs font-bold text-slate-600">0 students</span>
+                  <span id="std-count-label" class="font-mono-num text-xs font-bold text-slate-600 dark:text-slate-300">0 students</span>
                 </div>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs">
-                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-400">
                       <tr><th class="px-3 py-2.5">Chest No</th><th class="px-3 py-2.5">Name</th><th class="px-3 py-2.5">Team</th><th class="px-3 py-2.5">Category</th><th class="px-3 py-2.5">Gender</th><th class="px-3 py-2.5 text-right">Actions</th></tr>
                     </thead>
-                    <tbody id="students-tbody" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="students-tbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                   </table>
                 </div>
               </div>
@@ -386,71 +419,71 @@
           <!-- TAB 4: EVENTS -->
           <section id="view-events" class="admin-view hidden space-y-6">
             <div class="no-print flex flex-wrap items-center justify-between gap-3">
-              <div role="tablist" aria-label="Events mode" class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+              <div role="tablist" aria-label="Events mode" class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
                 <button type="button" role="tab" aria-selected="true" data-subtab-group="events" data-subtab="single"
-                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                   Create &amp; Manage
                 </button>
                 <button type="button" role="tab" aria-selected="false" data-subtab-group="events" data-subtab="excel"
-                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                   Excel Import / Export
                 </button>
               </div>
-              <span class="text-xs text-slate-500">Bulk upload events with live criteria &amp; duplicate checking</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Bulk upload events with live criteria &amp; duplicate checking</span>
             </div>
 
             <div id="events-subview-single" class="space-y-6">
-              <form id="form-event" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-                <h2 class="font-display text-base font-bold text-slate-900">Create Event (Single or Multi-line Quick Add)</h2>
+              <form id="form-event" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
+                <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Create Event (Single or Multi-line Quick Add)</h2>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
-                  <label class="sm:col-span-2 font-semibold text-slate-700">Event Name(s) * (one per line for quick multi-add)<textarea id="inp-ev-names" rows="2" required placeholder="Malayalam Speech" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></textarea></label>
-                  <label class="font-semibold text-slate-700">Category *<select id="inp-ev-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
-                  <label class="font-semibold text-slate-700">Gender
-                    <select id="inp-ev-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                  <label class="sm:col-span-2 font-semibold text-slate-700 dark:text-slate-300">Event Name(s) * (one per line for quick multi-add)<textarea id="inp-ev-names" rows="2" required placeholder="Malayalam Speech" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></textarea></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Category *<select id="inp-ev-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Gender
+                    <select id="inp-ev-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                       <option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option>
                     </select>
                   </label>
-                  <label class="font-semibold text-slate-700">Type
-                    <select id="inp-ev-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Type
+                    <select id="inp-ev-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                       <option value="Single">Single</option><option value="Group">Group</option>
                     </select>
                   </label>
-                  <label class="font-semibold text-slate-700">Entries / Team<input id="inp-ev-limit" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-                  <label class="font-semibold text-slate-700">Members / Entry (Group)<input id="inp-ev-grpsize" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-                  <label class="font-semibold text-slate-700">Stage Type
-                    <select id="inp-ev-stage" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Entries / Team<input id="inp-ev-limit" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Members / Entry (Group)<input id="inp-ev-grpsize" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Stage Type
+                    <select id="inp-ev-stage" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                       <option value="On-Stage">On-Stage</option><option value="Off-Stage">Off-Stage</option>
                     </select>
                   </label>
-                  <label class="font-semibold text-slate-700">Judging Method
-                    <select id="inp-ev-method" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Judging Method
+                    <select id="inp-ev-method" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                       <option value="criteria">Criteria / Mark Scoring</option>
                       <option value="direct">Direct Rank / Manual</option>
                     </select>
                   </label>
-                  <label class="font-semibold text-slate-700">Maximum Mark<input id="inp-ev-maxmark" type="number" min="1" value="100" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-                  <label class="sm:col-span-2 font-semibold text-slate-700">Criteria (optional, e.g. Content - 40, Delivery - 60)<input id="inp-ev-criteria" placeholder="Content - 50; Presentation - 50" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Maximum Mark<input id="inp-ev-maxmark" type="number" min="1" value="100" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="sm:col-span-2 font-semibold text-slate-700 dark:text-slate-300">Criteria (optional, e.g. Content - 40, Delivery - 60)<input id="inp-ev-criteria" placeholder="Content - 50; Presentation - 50" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
                 </div>
                 <div class="flex justify-end">
-                  <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Create Event(s)</button>
+                  <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Create Event(s)</button>
                 </div>
               </form>
 
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <div class="flex flex-wrap gap-2">
-                    <input id="filter-ev-search" type="search" placeholder="Search event…" class="w-52 rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                    <select id="filter-ev-cat" class="select-cat-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Categories</option></select>
-                    <select id="filter-ev-gender" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Genders</option><option value="Boys">Boys</option><option value="Girls">Girls</option><option value="Both">Both</option></select>
+                    <input id="filter-ev-search" type="search" placeholder="Search event…" class="w-52 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <select id="filter-ev-cat" class="select-cat-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="">All Categories</option></select>
+                    <select id="filter-ev-gender" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="">All Genders</option><option value="Boys">Boys</option><option value="Girls">Girls</option><option value="Both">Both</option></select>
                   </div>
-                  <span id="ev-count-label" class="font-mono-num text-xs font-bold text-slate-600">0 events</span>
+                  <span id="ev-count-label" class="font-mono-num text-xs font-bold text-slate-600 dark:text-slate-300">0 events</span>
                 </div>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs">
-                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-400">
                       <tr><th class="px-3 py-2.5">Event</th><th class="px-3 py-2.5">Category</th><th class="px-3 py-2.5">Gender</th><th class="px-3 py-2.5">Type &amp; Slots</th><th class="px-3 py-2.5">Stage</th><th class="px-3 py-2.5 text-right">Actions</th></tr>
                     </thead>
-                    <tbody id="events-tbody" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="events-tbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                   </table>
                 </div>
               </div>
@@ -463,18 +496,18 @@
 
           <!-- TAB 5: REGISTRATIONS -->
           <section id="view-registrations" class="admin-view hidden space-y-6">
-            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
               <div class="flex flex-wrap gap-2">
-                <select id="reg-filter-event" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"><option value="all" selected>All Events</option></select>
-                <select id="reg-filter-team" class="select-team-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"><option value="">All Teams</option></select>
+                <select id="reg-filter-event" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="all" selected>All Events</option></select>
+                <select id="reg-filter-team" class="select-team-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="">All Teams</option></select>
               </div>
-              <span id="reg-summary-count" class="font-mono-num text-xs font-bold text-slate-600">0 entries</span>
+              <span id="reg-summary-count" class="font-mono-num text-xs font-bold text-slate-600 dark:text-slate-300">0 entries</span>
             </div>
 
             <div id="admin-registrations-list" class="grid gap-4 md:grid-cols-2"></div>
 
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
-              <h3 class="font-display text-base font-bold text-slate-900">Pending Student Self-Registration Requests</h3>
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+              <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Pending Student Self-Registration Requests</h3>
               <div id="admin-requests-list" class="grid gap-3 md:grid-cols-2"></div>
             </div>
           </section>
@@ -482,43 +515,43 @@
           <!-- TAB 6: SCHEDULE -->
           <section id="view-schedule" class="admin-view hidden space-y-6">
             <div class="no-print flex flex-wrap items-center justify-between gap-3">
-              <div role="tablist" aria-label="Schedule mode" class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+              <div role="tablist" aria-label="Schedule mode" class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
                 <button type="button" role="tab" aria-selected="true" data-subtab-group="schedule" data-subtab="single"
-                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                   Schedule Builder &amp; Breaks
                 </button>
                 <button type="button" role="tab" aria-selected="false" data-subtab-group="schedule" data-subtab="excel"
-                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                   Excel Import / Export
                 </button>
               </div>
-              <span class="text-xs text-slate-500">Export event schedule, upload updates, and detect stage time conflicts</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Export event schedule, upload updates, and detect stage time conflicts</span>
             </div>
 
             <div id="schedule-subview-single" class="space-y-6">
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                  <h2 class="font-display text-base font-bold text-slate-900">Event Schedule Builder</h2>
-                  <button id="btn-print-schedule" type="button" class="no-print rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Print Schedule</button>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Event Schedule Builder</h2>
+                  <button id="btn-print-schedule" type="button" class="no-print rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Print Schedule</button>
                 </div>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs">
-                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-400">
                       <tr><th class="px-3 py-2.5">Event</th><th class="px-3 py-2.5">Date</th><th class="px-3 py-2.5">Stage</th><th class="px-3 py-2.5">Start Time</th><th class="px-3 py-2.5">Duration (m)</th><th class="px-3 py-2.5 text-right">Save</th></tr>
                     </thead>
-                    <tbody id="schedule-builder-body" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="schedule-builder-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                   </table>
                 </div>
               </div>
 
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-                <h3 class="font-display text-base font-bold text-slate-900">Schedule Breaks (Lunch / Prayer / Interval)</h3>
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
+                <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Schedule Breaks (Lunch / Prayer / Interval)</h3>
                 <div class="grid gap-3 sm:grid-cols-5 text-xs">
-                  <input id="brk-title" placeholder="Break Title (e.g. Lunch Break)" class="rounded-lg border border-slate-200 px-3 py-2">
-                  <input id="brk-date" type="date" class="rounded-lg border border-slate-200 px-3 py-2">
-                  <input id="brk-start" type="time" class="rounded-lg border border-slate-200 px-3 py-2">
-                  <input id="brk-end" type="time" class="rounded-lg border border-slate-200 px-3 py-2">
-                  <button id="btn-add-break" type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white">Add Break</button>
+                  <input id="brk-title" placeholder="Break Title (e.g. Lunch Break)" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <input id="brk-date" type="date" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <input id="brk-start" type="time" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <input id="brk-end" type="time" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <button id="btn-add-break" type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500">Add Break</button>
                 </div>
                 <div id="breaks-list" class="space-y-2 text-xs"></div>
               </div>
@@ -532,56 +565,56 @@
           <!-- TAB 7: JUDGING & RESULTS -->
           <section id="view-results" class="admin-view hidden space-y-6">
             <!-- Assign Judges -->
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-              <h2 class="font-display text-base font-bold text-slate-900">Assign Judges to Events</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
+              <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Assign Judges to Events</h2>
               <div class="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-                <select id="assign-event-select" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"></select>
-                <select id="assign-judge-select" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"></select>
-                <button id="btn-assign-judge" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Assign Judge</button>
+                <select id="assign-event-select" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select>
+                <select id="assign-judge-select" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select>
+                <button id="btn-assign-judge" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Assign Judge</button>
               </div>
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
-                  <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-400">
                     <tr><th class="px-4 py-2.5">Event</th><th class="px-4 py-2.5">Judge</th><th class="px-4 py-2.5">Schedule</th><th class="px-4 py-2.5 text-right">Action</th></tr>
                   </thead>
-                  <tbody id="judge-assignment-table" class="divide-y divide-slate-100"></tbody>
+                  <tbody id="judge-assignment-table" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                 </table>
               </div>
             </div>
 
             <!-- Submitted Judge Sheets -->
             <div class="space-y-3">
-              <h2 class="font-display text-base font-bold text-slate-900">Submitted Judge Sheets for Review & Publishing</h2>
+              <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Submitted Judge Sheets for Review & Publishing</h2>
               <div id="submitted-sheets-list" class="grid gap-4 md:grid-cols-2"></div>
             </div>
 
             <!-- Direct Admin Result Entry -->
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <h2 class="font-display text-base font-bold text-slate-900">Direct Result Entry & Correction</h2>
-                <button id="btn-cancel-direct-edit" type="button" class="hidden rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Cancel Edit</button>
+                <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Direct Result Entry & Correction</h2>
+                <button id="btn-cancel-direct-edit" type="button" class="hidden rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel Edit</button>
               </div>
-              <div id="direct-edit-banner" class="hidden rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">Editing published result. Saving will record an audit revision.</div>
+              <div id="direct-edit-banner" class="hidden rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 dark:border-blue-800/70 dark:bg-blue-950/50 dark:text-blue-300">Editing published result. Saving will record an audit revision.</div>
               <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
-                <label class="font-semibold text-slate-700">Event<select id="direct-result-event" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2"></select></label>
-                <label class="font-semibold text-slate-700">First Place<select id="direct-first" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2"></select></label>
-                <label class="font-semibold text-slate-700">Second Place<select id="direct-second" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2"></select></label>
-                <label class="font-semibold text-slate-700">Third Place<select id="direct-third" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2"></select></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Event<select id="direct-result-event" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">First Place<select id="direct-first" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Second Place<select id="direct-second" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Third Place<select id="direct-third" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
               </div>
               <div class="flex justify-end">
-                <button id="btn-save-direct-result" type="button" class="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800">Publish Result Directly</button>
+                <button id="btn-save-direct-result" type="button" class="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500">Publish Result Directly</button>
               </div>
             </div>
 
             <!-- Published Results Table -->
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
-              <h2 class="font-display text-base font-bold text-slate-900">Published & Archived Results</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+              <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Published & Archived Results</h2>
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
-                  <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-400">
                     <tr><th class="px-4 py-2.5">Event</th><th class="px-4 py-2.5">Winners</th><th class="px-4 py-2.5">Status</th><th class="px-4 py-2.5 text-right">Actions</th></tr>
                   </thead>
-                  <tbody id="published-results-tbody" class="divide-y divide-slate-100"></tbody>
+                  <tbody id="published-results-tbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                 </table>
               </div>
             </div>
@@ -589,65 +622,65 @@
 
           <!-- TAB 8: STAFF ACCESS, NOTICES & SYSTEM RESET -->
           <section id="view-system" class="admin-view hidden space-y-6">
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <h2 class="font-display text-base font-bold text-slate-900">Staff Access Management (Leaders, Judges, Admins)</h2>
-                <button id="btn-cancel-access-edit" type="button" class="hidden rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Cancel Edit</button>
+                <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Staff Access Management (Leaders, Judges, Admins)</h2>
+                <button id="btn-cancel-access-edit" type="button" class="hidden rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel Edit</button>
               </div>
-              <div id="access-edit-banner" class="hidden rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800"></div>
+              <div id="access-edit-banner" class="hidden rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 dark:border-blue-800/70 dark:bg-blue-950/50 dark:text-blue-300"></div>
               <input id="access-edit-uid" type="hidden">
               <input id="access-uid" type="hidden">
               <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
-                <label class="font-semibold text-slate-700">Role *
-                  <select id="access-role" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2">
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Role *
+                  <select id="access-role" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                     <option value="teamLeader">Team Leader</option>
                     <option value="judge">Judge</option>
                     <option value="admin">Admin</option>
                   </select>
                 </label>
-                <label class="font-semibold text-slate-700">Display Name *<input id="access-name" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"></label>
-                <label class="font-semibold text-slate-700">Username or Email *<input id="access-identifier" placeholder="leader_red" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"></label>
-                <label class="font-semibold text-slate-700">Password (min 6 chars, new only)<input id="access-password" type="password" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"></label>
-                <label id="access-team-wrap" class="font-semibold text-slate-700">Team<select id="access-team" class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2"></select></label>
-                <label id="access-gender-wrap" class="font-semibold text-slate-700">Gender Scope
-                  <select id="access-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2">
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Display Name *<input id="access-name" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Username or Email *<input id="access-identifier" placeholder="leader_red" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Password (min 6 chars, new only)<input id="access-password" type="password" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label id="access-team-wrap" class="font-semibold text-slate-700 dark:text-slate-300">Team<select id="access-team" class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+                <label id="access-gender-wrap" class="font-semibold text-slate-700 dark:text-slate-300">Gender Scope
+                  <select id="access-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                     <option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option>
                   </select>
                 </label>
-                <label class="font-semibold text-slate-700">Title / Designation<input id="access-title" placeholder="Team Captain" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"></label>
-                <label class="font-semibold text-slate-700">Phone<input id="access-phone" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Title / Designation<input id="access-title" placeholder="Team Captain" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Phone<input id="access-phone" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
               </div>
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700"><input id="access-active" type="checkbox" checked class="h-4 w-4 rounded">Active Account</label>
+                <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300"><input id="access-active" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-800">Active Account</label>
                 <div class="flex gap-2">
-                  <button id="btn-clear-access" type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Clear Form</button>
-                  <button id="btn-save-access" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Save Staff Account</button>
+                  <button id="btn-clear-access" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">Clear Form</button>
+                  <button id="btn-save-access" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Save Staff Account</button>
                 </div>
               </div>
               <div id="access-list" class="grid gap-3 pt-2 md:grid-cols-2 lg:grid-cols-3"></div>
             </div>
 
             <!-- Team Notifications -->
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
-              <h2 class="font-display text-base font-bold text-slate-900">Send Team Notice</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+              <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Send Team Notice</h2>
               <div class="grid gap-3 sm:grid-cols-[200px_1fr_auto] text-xs">
-                <select id="notif-team" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold"><option value="All">All Teams</option></select>
-                <input id="notif-message" placeholder="Enter notice message for team leaders…" class="rounded-lg border border-slate-200 px-3 py-2">
-                <button id="btn-send-notif" type="button" class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white">Send Notice</button>
+                <select id="notif-team" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="All">All Teams</option></select>
+                <input id="notif-message" placeholder="Enter notice message for team leaders…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                <button id="btn-send-notif" type="button" class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500">Send Notice</button>
               </div>
             </div>
 
             <!-- Safe Data Reset -->
-            <div class="rounded-xl border border-red-200 bg-red-50/40 p-5 space-y-4">
+            <div class="rounded-xl border border-red-200 bg-red-50/40 p-5 space-y-4 dark:border-red-900/70 dark:bg-red-950/25">
               <div>
-                <h2 class="font-display text-base font-bold text-red-900">System Maintenance & Safe Data Reset</h2>
-                <p class="text-xs text-red-700">Archives records into <code>deletedBackups</code> before clearing selected collections.</p>
+                <h2 class="font-display text-base font-bold text-red-900 dark:text-red-300">System Maintenance & Safe Data Reset</h2>
+                <p class="text-xs text-red-700 dark:text-red-400">Archives records into <code>deletedBackups</code> before clearing selected collections.</p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button type="button" data-reset-scope="registrations" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Clear Registrations & Requests</button>
-                <button type="button" data-reset-scope="results" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Clear Results & Judge Sheets</button>
-                <button type="button" data-reset-scope="students" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Clear All Students</button>
-                <button type="button" data-reset-scope="events" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Clear All Events</button>
+                <button type="button" data-reset-scope="registrations" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Clear Registrations & Requests</button>
+                <button type="button" data-reset-scope="results" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Clear Results & Judge Sheets</button>
+                <button type="button" data-reset-scope="students" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Clear All Students</button>
+                <button type="button" data-reset-scope="events" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Clear All Events</button>
               </div>
             </div>
           </section>
@@ -658,78 +691,78 @@
   </div>
 
   <!-- Admin Direct Registration Entry Modal -->
-  <div id="admin-reg-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-4">
-      <div class="flex items-start justify-between gap-2 border-b border-slate-200 pb-3">
+  <div id="admin-reg-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/75">
+    <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-4 dark:border-slate-800 dark:bg-slate-900">
+      <div class="flex items-start justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-800">
         <div>
-          <h3 id="admin-reg-modal-title" class="font-display text-base font-bold text-slate-900">Assign Registration</h3>
-          <p id="admin-reg-modal-sub" class="text-xs text-slate-500"></p>
+          <h3 id="admin-reg-modal-title" class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Assign Registration</h3>
+          <p id="admin-reg-modal-sub" class="text-xs text-slate-500 dark:text-slate-400"></p>
         </div>
-        <button id="btn-close-admin-reg" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100">✕</button>
+        <button id="btn-close-admin-reg" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
       </div>
       <div id="admin-reg-modal-body" class="space-y-3"></div>
     </div>
   </div>
 
   <!-- Edit Student Modal -->
-  <div id="edit-student-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <form id="edit-student-form" class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
-        <h3 class="font-display text-base font-bold text-slate-900">Edit Student</h3>
-        <button id="btn-close-edit-student" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100">✕</button>
+  <div id="edit-student-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/75">
+    <form id="edit-student-form" class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
+        <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Edit Student</h3>
+        <button id="btn-close-edit-student" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
       </div>
       <input id="edit-std-id" type="hidden">
-      <label class="block font-semibold">Name *<input id="edit-std-name" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
-      <label class="block font-semibold">Chest No. *<input id="edit-std-chest" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-      <label class="block font-semibold">Team *<select id="edit-std-team" required class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
-      <label class="block font-semibold">Category *<select id="edit-std-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
-      <label class="block font-semibold">Gender *<select id="edit-std-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"><option value="Boys">Boys</option><option value="Girls">Girls</option></select></label>
-      <div class="space-y-2 border-t border-slate-100 pt-2">
+      <label class="block font-semibold">Name *<input id="edit-std-name" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+      <label class="block font-semibold">Chest No. *<input id="edit-std-chest" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+      <label class="block font-semibold">Team *<select id="edit-std-team" required class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+      <label class="block font-semibold">Category *<select id="edit-std-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+      <label class="block font-semibold">Gender *<select id="edit-std-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="Boys">Boys</option><option value="Girls">Girls</option></select></label>
+      <div class="space-y-2 border-t border-slate-100 pt-2 dark:border-slate-800">
         <div class="flex items-center justify-between gap-2">
-          <span class="font-semibold text-slate-700">Student Photo</span>
-          <button id="btn-clear-edit-std-photo" type="button" class="text-[11px] font-semibold text-red-600 hover:underline">Clear Photo</button>
+          <span class="font-semibold text-slate-700 dark:text-slate-300">Student Photo</span>
+          <button id="btn-clear-edit-std-photo" type="button" class="text-[11px] font-semibold text-red-600 hover:underline dark:text-red-400">Clear Photo</button>
         </div>
-        <input id="edit-std-photo-file" type="file" accept="image/*" data-image-file data-image-value="edit-std-photo-data" data-image-preview="edit-std-photo-preview" data-image-error="edit-std-photo-error" class="block w-full text-xs text-slate-600">
+        <input id="edit-std-photo-file" type="file" accept="image/*" data-image-file data-image-value="edit-std-photo-data" data-image-preview="edit-std-photo-preview" data-image-error="edit-std-photo-error" class="block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200">
         <input id="edit-std-photo-data" type="hidden">
         <div id="edit-std-photo-preview" class="flex gap-2"></div>
-        <p id="edit-std-photo-error" class="text-[11px] text-red-600"></p>
-        <label class="inline-flex items-center gap-2 font-semibold text-slate-700 pt-1">
-          <input id="edit-std-show-photo" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-blue-700">
+        <p id="edit-std-photo-error" class="text-[11px] text-red-600 dark:text-red-400"></p>
+        <label class="inline-flex items-center gap-2 font-semibold text-slate-700 pt-1 dark:text-slate-300">
+          <input id="edit-std-show-photo" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-600 dark:bg-slate-800">
           Show photo on public results & TV
         </label>
       </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button id="btn-cancel-edit-student" type="button" class="rounded-lg border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Cancel</button>
-        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Save Changes</button>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="btn-cancel-edit-student" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Save Changes</button>
       </div>
     </form>
   </div>
 
   <!-- Edit Event Modal -->
-  <div id="edit-event-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <form id="edit-event-form" class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
-        <h3 class="font-display text-base font-bold text-slate-900">Edit Event</h3>
-        <button id="btn-close-edit-event" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100">✕</button>
+  <div id="edit-event-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/75">
+    <form id="edit-event-form" class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
+        <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Edit Event</h3>
+        <button id="btn-close-edit-event" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
       </div>
       <input id="edit-ev-id" type="hidden">
-      <label class="block font-semibold">Event Name *<input id="edit-ev-name" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
+      <label class="block font-semibold">Event Name *<input id="edit-ev-name" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
       <div class="grid gap-3 sm:grid-cols-2">
-        <label class="block font-semibold">Category *<select id="edit-ev-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
-        <label class="block font-semibold">Gender<select id="edit-ev-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"><option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option></select></label>
-        <label class="block font-semibold">Type<select id="edit-ev-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"><option value="Single">Single</option><option value="Group">Group</option></select></label>
-        <label class="block font-semibold">Stage Type<select id="edit-ev-stage" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"><option value="On-Stage">On-Stage</option><option value="Off-Stage">Off-Stage</option></select></label>
-        <label class="block font-semibold">Entries / Team<input id="edit-ev-limit" type="number" min="1" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-        <label class="block font-semibold">Members / Entry<input id="edit-ev-grpsize" type="number" min="1" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
+        <label class="block font-semibold">Category *<select id="edit-ev-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+        <label class="block font-semibold">Gender<select id="edit-ev-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option></select></label>
+        <label class="block font-semibold">Type<select id="edit-ev-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="Single">Single</option><option value="Group">Group</option></select></label>
+        <label class="block font-semibold">Stage Type<select id="edit-ev-stage" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="On-Stage">On-Stage</option><option value="Off-Stage">Off-Stage</option></select></label>
+        <label class="block font-semibold">Entries / Team<input id="edit-ev-limit" type="number" min="1" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+        <label class="block font-semibold">Members / Entry<input id="edit-ev-grpsize" type="number" min="1" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
         <label class="block font-semibold">Judging Method
-          <select id="edit-ev-method" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+          <select id="edit-ev-method" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
             <option value="criteria">Criteria / Mark Scoring</option>
             <option value="direct">Direct Rank / Manual</option>
           </select>
         </label>
-        <label class="block font-semibold">Maximum Mark<input id="edit-ev-maxmark" type="number" min="1" value="100" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
+        <label class="block font-semibold">Maximum Mark<input id="edit-ev-maxmark" type="number" min="1" value="100" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
         <label class="block font-semibold">Status
-          <select id="edit-ev-status" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+          <select id="edit-ev-status" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
             <option value="active">Active</option>
             <option value="draft">Draft</option>
             <option value="archived">Archived</option>
@@ -737,185 +770,185 @@
         </label>
       </div>
       <label class="block font-semibold">Criteria (optional, e.g. Content - 50; Presentation - 50)
-        <input id="edit-ev-criteria" placeholder="Content - 50; Presentation - 50" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <input id="edit-ev-criteria" placeholder="Content - 50; Presentation - 50" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       </label>
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button id="btn-cancel-edit-event" type="button" class="rounded-lg border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Cancel</button>
-        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Update Event</button>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="btn-cancel-edit-event" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Update Event</button>
       </div>
     </form>
   </div>
 
   <!-- Edit Team Modal -->
-  <div id="edit-team-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <form id="edit-team-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
-        <h3 class="font-display text-base font-bold text-slate-900">Edit Team / House</h3>
-        <button id="btn-close-edit-team" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100">✕</button>
+  <div id="edit-team-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/75">
+    <form id="edit-team-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
+        <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Edit Team / House</h3>
+        <button id="btn-close-edit-team" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
       </div>
-      <label class="block font-semibold text-slate-600">Team Key (Locked)
-        <input id="edit-team-key" disabled class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 font-mono-num text-sm text-slate-500 cursor-not-allowed">
+      <label class="block font-semibold text-slate-600 dark:text-slate-400">Team Key (Locked)
+        <input id="edit-team-key" disabled class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 font-mono-num text-sm text-slate-500 cursor-not-allowed dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-400">
       </label>
-      <p class="text-[11px] text-slate-500">Team Key cannot be edited after creation so existing students, registrations, and results stay linked.</p>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">Team Key cannot be edited after creation so existing students, registrations, and results stay linked.</p>
       <label class="block font-semibold">Display Name *
-        <input id="edit-team-label" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <input id="edit-team-label" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       </label>
       <label class="block font-semibold">Team Color
-        <input id="edit-team-color" type="color" class="mt-1 h-10 w-24 rounded-lg border border-slate-200 p-0.5">
+        <input id="edit-team-color" type="color" class="mt-1 h-10 w-24 rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-800">
       </label>
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button id="btn-cancel-edit-team" type="button" class="rounded-lg border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Cancel</button>
-        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Update Team</button>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="btn-cancel-edit-team" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Update Team</button>
       </div>
     </form>
   </div>
 
   <!-- Edit Category Modal -->
-  <div id="edit-category-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <form id="edit-category-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
-        <h3 class="font-display text-base font-bold text-slate-900">Edit Category</h3>
-        <button id="btn-close-edit-category" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100">✕</button>
+  <div id="edit-category-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/75">
+    <form id="edit-category-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
+        <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Edit Category</h3>
+        <button id="btn-close-edit-category" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
       </div>
-      <label class="block font-semibold text-slate-600">Category Key (Locked)
-        <input id="edit-cat-key" disabled class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 font-mono-num text-sm text-slate-500 cursor-not-allowed">
+      <label class="block font-semibold text-slate-600 dark:text-slate-400">Category Key (Locked)
+        <input id="edit-cat-key" disabled class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 font-mono-num text-sm text-slate-500 cursor-not-allowed dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-400">
       </label>
-      <p class="text-[11px] text-slate-500">Category Key cannot be edited after creation. Updating Display Name refreshes all portals immediately.</p>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">Category Key cannot be edited after creation. Updating Display Name refreshes all portals immediately.</p>
       <label class="block font-semibold">Display Name *
-        <input id="edit-cat-label" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <input id="edit-cat-label" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       </label>
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button id="btn-cancel-edit-category" type="button" class="rounded-lg border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Cancel</button>
-        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Update Category</button>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="btn-cancel-edit-category" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Update Category</button>
       </div>
     </form>
   </div>
 
   <!-- Edit Stage Modal -->
-  <div id="edit-stage-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <form id="edit-stage-form" class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
-        <h3 class="font-display text-base font-bold text-slate-900">Edit Stage</h3>
-        <button id="btn-close-edit-stage" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100">✕</button>
+  <div id="edit-stage-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/75">
+    <form id="edit-stage-form" class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
+        <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Edit Stage</h3>
+        <button id="btn-close-edit-stage" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
       </div>
       <input id="edit-stage-old" type="hidden">
       <label class="block font-semibold">Stage Name *
-        <input id="edit-stage-name" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <input id="edit-stage-name" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       </label>
-      <p class="text-[11px] text-slate-500">Updates the stage list and syncs any scheduled events assigned to this stage.</p>
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button id="btn-cancel-edit-stage" type="button" class="rounded-lg border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Cancel</button>
-        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Update Stage</button>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">Updates the stage list and syncs any scheduled events assigned to this stage.</p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="btn-cancel-edit-stage" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Update Stage</button>
       </div>
     </form>
   </div>
 
   <!-- Edit Festival Day Modal -->
-  <div id="edit-day-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <form id="edit-day-form" class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
-        <h3 class="font-display text-base font-bold text-slate-900">Edit Festival Day</h3>
-        <button id="btn-close-edit-day" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100">✕</button>
+  <div id="edit-day-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/75">
+    <form id="edit-day-form" class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
+        <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Edit Festival Day</h3>
+        <button id="btn-close-edit-day" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
       </div>
       <input id="edit-day-index" type="hidden">
       <label class="block font-semibold">Date *
-        <input id="edit-day-date" type="date" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <input id="edit-day-date" type="date" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       </label>
       <label class="block font-semibold">Label (Optional)
-        <input id="edit-day-label" placeholder="e.g. Day 1 — Inauguration" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <input id="edit-day-label" placeholder="e.g. Day 1 — Inauguration" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       </label>
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button id="btn-cancel-edit-day" type="button" class="rounded-lg border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Cancel</button>
-        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Update Day</button>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="btn-cancel-edit-day" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Update Day</button>
       </div>
     </form>
   </div>
 
   <!-- Edit Schedule Break Modal -->
-  <div id="edit-break-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <form id="edit-break-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
-        <h3 class="font-display text-base font-bold text-slate-900">Edit Schedule Break</h3>
-        <button id="btn-close-edit-break" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100">✕</button>
+  <div id="edit-break-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/75">
+    <form id="edit-break-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
+        <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Edit Schedule Break</h3>
+        <button id="btn-close-edit-break" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
       </div>
       <input id="edit-brk-id" type="hidden">
       <label class="block font-semibold">Break Title *
-        <input id="edit-brk-title" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <input id="edit-brk-title" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       </label>
       <label class="block font-semibold">Date *
-        <input id="edit-brk-date" type="date" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <input id="edit-brk-date" type="date" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       </label>
       <div class="grid gap-3 grid-cols-2">
         <label class="block font-semibold">Start Time *
-          <input id="edit-brk-start" type="time" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+          <input id="edit-brk-start" type="time" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
         </label>
         <label class="block font-semibold">End Time *
-          <input id="edit-brk-end" type="time" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+          <input id="edit-brk-end" type="time" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
         </label>
       </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button id="btn-cancel-edit-break" type="button" class="rounded-lg border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Cancel</button>
-        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Update Break</button>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="btn-cancel-edit-break" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Update Break</button>
       </div>
     </form>
   </div>
 
   <!-- Edit Judge Assignment Modal -->
-  <div id="edit-assignment-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <form id="edit-assignment-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
-        <h3 class="font-display text-base font-bold text-slate-900">Update Judge Assignment</h3>
-        <button id="btn-close-edit-assignment" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100">✕</button>
+  <div id="edit-assignment-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/75">
+    <form id="edit-assignment-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
+        <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Update Judge Assignment</h3>
+        <button id="btn-close-edit-assignment" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
       </div>
       <input id="edit-assign-id" type="hidden">
-      <label class="block font-semibold text-slate-600">Event
-        <input id="edit-assign-event-name" disabled class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-600">
+      <label class="block font-semibold text-slate-600 dark:text-slate-400">Event
+        <input id="edit-assign-event-name" disabled class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-600 cursor-not-allowed dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-400">
       </label>
       <label class="block font-semibold">Assigned Judge *
-        <select id="edit-assign-judge" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select>
+        <select id="edit-assign-judge" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select>
       </label>
       <div class="grid gap-3 grid-cols-2">
-        <label class="block font-semibold">Date<input id="edit-assign-date" type="date" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
-        <label class="block font-semibold">Time<input id="edit-assign-time" type="time" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
+        <label class="block font-semibold">Date<input id="edit-assign-date" type="date" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+        <label class="block font-semibold">Time<input id="edit-assign-time" type="time" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
       </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button id="btn-cancel-edit-assignment" type="button" class="rounded-lg border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Cancel</button>
-        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Update Assignment</button>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="btn-cancel-edit-assignment" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Update Assignment</button>
       </div>
     </form>
   </div>
 
   <!-- Custom In-App Confirmation Modal -->
-  <div id="admin-confirm-modal" class="no-print fixed inset-0 z-[120] hidden items-center justify-center bg-slate-900/55 p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
-    <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl space-y-4">
+  <div id="admin-confirm-modal" class="no-print fixed inset-0 z-[120] hidden items-center justify-center bg-slate-900/55 p-4 dark:bg-slate-950/80" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+    <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl space-y-4 dark:border-slate-800 dark:bg-slate-900">
       <div class="flex items-start gap-3">
-        <div id="confirm-modal-icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700">
+        <div id="confirm-modal-icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 dark:border-red-800/70 dark:bg-red-950/60 dark:text-red-400">
           <i data-lucide="alert-triangle" class="h-5 w-5"></i>
         </div>
         <div class="min-w-0 flex-1">
-          <h3 id="confirm-modal-title" class="font-display text-base font-bold text-slate-900">Confirm Action</h3>
-          <p id="confirm-modal-message" class="mt-1 text-xs leading-relaxed text-slate-600"></p>
+          <h3 id="confirm-modal-title" class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Confirm Action</h3>
+          <p id="confirm-modal-message" class="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300"></p>
         </div>
       </div>
-      <div class="flex justify-end gap-2 border-t border-slate-100 pt-3">
-        <button id="confirm-modal-cancel" type="button" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
-        <button id="confirm-modal-ok" type="button" class="rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700">Confirm</button>
+      <div class="flex justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+        <button id="confirm-modal-cancel" type="button" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button id="confirm-modal-ok" type="button" class="rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500">Confirm</button>
       </div>
     </div>
   </div>
 
   <!-- Custom In-App Reason Prompt Modal -->
-  <div id="admin-prompt-modal" class="no-print fixed inset-0 z-[120] hidden items-center justify-center bg-slate-900/55 p-4" role="dialog" aria-modal="true" aria-labelledby="prompt-modal-title">
-    <form id="admin-prompt-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl space-y-3">
-      <h3 id="prompt-modal-title" class="font-display text-base font-bold text-slate-900">Enter Reason</h3>
-      <p id="prompt-modal-message" class="text-xs text-slate-600"></p>
+  <div id="admin-prompt-modal" class="no-print fixed inset-0 z-[120] hidden items-center justify-center bg-slate-900/55 p-4 dark:bg-slate-950/80" role="dialog" aria-modal="true" aria-labelledby="prompt-modal-title">
+    <form id="admin-prompt-form" class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl space-y-3 dark:border-slate-800 dark:bg-slate-900">
+      <h3 id="prompt-modal-title" class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Enter Reason</h3>
+      <p id="prompt-modal-message" class="text-xs text-slate-600 dark:text-slate-300"></p>
       <div>
-        <input id="prompt-modal-input" type="text" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none">
-        <p id="prompt-modal-error" class="mt-1 hidden text-[11px] font-semibold text-red-600"></p>
+        <input id="prompt-modal-input" type="text" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-500">
+        <p id="prompt-modal-error" class="mt-1 hidden text-[11px] font-semibold text-red-600 dark:text-red-400"></p>
       </div>
-      <div class="flex justify-end gap-2 border-t border-slate-100 pt-3">
-        <button id="prompt-modal-cancel" type="button" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
-        <button id="prompt-modal-ok" type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Submit</button>
+      <div class="flex justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+        <button id="prompt-modal-cancel" type="button" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>
+        <button id="prompt-modal-ok" type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Submit</button>
       </div>
     </form>
   </div>

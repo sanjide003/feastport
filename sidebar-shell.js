@@ -24,6 +24,9 @@ function ensureSidebarStyles() {
         transform: translateX(0);
         box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15);
       }
+      html.dark [data-app-sidebar][data-mobile-open="true"] {
+        box-shadow: 0 20px 25px -5px rgba(2, 6, 23, 0.65);
+      }
       [data-app-sidebar-backdrop] {
         position: fixed;
         inset: 0;
@@ -32,6 +35,9 @@ function ensureSidebarStyles() {
         opacity: 0;
         pointer-events: none;
         transition: opacity 200ms ease;
+      }
+      html.dark [data-app-sidebar-backdrop] {
+        background: rgba(2, 6, 23, 0.72);
       }
       [data-app-sidebar-backdrop][data-open="true"] {
         opacity: 1;

@@ -116,16 +116,16 @@ export function createAdminResultsController(getState, actions) {
     const listEl = byId('judge-assignment-table');
     if (!listEl) return;
     listEl.innerHTML = active.length ? active.map((a) => `
-      <tr class="hover:bg-slate-50">
-        <td class="px-4 py-2.5 font-semibold text-slate-900">${h(a.eventName || a.eventId)}<br><span class="text-[11px] font-normal text-slate-500">${h(catLabel(a.category || ''))} • ${h(a.gender || '')}</span></td>
-        <td class="px-4 py-2.5 text-slate-700">${h(a.judgeName || a.judgeId)}</td>
-        <td class="px-4 py-2.5 font-mono-num text-xs text-slate-500">${h(a.date || 'TBA')} ${h(a.time || '')}</td>
+      <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+        <td class="px-4 py-2.5 font-semibold text-slate-900 dark:text-slate-100">${h(a.eventName || a.eventId)}<br><span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">${h(catLabel(a.category || ''))} • ${h(a.gender || '')}</span></td>
+        <td class="px-4 py-2.5 text-slate-700 dark:text-slate-300">${h(a.judgeName || a.judgeId)}</td>
+        <td class="px-4 py-2.5 font-mono-num text-xs text-slate-500 dark:text-slate-400">${h(a.date || 'TBA')} ${h(a.time || '')}</td>
         <td class="px-4 py-2.5 text-right space-x-1.5 whitespace-nowrap">
-          <button type="button" data-results-action="edit-assignment" data-id="${h(a.id)}" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
-          <button type="button" data-results-action="remove-assignment" data-id="${h(a.id)}" class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Remove</button>
+          <button type="button" data-results-action="edit-assignment" data-id="${h(a.id)}" class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50">Edit</button>
+          <button type="button" data-results-action="remove-assignment" data-id="${h(a.id)}" class="rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-2.5 py-1 text-[11px] font-semibold text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/70">Remove</button>
         </td>
       </tr>
-    `).join('') : '<tr><td colspan="4" class="px-4 py-6 text-center text-xs text-slate-400">No active judge assignments yet.</td></tr>';
+    `).join('') : '<tr><td colspan="4" class="px-4 py-6 text-center text-xs text-slate-400 dark:text-slate-500">No active judge assignments yet.</td></tr>';
   }
 
   function renderSubmittedSheets() {
@@ -135,7 +135,7 @@ export function createAdminResultsController(getState, actions) {
     if (!container) return;
 
     if (!submitted.length) {
-      container.innerHTML = '<div class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-500">No submitted judge sheets awaiting review.</div>';
+      container.innerHTML = '<div class="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500 dark:text-slate-400">No submitted judge sheets awaiting review.</div>';
       return;
     }
 
@@ -156,33 +156,33 @@ export function createAdminResultsController(getState, actions) {
       const isPublished = existingResult && existingResult.status === 'published';
 
       return `
-        <article class="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+        <article class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3">
           <div class="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h4 class="font-display text-sm font-bold text-slate-900">${h(ev.name)}</h4>
-              <p class="text-[11px] text-slate-500">${h(catLabel(ev.category || ''))} • ${h(ev.gender || '')} • ${sheets.length} judge sheet${sheets.length === 1 ? '' : 's'} submitted</p>
+              <h4 class="font-display text-sm font-bold text-slate-900 dark:text-slate-100">${h(ev.name)}</h4>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">${h(catLabel(ev.category || ''))} • ${h(ev.gender || '')} • ${sheets.length} judge sheet${sheets.length === 1 ? '' : 's'} submitted</p>
             </div>
-            <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${isPublished ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">${isPublished ? 'Published' : 'Ready to Publish'}</span>
+            <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${isPublished ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60' : 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60'}">${isPublished ? 'Published' : 'Ready to Publish'}</span>
           </div>
 
-          <div class="space-y-1.5 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+          <div class="space-y-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-3 text-xs">
             ${outcome.places.length ? outcome.places.map((p) => `
               <div class="flex items-center justify-between gap-2">
-                <span class="font-bold text-slate-800">${h(p.label)}:</span>
-                <span class="truncate text-slate-700">${h((p.winners || []).map((wid) => details[wid]?.name || wid).join(', '))}</span>
+                <span class="font-bold text-slate-800 dark:text-slate-200">${h(p.label)}:</span>
+                <span class="truncate text-slate-700 dark:text-slate-300">${h((p.winners || []).map((wid) => details[wid]?.name || wid).join(', '))}</span>
               </div>
-            `).join('') : '<p class="text-slate-500">No position winners qualified under current scoring rules.</p>'}
+            `).join('') : '<p class="text-slate-500 dark:text-slate-400">No position winners qualified under current scoring rules.</p>'}
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
             <div class="flex flex-wrap gap-1.5">
               ${sheets.map((s) => `
-                <button type="button" data-results-action="reopen-sheet" data-id="${h(s.id)}" class="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] font-semibold text-amber-800 hover:bg-amber-100">
+                <button type="button" data-results-action="reopen-sheet" data-id="${h(s.id)}" class="rounded-lg border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/70">
                   Reopen (${h(s.judgeName || 'Judge')})
                 </button>
               `).join('')}
             </div>
-            <button type="button" data-results-action="publish-from-sheets" data-event-id="${h(eventId)}" class="rounded-lg bg-blue-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-800">
+            <button type="button" data-results-action="publish-from-sheets" data-event-id="${h(eventId)}" class="rounded-lg bg-blue-700 dark:bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 dark:hover:bg-blue-500">
               ${isPublished ? 'Republish Update' : 'Approve & Publish'}
             </button>
           </div>
@@ -242,18 +242,18 @@ export function createAdminResultsController(getState, actions) {
         return `${p.label}: ${names}`;
       }).join(' • ');
       return `
-        <tr class="hover:bg-slate-50">
-          <td class="px-4 py-3 font-semibold text-slate-900">${h(ev.name || r.eventName || id)}<br><span class="text-[11px] font-normal text-slate-500">${h(catLabel(r.category || ev.category || ''))} • ${h(r.gender || ev.gender || '')}</span></td>
-          <td class="px-4 py-3 text-xs text-slate-700">${h(winnersSummary || 'No positions')}</td>
-          <td class="px-4 py-3"><span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}">${h(status)}</span></td>
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+          <td class="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">${h(ev.name || r.eventName || id)}<br><span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">${h(catLabel(r.category || ev.category || ''))} • ${h(r.gender || ev.gender || '')}</span></td>
+          <td class="px-4 py-3 text-xs text-slate-700 dark:text-slate-300">${h(winnersSummary || 'No positions')}</td>
+          <td class="px-4 py-3"><span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${status === 'published' ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}">${h(status)}</span></td>
           <td class="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
-            <button type="button" data-results-action="edit-result" data-event-id="${h(id)}" class="rounded border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
-            <button type="button" data-results-action="toggle-archive-result" data-event-id="${h(id)}" class="rounded border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100">${status === 'published' ? 'Archive' : 'Publish'}</button>
-            <button type="button" data-results-action="delete-result" data-event-id="${h(id)}" class="rounded border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Delete</button>
+            <button type="button" data-results-action="edit-result" data-event-id="${h(id)}" class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50">Edit</button>
+            <button type="button" data-results-action="toggle-archive-result" data-event-id="${h(id)}" class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">${status === 'published' ? 'Archive' : 'Publish'}</button>
+            <button type="button" data-results-action="delete-result" data-event-id="${h(id)}" class="rounded border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-2.5 py-1 text-[11px] font-semibold text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/70">Delete</button>
           </td>
         </tr>
       `;
-    }).join('') : '<tr><td colspan="4" class="px-4 py-6 text-center text-xs text-slate-400">No results published yet.</td></tr>';
+    }).join('') : '<tr><td colspan="4" class="px-4 py-6 text-center text-xs text-slate-400 dark:text-slate-500">No results published yet.</td></tr>';
   }
 
   async function publishEventOutcome(eventId, places, gradeAwards, scoringSnapshot, { sourceType = 'judgeScore', sheets = [], reason = '' } = {}) {

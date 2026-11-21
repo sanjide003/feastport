@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 
 const htmlFiles = ['admin.html', 'index.html', 'judge.html', 'login.html', 'register.html', 'results.html', 'team.html', 'tv.html', 'tv-control.html'];
 const externalScriptPages = ['admin.html', 'judge.html', 'login.html'];
-const jsFiles = ['server.js', 'firebase-runtime-config.js', 'firebase-config.js', 'sidebar-shell.js', 'data-cache.js', 'dependency-loader.js', 'branding-config.js', 'image-upload.js', 'fest-config.js', 'event-utils.js', 'registration-utils.js', 'admin-utils.js', 'admin-dashboard.js', 'admin-students.js', 'admin-events.js', 'admin-excel.js', 'admin-auth.js', 'admin-results.js', 'admin-main.js', 'judge.js', 'score-utils.js', 'login.js'];
+const jsFiles = ['server.js', 'firebase-runtime-config.js', 'firebase-config.js', 'admin-theme.js', 'sidebar-shell.js', 'data-cache.js', 'dependency-loader.js', 'branding-config.js', 'image-upload.js', 'fest-config.js', 'event-utils.js', 'registration-utils.js', 'admin-utils.js', 'admin-dashboard.js', 'admin-students.js', 'admin-events.js', 'admin-excel.js', 'admin-auth.js', 'admin-results.js', 'admin-main.js', 'judge.js', 'score-utils.js', 'login.js'];
 const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
 
 function assertBalancedHtml(file, html) {

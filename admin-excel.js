@@ -896,19 +896,19 @@ export function createAdminExcelController(getState, handlers = {}) {
     }
   }
 
+  const CELL_ERROR_CLASSES = ['border-red-500', 'dark:border-red-500', 'bg-red-50', 'dark:bg-red-950/50', 'text-red-900', 'dark:text-red-200'];
+  const CELL_WARN_CLASSES = ['border-amber-400', 'dark:border-amber-500', 'bg-amber-50', 'dark:bg-amber-950/40', 'text-amber-900', 'dark:text-amber-200'];
+  const CELL_DEFAULT_CLASSES = ['border-slate-200', 'dark:border-slate-700', 'bg-white', 'dark:bg-slate-950', 'text-slate-900', 'dark:text-slate-100'];
+
   function renderSelectControl(scope, row, field, options, currentVal, allowCustomInvalid = true, errKey = field) {
     const val = String(currentVal ?? '');
     const errMsg = row.errors?.[errKey];
     const warnMsg = row.warnings?.[errKey];
     const hasCustom = allowCustomInvalid && val && !options.some((o) => o.value === val);
-    const borderCls = errMsg
-      ? 'border-red-500 bg-red-50 text-red-900'
-      : warnMsg
-        ? 'border-amber-400 bg-amber-50 text-amber-900'
-        : 'border-slate-200 bg-white text-slate-900';
+    const borderCls = (errMsg ? CELL_ERROR_CLASSES : warnMsg ? CELL_WARN_CLASSES : CELL_DEFAULT_CLASSES).join(' ');
     return `
       <select data-excel-input="1" data-excel-scope="${scope}" data-row-id="${h(row.id)}" data-field="${h(field)}" data-err-field="${h(errKey)}"
-        class="w-full min-w-[120px] rounded border px-2 py-1 text-xs ${borderCls}" title="${h(errMsg || warnMsg || '')}">
+        class="w-full min-w-[120px] rounded border px-2 py-1 text-xs focus:border-blue-500 focus:outline-none ${borderCls}" title="${h(errMsg || warnMsg || '')}">
         ${allowCustomInvalid && !val ? '<option value="">Select…</option>' : ''}
         ${hasCustom ? `<option value="${h(val)}" selected>⚠ Invalid: ${h(val)}</option>` : ''}
         ${options.map((opt) => `<option value="${h(opt.value)}" ${opt.value === val ? 'selected' : ''}>${h(opt.label)}</option>`).join('')}
@@ -920,17 +920,13 @@ export function createAdminExcelController(getState, handlers = {}) {
     const val = String(row.data?.[field] ?? '');
     const errMsg = row.errors?.[field];
     const warnMsg = row.warnings?.[field];
-    const borderCls = errMsg
-      ? 'border-red-500 bg-red-50 text-red-900'
-      : warnMsg
-        ? 'border-amber-400 bg-amber-50 text-amber-900'
-        : 'border-slate-200 bg-white text-slate-900';
+    const borderCls = (errMsg ? CELL_ERROR_CLASSES : warnMsg ? CELL_WARN_CLASSES : CELL_DEFAULT_CLASSES).join(' ');
     return `
       <input type="${h(type)}" value="${h(val)}" ${min !== '' ? `min="${h(min)}"` : ''} ${max !== '' ? `max="${h(max)}"` : ''}
         ${list ? `list="${h(list)}"` : ''} ${placeholder ? `placeholder="${h(placeholder)}"` : ''}
         data-excel-input="1" data-excel-scope="${scope}" data-row-id="${h(row.id)}" data-field="${h(field)}"
         title="${h(errMsg || warnMsg || '')}"
-        class="w-full rounded border px-2 py-1 text-xs ${type === 'number' || field === 'chestNo' || field === 'scheduleDate' || field === 'time' ? 'font-mono-num' : ''} ${borderCls}">
+        class="w-full rounded border px-2 py-1 text-xs focus:border-blue-500 focus:outline-none ${type === 'number' || field === 'chestNo' || field === 'scheduleDate' || field === 'time' ? 'font-mono-num' : ''} ${borderCls}">
     `;
   }
 
@@ -938,24 +934,24 @@ export function createAdminExcelController(getState, handlers = {}) {
     const errList = Object.values(row.errors || {});
     const warnList = Object.values(row.warnings || {});
     if (row.skip) {
-      return '<span class="text-[11px] font-medium text-slate-400">Excluded by admin</span>';
+      return '<span class="text-[11px] font-medium text-slate-400 dark:text-slate-500">Excluded by admin</span>';
     }
     if (!errList.length && !warnList.length) {
-      return '<span class="text-[11px] font-semibold text-emerald-700">Valid & ready</span>';
+      return '<span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Valid & ready</span>';
     }
     return `
       <div class="space-y-0.5 text-[11px] leading-snug">
-        ${errList.map((m) => `<div class="font-semibold text-red-700">• ${h(m)}</div>`).join('')}
-        ${warnList.map((m) => `<div class="font-semibold text-amber-700">• ${h(m)}</div>`).join('')}
+        ${errList.map((m) => `<div class="font-semibold text-red-700 dark:text-red-400">• ${h(m)}</div>`).join('')}
+        ${warnList.map((m) => `<div class="font-semibold text-amber-700 dark:text-amber-400">• ${h(m)}</div>`).join('')}
       </div>
     `;
   }
 
   function statusBadgeHtml(row) {
-    if (row.skip) return '<span class="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-500">Skipped</span>';
-    if (row.status === 'error') return '<span class="inline-flex items-center rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-red-700">Error</span>';
-    if (row.status === 'warning') return '<span class="inline-flex items-center rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-700">Warning</span>';
-    return '<span class="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-700">Ready</span>';
+    if (row.skip) return '<span class="inline-flex items-center rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Skipped</span>';
+    if (row.status === 'error') return '<span class="inline-flex items-center rounded border border-red-200 dark:border-red-800/70 bg-red-50 dark:bg-red-950/50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-red-700 dark:text-red-400">Error</span>';
+    if (row.status === 'warning') return '<span class="inline-flex items-center rounded border border-amber-200 dark:border-amber-800/70 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-300">Warning</span>';
+    return '<span class="inline-flex items-center rounded border border-emerald-200 dark:border-emerald-800/70 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400">Ready</span>';
   }
 
   function updateSummaryDom(scope) {
@@ -996,17 +992,19 @@ export function createAdminExcelController(getState, handlers = {}) {
       if (diagCell) diagCell.innerHTML = formatRowDiagnostics(row);
 
       tr.classList.toggle('bg-red-50/30', !row.skip && row.status === 'error');
+      tr.classList.toggle('dark:bg-red-950/25', !row.skip && row.status === 'error');
       tr.classList.toggle('bg-slate-50/80', row.skip);
+      tr.classList.toggle('dark:bg-slate-800/50', row.skip);
       tr.classList.toggle('opacity-65', row.skip);
 
       tr.querySelectorAll('[data-excel-input]').forEach((input) => {
         const field = input.dataset.errField || input.dataset.field;
         const err = !row.skip && row.errors?.[field];
         const warn = !row.skip && row.warnings?.[field];
-        input.classList.remove('border-red-500', 'bg-red-50', 'text-red-900', 'border-amber-400', 'bg-amber-50', 'text-amber-900', 'border-slate-200', 'bg-white', 'text-slate-900');
-        if (err) input.classList.add('border-red-500', 'bg-red-50', 'text-red-900');
-        else if (warn) input.classList.add('border-amber-400', 'bg-amber-50', 'text-amber-900');
-        else input.classList.add('border-slate-200', 'bg-white', 'text-slate-900');
+        input.classList.remove(...CELL_ERROR_CLASSES, ...CELL_WARN_CLASSES, ...CELL_DEFAULT_CLASSES);
+        if (err) input.classList.add(...CELL_ERROR_CLASSES);
+        else if (warn) input.classList.add(...CELL_WARN_CLASSES);
+        else input.classList.add(...CELL_DEFAULT_CLASSES);
         input.title = err || warn || '';
       });
     });
@@ -1019,10 +1017,10 @@ export function createAdminExcelController(getState, handlers = {}) {
       const err = !row.skip && row.errors?.[field];
       const warn = !row.skip && row.warnings?.[field];
       const cls = err
-        ? 'rounded border border-red-300 bg-red-50 px-1.5 py-0.5 text-red-800 font-semibold'
+        ? 'rounded border border-red-300 dark:border-red-800/70 bg-red-50 dark:bg-red-950/50 px-1.5 py-0.5 text-red-800 dark:text-red-300 font-semibold'
         : warn
-          ? 'rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-amber-800 font-semibold'
-          : '';
+          ? 'rounded border border-amber-300 dark:border-amber-800/70 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 text-amber-800 dark:text-amber-300 font-semibold'
+          : 'text-slate-700 dark:text-slate-200';
       let displayVal = raw || '—';
       if (field === 'team' && raw && state.teamDisplayNames?.[raw]) {
         displayVal = `${state.teamDisplayNames[raw]} (${raw})`;
@@ -1064,10 +1062,10 @@ export function createAdminExcelController(getState, handlers = {}) {
         return renderSelectControl(scope, row, 'eventId', eventOpts, row.matchedEventId || row.data.eventId || '', true, 'eventName');
       }
       if (field === 'category') {
-        return `<span class="text-xs text-slate-600">${h(resolveDisplayName(state.categoryDisplayNames, raw, raw || '—'))}</span>`;
+        return `<span class="text-xs text-slate-600 dark:text-slate-300">${h(resolveDisplayName(state.categoryDisplayNames, raw, raw || '—'))}</span>`;
       }
       if (field === 'eventId') {
-        return `<span class="font-mono-num text-[11px] text-slate-500">${h(row.matchedEventId || raw || 'Auto')}</span>`;
+        return `<span class="font-mono-num text-[11px] text-slate-500 dark:text-slate-400">${h(row.matchedEventId || raw || 'Auto')}</span>`;
       }
       if (field === 'scheduleDate') return renderInputControl(scope, row, field, { type: 'date', list: `excel-days-list-${scope}` });
       if (field === 'scheduleStage') {
@@ -1102,11 +1100,11 @@ export function createAdminExcelController(getState, handlers = {}) {
     root.innerHTML = `
       ${dayDatalist}
       <!-- Top Bar: Download, Upload & Edit Mode Toggle -->
-      <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
-            <h2 class="font-display text-base font-bold text-slate-900">${h(schema.label)} Excel Import & Export</h2>
-            <p class="text-xs text-slate-500">Download formatted templates or current records, upload .xlsx/.csv to validate, and fix issues in Edit Mode.</p>
+            <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">${h(schema.label)} Excel Import & Export</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Download formatted templates or current records, upload .xlsx/.csv to validate, and fix issues in Edit Mode.</p>
           </div>
 
           <!-- Top Edit Mode Toggle Button -->
@@ -1115,10 +1113,10 @@ export function createAdminExcelController(getState, handlers = {}) {
               data-excel-action="toggle-edit" data-excel-scope="${scope}"
               class="inline-flex items-center gap-2.5 rounded-lg border px-3.5 py-2 text-xs font-bold transition-colors ${
                 sc.editMode
-                  ? 'border-blue-700 bg-blue-700 text-white shadow-sm'
-                  : 'border-slate-300 bg-slate-50 text-slate-800 hover:bg-slate-100'
+                  ? 'border-blue-700 dark:border-blue-600 bg-blue-700 dark:bg-blue-600 text-white shadow-sm'
+                  : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
               }">
-              <span class="relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${sc.editMode ? 'bg-blue-400' : 'bg-slate-300'}">
+              <span class="relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${sc.editMode ? 'bg-blue-400 dark:bg-blue-300' : 'bg-slate-300 dark:bg-slate-600'}">
                 <span class="inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${sc.editMode ? 'translate-x-3.5' : 'translate-x-0.5'}"></span>
               </span>
               <span>Edit Mode (Excel Editor): ${sc.editMode ? 'ON' : 'OFF'}</span>
@@ -1128,79 +1126,79 @@ export function createAdminExcelController(getState, handlers = {}) {
 
         <!-- Download & Upload Controls -->
         <div class="grid gap-4 lg:grid-cols-2">
-          <div class="rounded-lg border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+          <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 p-4 space-y-3">
             <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-bold uppercase tracking-wider text-slate-600">1. Download Excel / CSV</p>
-              <span class="text-[11px] text-slate-500">Includes Reference Guide sheet</span>
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">1. Download Excel / CSV</p>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">Includes Reference Guide sheet</span>
             </div>
             <div class="flex flex-wrap gap-2">
               <button type="button" data-excel-action="export-template" data-excel-scope="${scope}"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100">
+                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
                 Download Template (.xlsx)
               </button>
               <button type="button" data-excel-action="export-xlsx" data-excel-scope="${scope}"
-                class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:hover:bg-slate-600">
                 Export Current Data (.xlsx)
               </button>
               <button type="button" data-excel-action="export-csv" data-excel-scope="${scope}"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
                 Export CSV (.csv)
               </button>
               ${scope === 'schedule' ? `
                 <button type="button" data-excel-action="load-current-schedule" data-excel-scope="${scope}"
-                  class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100">
+                  class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 dark:border-blue-800/70 bg-blue-50 dark:bg-blue-950/50 px-3 py-2 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-950/80">
                   Load Active Events into Editor
                 </button>
               ` : ''}
             </div>
           </div>
 
-          <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50/70 p-4 space-y-2.5" data-excel-dropzone="${scope}">
+          <div class="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 p-4 space-y-2.5 transition-colors" data-excel-dropzone="${scope}">
             <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-bold uppercase tracking-wider text-slate-600">2. Upload Filled Excel / CSV</p>
-              ${sc.fileName ? `<span class="truncate max-w-[200px] text-[11px] font-semibold text-blue-700">${h(sc.fileName)}</span>` : ''}
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">2. Upload Filled Excel / CSV</p>
+              ${sc.fileName ? `<span class="truncate max-w-[200px] text-[11px] font-semibold text-blue-700 dark:text-blue-400">${h(sc.fileName)}</span>` : ''}
             </div>
             <div class="flex flex-wrap items-center gap-2">
-              <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-800">
+              <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-700 dark:bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:hover:bg-blue-500">
                 <span>Choose .xlsx / .csv File</span>
                 <input type="file" accept=".xlsx,.xls,.csv" data-excel-file="${scope}" class="sr-only">
               </label>
               ${sc.sheetNames.length > 1 ? `
-                <select data-excel-sheet="${scope}" class="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-800">
+                <select data-excel-sheet="${scope}" class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100">
                   ${sc.sheetNames.map((n) => `<option value="${h(n)}" ${n === sc.activeSheet ? 'selected' : ''}>Sheet: ${h(n)}</option>`).join('')}
                 </select>
               ` : ''}
               ${sc.rawHeaders.length ? `
                 <button type="button" data-excel-action="toggle-mapper" data-excel-scope="${scope}"
-                  class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+                  class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
                   ${sc.showMapper ? 'Hide Column Map' : 'Map Columns'}
                 </button>
               ` : ''}
               ${hasRows ? `
                 <button type="button" data-excel-action="clear-staging" data-excel-scope="${scope}"
-                  class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">
+                  class="rounded-lg border border-red-200 dark:border-red-900/60 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50">
                   Clear Sheet
                 </button>
               ` : ''}
             </div>
-            <p class="text-[11px] text-slate-500">Every row is validated immediately against active Teams, Categories, Stages, and duplicates.</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Every row is validated immediately against active Teams, Categories, Stages, and duplicates.</p>
           </div>
         </div>
 
         ${sc.rawHeaders.length && sc.showMapper ? `
-          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+          <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h3 class="text-xs font-bold text-slate-900">Column Header Mapping</h3>
-                <p class="text-[11px] text-slate-500">Match your uploaded spreadsheet headers to the required fields below, then apply.</p>
+                <h3 class="text-xs font-bold text-slate-900 dark:text-slate-100">Column Header Mapping</h3>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Match your uploaded spreadsheet headers to the required fields below, then apply.</p>
               </div>
               <button type="button" data-excel-action="apply-mapping" data-excel-scope="${scope}"
-                class="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800">Apply Mapping</button>
+                class="rounded-lg bg-blue-700 dark:bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 dark:hover:bg-blue-500">Apply Mapping</button>
             </div>
             <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-xs">
               ${schema.fields.map((f) => `
-                <label class="font-semibold text-slate-700">${h(f.label)}${f.required ? ' *' : ''}
-                  <select data-excel-map="${scope}" data-map-field="${h(f.key)}" class="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-xs">
+                <label class="font-semibold text-slate-700 dark:text-slate-300">${h(f.label)}${f.required ? ' *' : ''}
+                  <select data-excel-map="${scope}" data-map-field="${h(f.key)}" class="mt-1 w-full rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 px-2 py-1.5 text-xs">
                     <option value="">— Not Mapped —</option>
                     ${sc.rawHeaders.map((hdr) => `<option value="${h(hdr)}" ${sc.columnMap[f.key] === hdr ? 'selected' : ''}>${h(hdr)}</option>`).join('')}
                   </select>
@@ -1213,65 +1211,65 @@ export function createAdminExcelController(getState, handlers = {}) {
 
       ${(hasRows || sc.editMode) ? `
         <!-- Validation Summary & Sheet Editor Container -->
-        <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap items-center gap-2 text-xs">
-              <span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 font-semibold text-slate-700">Total: <strong id="excel-stat-total-${scope}" class="font-mono-num">${sc.summary.total}</strong></span>
-              <span class="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 font-semibold text-emerald-800">Ready: <strong id="excel-stat-ready-${scope}" class="font-mono-num">${sc.summary.ready}</strong></span>
-              <span class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 font-semibold text-red-800">Errors: <strong id="excel-stat-errors-${scope}" class="font-mono-num">${sc.summary.errors}</strong></span>
-              <span class="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 font-semibold text-amber-800">Warnings: <strong id="excel-stat-warnings-${scope}" class="font-mono-num">${sc.summary.warnings}</strong></span>
-              <span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 font-semibold text-slate-500">Skipped: <strong id="excel-stat-skipped-${scope}" class="font-mono-num">${sc.summary.skipped}</strong></span>
+              <span class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 font-semibold text-slate-700 dark:text-slate-200">Total: <strong id="excel-stat-total-${scope}" class="font-mono-num">${sc.summary.total}</strong></span>
+              <span class="rounded-lg border border-emerald-200 dark:border-emerald-800/70 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1.5 font-semibold text-emerald-800 dark:text-emerald-300">Ready: <strong id="excel-stat-ready-${scope}" class="font-mono-num">${sc.summary.ready}</strong></span>
+              <span class="rounded-lg border border-red-200 dark:border-red-800/70 bg-red-50 dark:bg-red-950/50 px-2.5 py-1.5 font-semibold text-red-800 dark:text-red-300">Errors: <strong id="excel-stat-errors-${scope}" class="font-mono-num">${sc.summary.errors}</strong></span>
+              <span class="rounded-lg border border-amber-200 dark:border-amber-800/70 bg-amber-50 dark:bg-amber-950/50 px-2.5 py-1.5 font-semibold text-amber-800 dark:text-amber-300">Warnings: <strong id="excel-stat-warnings-${scope}" class="font-mono-num">${sc.summary.warnings}</strong></span>
+              <span class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 font-semibold text-slate-500 dark:text-slate-400">Skipped: <strong id="excel-stat-skipped-${scope}" class="font-mono-num">${sc.summary.skipped}</strong></span>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-              <label class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
-                <input type="checkbox" data-excel-action="toggle-errors-only" data-excel-scope="${scope}" ${sc.errorsOnly ? 'checked' : ''} class="h-3.5 w-3.5 rounded border-slate-300 text-blue-700">
+              <label class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+                <input type="checkbox" data-excel-action="toggle-errors-only" data-excel-scope="${scope}" ${sc.errorsOnly ? 'checked' : ''} class="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-600 text-blue-700">
                 <span>Errors / Warnings Only</span>
               </label>
               ${sc.summary.errors > 0 ? `
                 <button type="button" data-excel-action="skip-all-errors" data-excel-scope="${scope}"
-                  class="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                  class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
                   Skip Error Rows
                 </button>
               ` : ''}
               ${sc.summary.skipped > 0 ? `
                 <button type="button" data-excel-action="include-all" data-excel-scope="${scope}"
-                  class="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                  class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
                   Restore Skipped
                 </button>
               ` : ''}
               ${sc.editMode ? `
                 <button type="button" data-excel-action="add-row" data-excel-scope="${scope}"
-                  class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">
+                  class="rounded-lg border border-blue-200 dark:border-blue-800/70 bg-blue-50 dark:bg-blue-950/50 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-950/80">
                   + Add Row
                 </button>
               ` : ''}
               <button type="button" id="excel-commit-btn-${scope}" data-excel-action="commit-import" data-excel-scope="${scope}"
                 ${sc.importing || sc.summary.ready === 0 || sc.summary.errors > 0 ? 'disabled' : ''}
-                class="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600">
+                class="rounded-lg bg-emerald-700 dark:bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-600 dark:disabled:text-slate-500">
                 ${sc.importing ? 'Saving…' : sc.summary.errors > 0 ? `Fix ${sc.summary.errors} Error(s) Before Import` : `${schema.commitLabel} (${sc.summary.ready})`}
               </button>
             </div>
           </div>
 
           ${sc.summary.errors > 0 ? `
-            <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-900">
+            <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-xs text-red-900 dark:text-red-200">
               <div>
                 <strong>${sc.summary.errors} row(s) contain validation or duplicate errors.</strong>
                 <span>${sc.editMode ? 'Edit highlighted fields or dropdowns below, or check Skip on rows you want to exclude.' : 'Turn ON Edit Mode at the top to open the inline Excel Sheet Editor and fix or skip problem rows.'}</span>
               </div>
               ${!sc.editMode ? `
                 <button type="button" data-excel-action="toggle-edit" data-excel-scope="${scope}"
-                  class="rounded-lg bg-red-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-800">
+                  class="rounded-lg bg-red-700 dark:bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-800 dark:hover:bg-red-500">
                   Open Edit Mode
                 </button>
               ` : ''}
             </div>
           ` : ''}
 
-          <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
             <table class="w-full text-left text-xs">
-              <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <thead class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/70 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <tr>
                   <th class="px-2.5 py-2.5 w-10">#</th>
                   <th class="px-2.5 py-2.5 w-20">Status</th>
@@ -1281,30 +1279,30 @@ export function createAdminExcelController(getState, handlers = {}) {
                   ${sc.editMode ? '<th class="px-2.5 py-2.5 text-right w-16">Row</th>' : ''}
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100">
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                 ${filteredRows.length ? filteredRows.map((row) => {
                   const rowNum = sc.rows.indexOf(row) + 1;
                   return `
-                    <tr data-excel-row-id="${h(row.id)}" class="${row.skip ? 'bg-slate-50/80 opacity-65' : row.status === 'error' ? 'bg-red-50/30' : 'hover:bg-slate-50'}">
-                      <td class="px-2.5 py-2 font-mono-num font-bold text-slate-500">${rowNum}</td>
+                    <tr data-excel-row-id="${h(row.id)}" class="${row.skip ? 'bg-slate-50/80 dark:bg-slate-800/50 opacity-65' : row.status === 'error' ? 'bg-red-50/30 dark:bg-red-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}">
+                      <td class="px-2.5 py-2 font-mono-num font-bold text-slate-500 dark:text-slate-400">${rowNum}</td>
                       <td class="px-2.5 py-2" data-row-status-badge>${statusBadgeHtml(row)}</td>
                       <td class="px-2.5 py-2 text-center">
                         <input type="checkbox" data-excel-action="toggle-skip" data-excel-scope="${scope}" data-row-id="${h(row.id)}" ${row.skip ? 'checked' : ''}
-                          class="h-4 w-4 rounded border-slate-300 text-slate-700 cursor-pointer" title="Skip this row during import">
+                          class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-slate-700 cursor-pointer" title="Skip this row during import">
                       </td>
                       ${visibleFields.map((f) => `<td class="px-2 py-2 align-top">${renderFieldCell(scope, row, f, state)}</td>`).join('')}
                       <td class="px-2.5 py-2 align-top" data-row-diagnostics>${formatRowDiagnostics(row)}</td>
                       ${sc.editMode ? `
                         <td class="px-2.5 py-2 text-right align-top">
                           <button type="button" data-excel-action="delete-row" data-excel-scope="${scope}" data-row-id="${h(row.id)}"
-                            class="rounded border border-red-200 bg-white px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50" title="Remove row from staging">✕</button>
+                            class="rounded border border-red-200 dark:border-red-900/60 bg-white dark:bg-slate-800 px-2 py-1 text-[11px] font-semibold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50" title="Remove row from staging">✕</button>
                         </td>
                       ` : ''}
                     </tr>
                   `;
                 }).join('') : `
                   <tr>
-                    <td colspan="${visibleFields.length + (sc.editMode ? 5 : 4)}" class="px-4 py-8 text-center text-slate-400">
+                    <td colspan="${visibleFields.length + (sc.editMode ? 5 : 4)}" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">
                       ${sc.errorsOnly ? 'No error or warning rows remaining.' : 'No rows loaded yet. Click "+ Add Row" or upload a spreadsheet above.'}
                     </td>
                   </tr>
@@ -1631,20 +1629,20 @@ export function createAdminExcelController(getState, handlers = {}) {
       const zone = e.target.closest('[data-excel-dropzone]');
       if (!zone) return;
       e.preventDefault();
-      zone.classList.add('border-blue-600', 'bg-blue-50/40');
+      zone.classList.add('border-blue-600', 'dark:border-blue-500', 'bg-blue-50/40', 'dark:bg-blue-950/30');
     });
 
     document.addEventListener('dragleave', (e) => {
       const zone = e.target.closest('[data-excel-dropzone]');
       if (!zone) return;
-      zone.classList.remove('border-blue-600', 'bg-blue-50/40');
+      zone.classList.remove('border-blue-600', 'dark:border-blue-500', 'bg-blue-50/40', 'dark:bg-blue-950/30');
     });
 
     document.addEventListener('drop', (e) => {
       const zone = e.target.closest('[data-excel-dropzone]');
       if (!zone) return;
       e.preventDefault();
-      zone.classList.remove('border-blue-600', 'bg-blue-50/40');
+      zone.classList.remove('border-blue-600', 'dark:border-blue-500', 'bg-blue-50/40', 'dark:bg-blue-950/30');
       const scope = zone.dataset.excelDropzone;
       const file = e.dataTransfer?.files?.[0];
       if (file) handleFileUpload(scope, file);
