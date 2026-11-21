@@ -2,12 +2,6 @@
   const STORAGE_KEY = 'feastport_admin_theme';
   const DARK_QUERY = '(prefers-color-scheme: dark)';
 
-  window.tailwind = window.tailwind || {};
-  window.tailwind.config = {
-    ...(window.tailwind.config || {}),
-    darkMode: 'class'
-  };
-
   function getStoredTheme() {
     try {
       const value = localStorage.getItem(STORAGE_KEY);
@@ -68,6 +62,11 @@
     root.classList.toggle('dark', isDark);
     root.style.colorScheme = resolved;
     root.dataset.theme = resolved;
+
+    const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+    if (colorSchemeMeta) {
+      colorSchemeMeta.setAttribute('content', resolved);
+    }
 
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (themeColorMeta) {
