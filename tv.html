@@ -96,6 +96,7 @@
     let events = [];
     let teams = [];
     let teamDisplayNames = {};
+    let categoryDisplayNames = {};
     let festSetup = normalizeFestSetup();
     const resultQueue = [];
     let presenting = false;
@@ -150,6 +151,7 @@
     };
 
     const teamName = (value) => String(teamDisplayNames?.[value] || value || 'Team');
+    const categoryName = (value) => String(categoryDisplayNames?.[value] || value || 'General');
     const animationClass = () => ({ spotlight: 'scene-spotlight', 'ticker-rise': 'scene-ticker-rise', confetti: 'scene-confetti' }[cfg().control.animationStyle] || 'scene-in');
     const resultEvent = (r) => events.find((e) => e.id === r.eventId) || r;
     const resultType = (r) => resultEvent(r).type || r.type || 'Single';
@@ -165,7 +167,7 @@
       const e = resultEvent(r);
       return {
         name: eventName(r),
-        category: r.category || e.category || 'General',
+        category: categoryName(r.category || e.category || 'General'),
         stage: r.stage || e.stage || 'Main Stage',
         gender: r.gender || e.gender || 'Open',
         type: resultType(r)
@@ -578,6 +580,7 @@
       const data = s.data() || {};
       teams = data.teams || [];
       teamDisplayNames = data.teamDisplayNames || {};
+      categoryDisplayNames = data.categoryDisplayNames || {};
       festSetup = normalizeFestSetup(data.festSetup || {});
       render();
     });

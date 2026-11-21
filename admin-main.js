@@ -7,8 +7,9 @@ import { normalizeFestSetup } from './fest-config.js';
 import { parseCriteria, validateEvent, eventToFirestore } from './event-utils.js';
 import { normalizeRegistrationConfig } from './registration-utils.js';
 import { defaultScoringRules, normalizeScoringRules, buildTeamScoreLedger } from './score-utils.js';
-import { escapeHtml, printPage } from './admin-utils.js';
+import { escapeHtml, printPage, resolveDisplayName } from './admin-utils.js';
 import { createAdminResultsController } from './admin-results.js';
+import { initCollapsibleSidebar } from './sidebar-shell.js';
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
 import { getAuth as getSecondaryAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
 import {
@@ -25,6 +26,7 @@ import {
 
 const byId = (id) => document.getElementById(id);
 const h = escapeHtml;
+let sidebarShell = null;
 
 let state = {
   homeConfig: {},
@@ -37,6 +39,7 @@ let state = {
   teamColors: {},
   teamDisplayNames: {},
   categories: [],
+  categoryDisplayNames: {},
   stages: [],
   days: [],
   students: [],
@@ -53,6 +56,23 @@ let state = {
 let activeTab = 'overview';
 let resultsController = null;
 
+const teamName = (key) => resolveDisplayName(state.teamDisplayNames, key, key);
+const categoryName = (key) => resolveDisplayName(state.categoryDisplayNames, key, key);
+
+function closeModal(id) {
+  const el = byId(id);
+  if (!el) return;
+  el.classList.add('hidden');
+  el.classList.remove('flex');
+}
+
+function openModal(id) {
+  const el = byId(id);
+  if (!el) return;
+  el.classList.remove('hidden');
+  el.classList.add('flex');
+}
+
 function showToast(msg, type = 'success') {
   const el = byId('toast');
   if (!el) return;
@@ -64,7 +84,104 @@ function showToast(msg, type = 'success') {
   setTimeout(() => el.classList.add('hidden'), 3200);
 }
 
-const confirmAction = async (msg) => window.confirm(msg);
+function confirmAction(msg, { title = 'Confirm Action', okLabel = 'Confirm', cancelLabel = 'Cancel', tone = 'danger' } = {}) {
+  return new Promise((resolve) => {
+    const modal = byId('admin-confirm-modal');
+    const titleEl = byId('confirm-modal-title');
+    const msgEl = byId('confirm-modal-message');
+    const okBtn = byId('confirm-modal-ok');
+    const cancelBtn = byId('confirm-modal-cancel');
+    const iconBox = byId('confirm-modal-icon');
+    if (!modal || !okBtn || !cancelBtn) return resolve(false);
+
+    titleEl.textContent = title;
+    msgEl.textContent = msg;
+    okBtn.textContent = okLabel;
+    cancelBtn.textContent = cancelLabel;
+    okBtn.className = tone === 'primary'
+      ? 'rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800'
+      : 'rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700';
+    if (iconBox) {
+      iconBox.className = tone === 'primary'
+        ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700'
+        : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700';
+    }
+
+    const cleanup = (result) => {
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      modal.removeEventListener('click', onBackdrop);
+      document.removeEventListener('keydown', onKey);
+      closeModal('admin-confirm-modal');
+      resolve(result);
+    };
+    const onOk = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    const onBackdrop = (e) => { if (e.target === modal) cleanup(false); };
+    const onKey = (e) => { if (e.key === 'Escape') cleanup(false); };
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    modal.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey);
+    openModal('admin-confirm-modal');
+    window.lucide?.createIcons?.();
+    okBtn.focus();
+  });
+}
+
+function promptAction({ title = 'Enter Details', message = '', defaultValue = '', placeholder = '', minLength = 0, okLabel = 'Submit' } = {}) {
+  return new Promise((resolve) => {
+    const modal = byId('admin-prompt-modal');
+    const form = byId('admin-prompt-form');
+    const titleEl = byId('prompt-modal-title');
+    const msgEl = byId('prompt-modal-message');
+    const inputEl = byId('prompt-modal-input');
+    const errEl = byId('prompt-modal-error');
+    const okBtn = byId('prompt-modal-ok');
+    const cancelBtn = byId('prompt-modal-cancel');
+    if (!modal || !form || !inputEl) return resolve(null);
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    inputEl.value = defaultValue || '';
+    inputEl.placeholder = placeholder || '';
+    okBtn.textContent = okLabel;
+    errEl.textContent = '';
+    errEl.classList.add('hidden');
+
+    const cleanup = (value) => {
+      form.removeEventListener('submit', onSubmit);
+      cancelBtn.removeEventListener('click', onCancel);
+      modal.removeEventListener('click', onBackdrop);
+      document.removeEventListener('keydown', onKey);
+      closeModal('admin-prompt-modal');
+      resolve(value);
+    };
+    const onSubmit = (e) => {
+      e.preventDefault();
+      const val = inputEl.value.trim();
+      if (minLength > 0 && val.length < minLength) {
+        errEl.textContent = `Please enter at least ${minLength} characters.`;
+        errEl.classList.remove('hidden');
+        inputEl.focus();
+        return;
+      }
+      cleanup(val);
+    };
+    const onCancel = () => cleanup(null);
+    const onBackdrop = (e) => { if (e.target === modal) cleanup(null); };
+    const onKey = (e) => { if (e.key === 'Escape') cleanup(null); };
+
+    form.addEventListener('submit', onSubmit);
+    cancelBtn.addEventListener('click', onCancel);
+    modal.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey);
+    openModal('admin-prompt-modal');
+    inputEl.focus();
+    inputEl.select();
+  });
+}
 
 function applyAdminBranding() {
   const b = normalizeBranding(state.homeConfig);
@@ -122,6 +239,7 @@ async function loadAllAdminData(force = false) {
   state.teamColors = state.generalConfig.teamColors || {};
   state.teamDisplayNames = state.generalConfig.teamDisplayNames || {};
   state.categories = state.generalConfig.categories || [];
+  state.categoryDisplayNames = state.generalConfig.categoryDisplayNames || {};
   state.stages = state.generalConfig.stages || [];
   state.days = state.generalConfig.days || [];
 
@@ -143,10 +261,10 @@ async function loadAllAdminData(force = false) {
 }
 
 function populateSelectOptions() {
-  const teamOpts = `<option value="">Select Team</option>` + state.teams.map((t) => `<option value="${h(t)}">${h(state.teamDisplayNames?.[t] || t)}</option>`).join('');
-  const teamFilterOpts = `<option value="">All Teams</option>` + state.teams.map((t) => `<option value="${h(t)}">${h(state.teamDisplayNames?.[t] || t)}</option>`).join('');
-  const catOpts = `<option value="">Select Category</option>` + state.categories.map((c) => `<option value="${h(c)}">${h(c)}</option>`).join('');
-  const catFilterOpts = `<option value="">All Categories</option>` + state.categories.map((c) => `<option value="${h(c)}">${h(c)}</option>`).join('');
+  const teamOpts = `<option value="">Select Team</option>` + state.teams.map((t) => `<option value="${h(t)}">${h(teamName(t))}</option>`).join('');
+  const teamFilterOpts = `<option value="">All Teams</option>` + state.teams.map((t) => `<option value="${h(t)}">${h(teamName(t))}</option>`).join('');
+  const catOpts = `<option value="">Select Category</option>` + state.categories.map((c) => `<option value="${h(c)}">${h(categoryName(c))}</option>`).join('');
+  const catFilterOpts = `<option value="">All Categories</option>` + state.categories.map((c) => `<option value="${h(c)}">${h(categoryName(c))}</option>`).join('');
 
   document.querySelectorAll('.select-team').forEach((el) => { const v = el.value; el.innerHTML = teamOpts; if (v) el.value = v; });
   document.querySelectorAll('.select-team-filter').forEach((el) => { const v = el.value; el.innerHTML = teamFilterOpts; if (v) el.value = v; });
@@ -155,7 +273,7 @@ function populateSelectOptions() {
 
   const notifTeam = byId('notif-team');
   if (notifTeam) {
-    notifTeam.innerHTML = `<option value="All">All Teams</option>` + state.teams.map((t) => `<option value="${h(t)}">${h(t)}</option>`).join('');
+    notifTeam.innerHTML = `<option value="All">All Teams</option>` + state.teams.map((t) => `<option value="${h(t)}">${h(teamName(t))}</option>`).join('');
   }
   const regEv = byId('reg-filter-event');
   if (regEv) {
@@ -268,25 +386,46 @@ function renderSetupLists() {
   byId('created-teams-list').innerHTML = state.teams.length ? state.teams.map((t) => `
     <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs">
       <div class="flex items-center gap-2 min-w-0">
-        <span class="h-3.5 w-3.5 rounded-full border border-slate-300" style="background:${h(state.teamColors?.[t] || '#1D4ED8')}"></span>
-        <span class="font-bold text-slate-900 truncate">${h(state.teamDisplayNames?.[t] || t)}</span>
-        <span class="text-slate-400">(${h(t)})</span>
+        <span class="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-300" style="background:${h(state.teamColors?.[t] || '#1D4ED8')}"></span>
+        <span class="font-bold text-slate-900 truncate">${h(teamName(t))}</span>
+        <span class="font-mono-num text-[11px] text-slate-400">Key: ${h(t)}</span>
       </div>
-      <button type="button" data-admin-action="remove-team" data-team="${h(t)}" class="text-red-600 font-semibold hover:underline">Remove</button>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" data-admin-action="edit-team" data-team="${h(t)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
+        <button type="button" data-admin-action="remove-team" data-team="${h(t)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Remove</button>
+      </div>
     </div>
   `).join('') : '<p class="text-xs text-slate-400">No teams added yet.</p>';
 
   byId('created-categories-list').innerHTML = state.categories.length ? state.categories.map((c) => `
-    <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-800">
-      ${h(c)}
-      <button type="button" data-admin-action="remove-category" data-cat="${h(c)}" class="text-slate-400 hover:text-red-600">✕</button>
-    </span>
+    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="font-bold text-slate-900 truncate">${h(categoryName(c))}</span>
+        <span class="font-mono-num text-[11px] text-slate-400">Key: ${h(c)}</span>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" data-admin-action="edit-category" data-cat="${h(c)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
+        <button type="button" data-admin-action="remove-category" data-cat="${h(c)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Remove</button>
+      </div>
+    </div>
   `).join('') : '<p class="text-xs text-slate-400">No categories added yet.</p>';
 
-  byId('created-stages-days').innerHTML = `
-    ${state.stages.map((s) => `<span class="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-1 font-semibold text-blue-800">Stage: ${h(s)} <button type="button" data-admin-action="remove-stage" data-stage="${h(s)}">✕</button></span>`).join('')}
-    ${state.days.map((d) => `<span class="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 font-semibold text-emerald-800">Day: ${h(d.date || d)} <button type="button" data-admin-action="remove-day" data-date="${h(d.date || d)}">✕</button></span>`).join('')}
-  `;
+  byId('created-stages-days').innerHTML = (state.stages.length || state.days.length) ? `
+    ${state.stages.map((s) => `
+      <span class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 font-semibold text-blue-900">
+        <span>Stage: ${h(s)}</span>
+        <button type="button" data-admin-action="edit-stage" data-stage="${h(s)}" class="text-blue-700 hover:underline">Edit</button>
+        <button type="button" data-admin-action="remove-stage" data-stage="${h(s)}" class="text-red-600 hover:text-red-800" aria-label="Remove stage">✕</button>
+      </span>
+    `).join('')}
+    ${state.days.map((d, idx) => `
+      <span class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-900">
+        <span>Day: ${h(d.label && d.label !== d.date ? `${d.label} (${d.date})` : (d.date || d))}</span>
+        <button type="button" data-admin-action="edit-day" data-day-index="${idx}" class="text-emerald-700 hover:underline">Edit</button>
+        <button type="button" data-admin-action="remove-day" data-date="${h(d.date || d)}" class="text-red-600 hover:text-red-800" aria-label="Remove day">✕</button>
+      </span>
+    `).join('')}
+  ` : '<p class="text-xs text-slate-400">No stages or festival days added yet.</p>';
 }
 
 function renderStudents() {
@@ -306,10 +445,10 @@ function renderStudents() {
     <tr class="hover:bg-slate-50">
       <td class="px-3 py-2.5 font-mono-num font-bold text-slate-900">${h(s.chestNo || '—')}</td>
       <td class="px-3 py-2.5 font-semibold text-slate-900">${h(s.name)}</td>
-      <td class="px-3 py-2.5">${h(s.team)}</td>
-      <td class="px-3 py-2.5">${h(s.category)}</td>
+      <td class="px-3 py-2.5">${h(teamName(s.team))}</td>
+      <td class="px-3 py-2.5">${h(categoryName(s.category))}</td>
       <td class="px-3 py-2.5">${h(s.gender || 'Boys')}</td>
-      <td class="px-3 py-2.5 text-right space-x-1.5">
+      <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
         <button type="button" data-admin-action="edit-student" data-id="${h(s.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
         <button type="button" data-admin-action="delete-student" data-id="${h(s.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Delete</button>
       </td>
@@ -332,12 +471,12 @@ function renderEvents() {
   byId('ev-count-label').textContent = `${filtered.length} events`;
   byId('events-tbody').innerHTML = filtered.length ? filtered.map((e) => `
     <tr class="hover:bg-slate-50">
-      <td class="px-3 py-2.5 font-semibold text-slate-900">${h(e.name)}</td>
-      <td class="px-3 py-2.5">${h(e.category || 'General')}</td>
+      <td class="px-3 py-2.5 font-semibold text-slate-900">${h(e.name)}${e.status && e.status !== 'active' ? ` <span class="text-[10px] font-bold uppercase text-amber-700">(${h(e.status)})</span>` : ''}</td>
+      <td class="px-3 py-2.5">${h(categoryName(e.category || 'General'))}</td>
       <td class="px-3 py-2.5">${h(e.gender || 'Both')}</td>
       <td class="px-3 py-2.5 font-mono-num">${h(e.type || 'Single')} (${e.limit || 1}×${e.groupSize || 1})</td>
       <td class="px-3 py-2.5">${h(e.stage || 'On-Stage')}</td>
-      <td class="px-3 py-2.5 text-right space-x-1.5">
+      <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
         <button type="button" data-admin-action="edit-event" data-id="${h(e.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
         <button type="button" data-admin-action="delete-event" data-id="${h(e.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Delete</button>
       </td>
@@ -360,17 +499,20 @@ function renderRegistrations() {
         <div class="flex items-start justify-between gap-2">
           <div>
             <h3 class="font-display text-sm font-bold text-slate-900">${h(ev.name)}</h3>
-            <p class="text-[11px] text-slate-500">${h(ev.category || '')} • ${h(ev.gender || 'Both')} • ${h(ev.type || 'Single')}</p>
+            <p class="text-[11px] text-slate-500">${h(categoryName(ev.category || ''))} • ${h(ev.gender || 'Both')} • ${h(ev.type || 'Single')}</p>
           </div>
-          <button type="button" data-admin-action="open-admin-reg" data-event-id="${h(ev.id)}" class="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100">+ Add / Edit Entry</button>
+          <button type="button" data-admin-action="open-admin-reg" data-event-id="${h(ev.id)}" class="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 whitespace-nowrap">+ Add Entry</button>
         </div>
         <div class="space-y-1.5 text-xs">
           ${evRegs.length ? evRegs.map((r) => {
             const names = (r.studentIds || []).map((sid) => state.students.find((s) => s.id === sid)?.name || sid);
             return `
               <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
-                <span class="truncate"><strong>${h(r.team)}</strong> #${r.slotIndex || 1}: ${h(names.join(', ') || 'Empty')}</span>
-                <button type="button" data-admin-action="delete-reg" data-id="${h(r.id)}" class="text-red-600 font-semibold hover:underline">Remove</button>
+                <span class="truncate"><strong>${h(teamName(r.team))}</strong> #${r.slotIndex || 1}: ${h(names.join(', ') || 'Empty')}</span>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button type="button" data-admin-action="edit-reg" data-id="${h(r.id)}" class="text-blue-700 font-semibold hover:underline">Edit</button>
+                  <button type="button" data-admin-action="delete-reg" data-id="${h(r.id)}" class="text-red-600 font-semibold hover:underline">Remove</button>
+                </div>
               </div>
             `;
           }).join('') : '<p class="text-slate-400">No teams registered yet.</p>'}
@@ -385,13 +527,13 @@ function renderRegistrations() {
     return `
       <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs space-y-2">
         <div class="flex items-center justify-between">
-          <strong>${h(r.name)} (${h(r.team)})</strong>
+          <strong>${h(r.name)} (${h(teamName(r.team))})</strong>
           <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">PENDING</span>
         </div>
         <p class="text-slate-600">${h(evNames.join(', '))}</p>
         <div class="flex justify-end gap-2">
-          <button type="button" data-admin-action="reject-req" data-id="${h(r.id)}" class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700">Reject</button>
-          <button type="button" data-admin-action="approve-req" data-id="${h(r.id)}" class="rounded bg-blue-700 px-2.5 py-1 font-semibold text-white">Approve</button>
+          <button type="button" data-admin-action="reject-req" data-id="${h(r.id)}" class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700 hover:bg-red-50">Reject</button>
+          <button type="button" data-admin-action="approve-req" data-id="${h(r.id)}" class="rounded bg-blue-700 px-2.5 py-1 font-semibold text-white hover:bg-blue-800">Approve</button>
         </div>
       </div>
     `;
@@ -402,19 +544,22 @@ function renderSchedule() {
   const stageOpts = (selected) => `<option value="">Select Stage</option>` + [...new Set(['Main Stage', ...state.stages])].map((s) => `<option value="${h(s)}" ${selected === s ? 'selected' : ''}>${h(s)}</option>`).join('');
   byId('schedule-builder-body').innerHTML = state.events.filter((e) => !['draft', 'archived'].includes(e.status)).map((e) => `
     <tr data-sched-row="${h(e.id)}" class="hover:bg-slate-50">
-      <td class="px-3 py-2 font-semibold text-slate-900">${h(e.name)}<br><span class="text-[11px] font-normal text-slate-500">${h(e.category || '')} • ${h(e.gender || '')}</span></td>
+      <td class="px-3 py-2 font-semibold text-slate-900">${h(e.name)}<br><span class="text-[11px] font-normal text-slate-500">${h(categoryName(e.category || ''))} • ${h(e.gender || '')}</span></td>
       <td class="px-3 py-2"><input data-sched-date="${h(e.id)}" type="date" value="${h(e.scheduleDate || '')}" class="rounded border border-slate-200 px-2 py-1 text-xs"></td>
       <td class="px-3 py-2"><select data-sched-stage="${h(e.id)}" class="rounded border border-slate-200 bg-white px-2 py-1 text-xs">${stageOpts(e.scheduleStage || e.stage || '')}</select></td>
       <td class="px-3 py-2"><input data-sched-time="${h(e.id)}" type="time" value="${h(e.time || '')}" class="rounded border border-slate-200 px-2 py-1 text-xs"></td>
       <td class="px-3 py-2"><input data-sched-dur="${h(e.id)}" type="number" min="5" max="300" value="${Number(e.scheduleDuration || e.duration || 30)}" class="w-16 rounded border border-slate-200 px-2 py-1 font-mono-num text-xs"></td>
-      <td class="px-3 py-2 text-right"><button type="button" data-admin-action="save-schedule-row" data-id="${h(e.id)}" class="rounded bg-blue-700 px-2.5 py-1 text-[11px] font-semibold text-white">Save</button></td>
+      <td class="px-3 py-2 text-right"><button type="button" data-admin-action="save-schedule-row" data-id="${h(e.id)}" class="rounded bg-blue-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-blue-800">Save</button></td>
     </tr>
   `).join('');
 
   byId('breaks-list').innerHTML = state.scheduleBreaks.length ? state.scheduleBreaks.map((b) => `
-    <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
       <span><strong>${h(b.title)}</strong> • ${h(b.date)} (${h(b.startTime)} – ${h(b.endTime)})</span>
-      <button type="button" data-admin-action="delete-break" data-id="${h(b.id)}" class="text-red-600 font-semibold hover:underline">Remove</button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button type="button" data-admin-action="edit-break" data-id="${h(b.id)}" class="text-blue-700 font-semibold hover:underline">Edit</button>
+        <button type="button" data-admin-action="delete-break" data-id="${h(b.id)}" class="text-red-600 font-semibold hover:underline">Remove</button>
+      </div>
     </div>
   `).join('') : '<p class="text-slate-400">No schedule breaks configured.</p>';
 }
@@ -434,14 +579,15 @@ function renderAccessList() {
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
             <p class="truncate font-bold text-slate-900">${h(u.displayName || u.username)}</p>
-            <p class="text-[11px] text-slate-600">${h(u.role)} ${u.team ? `• ${h(u.team)} (${h(u.genderScope || 'Both')})` : ''}</p>
+            <p class="text-[11px] text-slate-600">${h(u.role)} ${u.team ? `• ${h(teamName(u.team))} (${h(u.genderScope || 'Both')})` : ''}</p>
             <p class="truncate text-[11px] text-slate-400">${h(u.email || u.username || '')}</p>
           </div>
           <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${active ? 'Active' : 'Inactive'}</span>
         </div>
-        <div class="flex gap-1.5">
-          <button type="button" data-admin-action="toggle-access" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-700">${active ? 'Deactivate' : 'Activate'}</button>
-          <button type="button" data-admin-action="delete-access" data-id="${h(docId)}" class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700">Delete</button>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" data-admin-action="edit-access" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
+          <button type="button" data-admin-action="toggle-access" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-100">${active ? 'Deactivate' : 'Activate'}</button>
+          <button type="button" data-admin-action="delete-access" data-id="${h(docId)}" class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700 hover:bg-red-50">Delete</button>
         </div>
       </div>
     `;
@@ -475,8 +621,7 @@ function switchTab(tab) {
     system: 'Staff Access, TV & Maintenance'
   };
   byId('admin-page-title').textContent = titles[tab] || 'Admin Console';
-  byId('sidebar')?.classList.add('-translate-x-full');
-  byId('sidebar-backdrop')?.classList.add('hidden');
+  sidebarShell?.closeMobile?.();
 }
 
 // Secondary Auth user creator (does not sign out Admin)
@@ -493,7 +638,60 @@ async function createAccessAuthUser(email, password) {
   }
 }
 
+function resetStaffForm() {
+  byId('access-edit-uid').value = '';
+  byId('access-uid').value = '';
+  byId('access-identifier').disabled = false;
+  byId('access-identifier').classList.remove('bg-slate-100', 'text-slate-500');
+  byId('access-password').disabled = false;
+  byId('access-password').classList.remove('bg-slate-100', 'text-slate-500');
+  ['access-name', 'access-identifier', 'access-password', 'access-title', 'access-phone'].forEach((id) => {
+    const el = byId(id);
+    if (el) el.value = '';
+  });
+  if (byId('access-role')) byId('access-role').value = 'teamLeader';
+  if (byId('access-gender')) byId('access-gender').value = 'Both';
+  if (byId('access-active')) byId('access-active').checked = true;
+  byId('access-team-wrap')?.classList.remove('hidden');
+  byId('access-gender-wrap')?.classList.remove('hidden');
+  byId('access-edit-banner')?.classList.add('hidden');
+  byId('btn-cancel-access-edit')?.classList.add('hidden');
+  if (byId('btn-save-access')) byId('btn-save-access').textContent = 'Save Staff Account';
+}
+
+function loadStaffIntoForm(docId) {
+  const u = state.accessUsers.find((x) => (x.authUid || x.docId || x.id) === docId);
+  if (!u) return;
+  byId('access-edit-uid').value = docId;
+  byId('access-uid').value = u.authUid || docId;
+  byId('access-role').value = u.role || 'teamLeader';
+  byId('access-name').value = u.displayName || u.username || '';
+  byId('access-identifier').value = u.email || u.username || '';
+  byId('access-identifier').disabled = true;
+  byId('access-identifier').classList.add('bg-slate-100', 'text-slate-500');
+  byId('access-password').value = '';
+  byId('access-password').disabled = true;
+  byId('access-password').classList.add('bg-slate-100', 'text-slate-500');
+  byId('access-team').value = u.team || '';
+  byId('access-gender').value = u.genderScope || 'Both';
+  byId('access-title').value = u.title || '';
+  byId('access-phone').value = u.phone || '';
+  byId('access-active').checked = u.active !== false;
+  const isLeader = byId('access-role').value === 'teamLeader';
+  byId('access-team-wrap')?.classList.toggle('hidden', !isLeader);
+  byId('access-gender-wrap')?.classList.toggle('hidden', !isLeader);
+  const banner = byId('access-edit-banner');
+  if (banner) {
+    banner.textContent = `Editing staff account: ${u.displayName || u.username} (login email/password stays unchanged).`;
+    banner.classList.remove('hidden');
+  }
+  byId('btn-cancel-access-edit')?.classList.remove('hidden');
+  if (byId('btn-save-access')) byId('btn-save-access').textContent = 'Update Staff Account';
+  byId('access-name')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 async function saveStaffAccount() {
+  const editUid = byId('access-edit-uid')?.value.trim();
   const role = byId('access-role').value;
   const displayName = byId('access-name').value.trim();
   const identifier = byId('access-identifier').value.trim();
@@ -504,8 +702,53 @@ async function saveStaffAccount() {
   const phone = byId('access-phone').value.trim();
   const active = byId('access-active').checked;
 
-  if (!displayName || !identifier) return showToast('Display name and username/email are required', 'error');
+  if (!displayName) return showToast('Display name is required', 'error');
   if (role === 'teamLeader' && !team) return showToast('Select a team for Team Leader', 'error');
+
+  if (editUid) {
+    const existing = state.accessUsers.find((x) => (x.authUid || x.docId || x.id) === editUid);
+    if (!existing) return showToast('Staff account not found', 'error');
+    const now = Date.now();
+    const prevRole = existing.role;
+    const username = existing.username || normalizeUsername(displayName);
+    const email = existing.email || '';
+    const emailKey = email ? `email_${normalizeUsername(email).replace(/[^a-z0-9_@.-]/g, '_')}` : '';
+    const patch = {
+      role,
+      displayName,
+      phone,
+      team,
+      genderScope,
+      title: title || (role === 'teamLeader' ? 'Team Leader' : role),
+      active,
+      updatedAt: now
+    };
+    await setDoc(doc(db, 'accessUsers', editUid), patch, { merge: true });
+    if (username) await setDoc(doc(db, 'accessUsernames', username), { ...patch, accessDocId: editUid }, { merge: true }).catch(() => {});
+    if (emailKey) await setDoc(doc(db, 'accessUsernames', emailKey), { ...patch, accessDocId: editUid }, { merge: true }).catch(() => {});
+
+    if (prevRole !== role) {
+      if (prevRole === 'teamLeader') await deleteDoc(doc(db, 'teamLeaders', editUid)).catch(() => {});
+      if (prevRole === 'judge') await deleteDoc(doc(db, 'judges', editUid)).catch(() => {});
+      if (['admin', 'superAdmin'].includes(prevRole)) await deleteDoc(doc(db, 'adminUsers', editUid)).catch(() => {});
+    }
+    if (role === 'teamLeader') {
+      await setDoc(doc(db, 'teamLeaders', editUid), { uid: editUid, authUid: editUid, username, displayName, phone, team, genderScope: genderScope || 'Both', title: patch.title, active, updatedAt: now }, { merge: true });
+    } else if (role === 'judge') {
+      await setDoc(doc(db, 'judges', editUid), { uid: editUid, authUid: editUid, username, name: displayName, phone, active, updatedAt: now }, { merge: true });
+    } else if (['admin', 'superAdmin'].includes(role)) {
+      await setDoc(doc(db, 'adminUsers', editUid), { username, email, displayName, role, active, updatedAt: now }, { merge: true });
+    }
+
+    Object.assign(existing, patch);
+    resetStaffForm();
+    renderAccessList();
+    resultsController?.renderAll();
+    showToast(`Updated staff account: ${displayName}`);
+    return;
+  }
+
+  if (!identifier) return showToast('Username or email is required', 'error');
   if (password.length < 6) return showToast('Password must be at least 6 characters', 'error');
 
   const email = identifier.includes('@') ? identifier.toLowerCase() : `${normalizeUsername(identifier)}@fest.local`;
@@ -541,7 +784,7 @@ async function saveStaffAccount() {
     }
 
     state.accessUsers.push({ id: authUid, docId: authUid, ...profile });
-    ['access-name', 'access-identifier', 'access-password', 'access-title', 'access-phone'].forEach((id) => { byId(id).value = ''; });
+    resetStaffForm();
     renderAccessList();
     resultsController?.renderAll();
     showToast(`Created ${role} account: ${displayName}`);
@@ -551,45 +794,68 @@ async function saveStaffAccount() {
   }
 }
 
-async function openAdminRegModal(eventId) {
+async function openAdminRegModal(eventId, regId = '') {
   const ev = state.events.find((e) => e.id === eventId);
   if (!ev) return;
-  byId('admin-reg-modal-title').textContent = `Assign Entry — ${ev.name}`;
-  byId('admin-reg-modal-sub').textContent = `${ev.category} • ${ev.gender} • ${ev.type}`;
+  const existingReg = regId ? state.registrations.find((r) => r.id === regId) : null;
+  const isEditing = Boolean(existingReg);
+
+  byId('admin-reg-modal-title').textContent = isEditing ? `Edit Entry #${existingReg.slotIndex || 1} — ${ev.name}` : `Assign Entry — ${ev.name}`;
+  byId('admin-reg-modal-sub').textContent = `${categoryName(ev.category)} • ${ev.gender} • ${ev.type}`;
 
   byId('admin-reg-modal-body').innerHTML = `
     <label class="block text-xs font-semibold text-slate-700">Team
-      <select id="admin-reg-team" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
-        ${state.teams.map((t) => `<option value="${h(t)}">${h(t)}</option>`).join('')}
+      <select id="admin-reg-team" ${isEditing ? 'disabled' : ''} class="mt-1 w-full rounded-lg border border-slate-200 ${isEditing ? 'bg-slate-100 text-slate-600' : 'bg-white'} px-3 py-2 text-xs">
+        ${state.teams.map((t) => `<option value="${h(t)}">${h(teamName(t))}</option>`).join('')}
       </select>
     </label>
     <div id="admin-reg-students" class="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2 text-xs"></div>
     <div class="flex justify-end gap-2">
-      <button id="btn-save-admin-reg" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white">Save Entry</button>
+      <button id="btn-cancel-admin-reg" type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+      <button id="btn-save-admin-reg" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">${isEditing ? 'Update Entry' : 'Save Entry'}</button>
     </div>
   `;
+
+  if (existingReg?.team) byId('admin-reg-team').value = existingReg.team;
+  const preselectedIds = new Set(existingReg?.studentIds || []);
 
   const renderChecklist = () => {
     const team = byId('admin-reg-team').value;
     const list = state.students.filter((s) => s.team === team && (!ev.category || ev.category === 'All' || ev.category === 'General' || s.category === ev.category) && (!ev.gender || ev.gender === 'Both' || s.gender === ev.gender));
     byId('admin-reg-students').innerHTML = list.length ? list.map((s) => `
-      <label class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-slate-50">
-        <span class="flex items-center gap-2"><input type="checkbox" name="admin-reg-pick" value="${h(s.id)}"><strong>${h(s.name)}</strong></span>
+      <label class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-slate-50 cursor-pointer">
+        <span class="flex items-center gap-2"><input type="checkbox" name="admin-reg-pick" value="${h(s.id)}" ${preselectedIds.has(s.id) ? 'checked' : ''}><strong>${h(s.name)}</strong></span>
         <span class="font-mono-num text-slate-500">${h(s.chestNo || '')}</span>
       </label>
     `).join('') : '<p class="p-3 text-center text-slate-400">No eligible students in this team.</p>';
   };
 
   byId('admin-reg-team').addEventListener('change', renderChecklist);
+  byId('btn-cancel-admin-reg').addEventListener('click', () => closeModal('admin-reg-modal'));
   renderChecklist();
 
   byId('btn-save-admin-reg').addEventListener('click', async () => {
     const team = byId('admin-reg-team').value;
     const picked = [...document.querySelectorAll('input[name="admin-reg-pick"]:checked')].map((i) => i.value);
     if (!picked.length) return showToast('Select at least one student', 'error');
+    const now = Date.now();
+    if (isEditing) {
+      const patch = {
+        studentIds: picked,
+        lastUpdatedAt: now,
+        lastUpdatedByUid: auth.currentUser?.uid || ''
+      };
+      await updateDoc(doc(db, 'registrations', existingReg.id), patch);
+      Object.assign(existingReg, patch);
+      closeModal('admin-reg-modal');
+      renderRegistrations();
+      renderOverview();
+      showToast('Registration entry updated');
+      return;
+    }
+
     const existingSlots = state.registrations.filter((r) => r.eventId === ev.id && r.team === team).length;
     const slotIndex = existingSlots + 1;
-    const now = Date.now();
     const payload = {
       eventId: ev.id,
       eventName: ev.name || '',
@@ -604,15 +870,13 @@ async function openAdminRegModal(eventId) {
     };
     const docRef = await addDoc(collection(db, 'registrations'), payload);
     state.registrations.push({ id: docRef.id, ...payload });
-    byId('admin-reg-modal').classList.add('hidden');
-    byId('admin-reg-modal').classList.remove('flex');
+    closeModal('admin-reg-modal');
     renderRegistrations();
     renderOverview();
     showToast('Registration entry added');
   });
 
-  byId('admin-reg-modal').classList.remove('hidden');
-  byId('admin-reg-modal').classList.add('flex');
+  openModal('admin-reg-modal');
 }
 
 async function safeResetScope(scopeName) {
@@ -624,7 +888,7 @@ async function safeResetScope(scopeName) {
   };
   const cols = scopes[scopeName];
   if (!cols) return;
-  if (!await confirmAction(`Archive and permanently clear ${cols.join(', ')}?`)) return;
+  if (!await confirmAction(`Archive and permanently clear ${cols.join(', ')}?`, { title: 'Confirm System Reset', okLabel: 'Archive & Clear' })) return;
 
   for (const colName of cols) {
     const snap = await getDocs(collection(db, colName));
@@ -648,14 +912,9 @@ async function safeResetScope(scopeName) {
 
 function bindEvents() {
   initImageUploads(document);
-
-  byId('btn-mobile-sidebar')?.addEventListener('click', () => {
-    byId('sidebar')?.classList.remove('-translate-x-full');
-    byId('sidebar-backdrop')?.classList.remove('hidden');
-  });
-  byId('sidebar-backdrop')?.addEventListener('click', () => {
-    byId('sidebar')?.classList.add('-translate-x-full');
-    byId('sidebar-backdrop')?.classList.add('hidden');
+  sidebarShell = initCollapsibleSidebar();
+  ['edit-team-modal', 'edit-category-modal', 'edit-stage-modal', 'edit-day-modal', 'edit-student-modal', 'edit-event-modal', 'edit-break-modal', 'edit-assignment-modal', 'admin-reg-modal'].forEach((id) => {
+    byId(id)?.addEventListener('click', (e) => { if (e.target === byId(id)) closeModal(id); });
   });
   byId('btn-admin-refresh')?.addEventListener('click', () => loadAllAdminData(true).then(() => showToast('Synced')));
 
@@ -687,8 +946,7 @@ function bindEvents() {
     await setDoc(doc(db, 'settings', 'general'), { ...patch, updatedAt: Date.now() }, { merge: true });
     invalidateCache('general');
     populateSelectOptions();
-    renderSetupLists();
-    applyAdminBranding();
+    renderAll();
     showToast(msg);
   };
 
@@ -696,38 +954,115 @@ function bindEvents() {
     const key = byId('inp-new-team').value.trim();
     const label = byId('inp-new-team-label').value.trim() || key;
     const color = byId('inp-new-team-color').value || '#1D4ED8';
-    if (!key) return showToast('Enter a team key', 'error');
-    if (!state.teams.includes(key)) state.teams.push(key);
+    if (!key) return showToast('Enter a Team Key', 'error');
+    if (state.teams.some((t) => t.toLowerCase() === key.toLowerCase())) {
+      return showToast('Team Key already exists. Use Edit to change its Display Name.', 'error');
+    }
+    state.teams.push(key);
     state.teamColors[key] = color;
     state.teamDisplayNames[key] = label;
     byId('inp-new-team').value = '';
     byId('inp-new-team-label').value = '';
-    await saveGeneral({ teams: state.teams, teamColors: state.teamColors, teamDisplayNames: state.teamDisplayNames }, 'Team saved');
+    await saveGeneral({ teams: state.teams, teamColors: state.teamColors, teamDisplayNames: state.teamDisplayNames }, 'Team added');
   });
 
-  byId('btn-add-category')?.addEventListener('click', async () => {
-    const cat = byId('inp-new-category').value.trim();
-    if (!cat) return;
-    if (!state.categories.includes(cat)) state.categories.push(cat);
-    byId('inp-new-category').value = '';
-    await saveGeneral({ categories: state.categories }, 'Category added');
+  byId('edit-team-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const key = byId('edit-team-key').value.trim();
+    const label = byId('edit-team-label').value.trim() || key;
+    const color = byId('edit-team-color').value || '#1D4ED8';
+    if (!key || !state.teams.includes(key)) return;
+    state.teamDisplayNames[key] = label;
+    state.teamColors[key] = color;
+    closeModal('edit-team-modal');
+    await saveGeneral({ teamDisplayNames: state.teamDisplayNames, teamColors: state.teamColors }, 'Team display name updated');
   });
+  byId('btn-close-edit-team')?.addEventListener('click', () => closeModal('edit-team-modal'));
+  byId('btn-cancel-edit-team')?.addEventListener('click', () => closeModal('edit-team-modal'));
+
+  byId('btn-add-category')?.addEventListener('click', async () => {
+    const key = byId('inp-new-category').value.trim();
+    const label = byId('inp-new-category-label')?.value.trim() || key;
+    if (!key) return showToast('Enter a Category Key', 'error');
+    if (state.categories.some((c) => c.toLowerCase() === key.toLowerCase())) {
+      return showToast('Category Key already exists. Use Edit to change its Display Name.', 'error');
+    }
+    state.categories.push(key);
+    state.categoryDisplayNames[key] = label;
+    byId('inp-new-category').value = '';
+    if (byId('inp-new-category-label')) byId('inp-new-category-label').value = '';
+    await saveGeneral({ categories: state.categories, categoryDisplayNames: state.categoryDisplayNames }, 'Category added');
+  });
+
+  byId('edit-category-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const key = byId('edit-cat-key').value.trim();
+    const label = byId('edit-cat-label').value.trim() || key;
+    if (!key || !state.categories.includes(key)) return;
+    state.categoryDisplayNames[key] = label;
+    closeModal('edit-category-modal');
+    await saveGeneral({ categoryDisplayNames: state.categoryDisplayNames }, 'Category display name updated');
+  });
+  byId('btn-close-edit-category')?.addEventListener('click', () => closeModal('edit-category-modal'));
+  byId('btn-cancel-edit-category')?.addEventListener('click', () => closeModal('edit-category-modal'));
 
   byId('btn-add-stage')?.addEventListener('click', async () => {
     const stage = byId('setup-stage-name').value.trim();
-    if (!stage) return;
-    if (!state.stages.includes(stage)) state.stages.push(stage);
+    if (!stage) return showToast('Enter a stage name', 'error');
+    if (state.stages.some((s) => s.toLowerCase() === stage.toLowerCase())) {
+      return showToast('Stage already exists', 'error');
+    }
+    state.stages.push(stage);
     byId('setup-stage-name').value = '';
     await saveGeneral({ stages: state.stages }, 'Stage added');
   });
 
+  byId('edit-stage-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const oldName = byId('edit-stage-old').value;
+    const newName = byId('edit-stage-name').value.trim();
+    if (!newName) return showToast('Stage name is required', 'error');
+    if (oldName !== newName && state.stages.some((s) => s.toLowerCase() === newName.toLowerCase())) {
+      return showToast('Another stage already uses that name', 'error');
+    }
+    state.stages = state.stages.map((s) => (s === oldName ? newName : s));
+    const affectedEvents = state.events.filter((ev) => ev.scheduleStage === oldName);
+    if (affectedEvents.length) {
+      const batch = writeBatch(db);
+      affectedEvents.forEach((ev) => {
+        batch.update(doc(db, 'events', ev.id), { scheduleStage: newName, updatedAt: Date.now() });
+        ev.scheduleStage = newName;
+      });
+      await batch.commit();
+      invalidateCache('events_all');
+    }
+    closeModal('edit-stage-modal');
+    await saveGeneral({ stages: state.stages }, 'Stage updated');
+  });
+  byId('btn-close-edit-stage')?.addEventListener('click', () => closeModal('edit-stage-modal'));
+  byId('btn-cancel-edit-stage')?.addEventListener('click', () => closeModal('edit-stage-modal'));
+
   byId('btn-add-day')?.addEventListener('click', async () => {
     const date = byId('setup-day-date').value;
-    if (!date) return;
-    if (!state.days.some((d) => (d.date || d) === date)) state.days.push({ date, label: date });
+    if (!date) return showToast('Select a date', 'error');
+    if (state.days.some((d) => (d.date || d) === date)) return showToast('Date already added', 'error');
+    state.days.push({ date, label: date });
     byId('setup-day-date').value = '';
     await saveGeneral({ days: state.days }, 'Festival day added');
   });
+
+  byId('edit-day-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const idx = Number(byId('edit-day-index').value);
+    const date = byId('edit-day-date').value;
+    const label = byId('edit-day-label').value.trim() || date;
+    if (!date || Number.isNaN(idx) || !state.days[idx]) return;
+    state.days[idx] = { date, label };
+    closeModal('edit-day-modal');
+    await saveGeneral({ days: state.days }, 'Festival day updated');
+  });
+  byId('btn-close-edit-day')?.addEventListener('click', () => closeModal('edit-day-modal'));
+  byId('btn-cancel-edit-day')?.addEventListener('click', () => closeModal('edit-day-modal'));
 
   // Registration & Scoring Save
   byId('btn-save-reg-config')?.addEventListener('click', async () => {
@@ -811,26 +1146,37 @@ function bindEvents() {
   byId('edit-student-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = byId('edit-std-id').value;
+    const name = byId('edit-std-name').value.trim();
+    const chestNo = byId('edit-std-chest').value.trim();
+    if (state.students.some((s) => s.id !== id && String(s.chestNo || '').toLowerCase() === chestNo.toLowerCase())) {
+      return showToast('Duplicate chest number', 'error');
+    }
     const patch = {
-      name: byId('edit-std-name').value.trim(),
-      chestNo: byId('edit-std-chest').value.trim(),
+      name,
+      chestNo,
       team: byId('edit-std-team').value,
       category: byId('edit-std-cat').value,
       gender: byId('edit-std-gender').value,
+      photoData: byId('edit-std-photo-data')?.value.trim() || '',
+      showPhotoInResults: byId('edit-std-show-photo')?.checked !== false,
       updatedAt: Date.now()
     };
     await updateDoc(doc(db, 'students', id), patch);
     const idx = state.students.findIndex((s) => s.id === id);
     if (idx >= 0) state.students[idx] = { ...state.students[idx], ...patch };
-    byId('edit-student-modal').classList.add('hidden');
-    byId('edit-student-modal').classList.remove('flex');
+    closeModal('edit-student-modal');
     renderStudents();
+    renderRegistrations();
+    resultsController?.renderAll();
     showToast('Student updated');
   });
-  byId('btn-cancel-edit-student')?.addEventListener('click', () => {
-    byId('edit-student-modal').classList.add('hidden');
-    byId('edit-student-modal').classList.remove('flex');
+  byId('btn-clear-edit-std-photo')?.addEventListener('click', () => {
+    if (byId('edit-std-photo-data')) byId('edit-std-photo-data').value = '';
+    if (byId('edit-std-photo-file')) byId('edit-std-photo-file').value = '';
+    window.refreshImageUploadPreviews?.();
   });
+  byId('btn-close-edit-student')?.addEventListener('click', () => closeModal('edit-student-modal'));
+  byId('btn-cancel-edit-student')?.addEventListener('click', () => closeModal('edit-student-modal'));
 
   // Events
   byId('form-event')?.addEventListener('submit', async (e) => {
@@ -862,6 +1208,7 @@ function bindEvents() {
     populateSelectOptions();
     renderEvents();
     renderSchedule();
+    renderRegistrations();
     renderOverview();
     resultsController?.renderAll();
     showToast(`Created ${names.length} event(s)`);
@@ -872,37 +1219,69 @@ function bindEvents() {
   byId('edit-event-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = byId('edit-ev-id').value;
+    const existing = state.events.find((ev) => ev.id === id) || {};
+    const name = byId('edit-ev-name').value.trim();
+    const category = byId('edit-ev-cat').value;
+    const gender = byId('edit-ev-gender').value;
+    const type = byId('edit-ev-type').value;
+    const stage = byId('edit-ev-stage').value;
+    const limit = Number(byId('edit-ev-limit').value || 1);
+    const groupSize = Number(byId('edit-ev-grpsize').value || 1);
+    const resultMethod = byId('edit-ev-method').value || 'criteria';
+    const maximumMark = Number(byId('edit-ev-maxmark').value || 100);
+    const status = byId('edit-ev-status').value || 'active';
+    const parsedCriteria = parseCriteria(byId('edit-ev-criteria').value || '');
+
+    const candidate = {
+      ...existing,
+      id,
+      name,
+      category,
+      gender,
+      type,
+      entriesPerTeam: limit,
+      membersPerEntry: groupSize,
+      stage,
+      resultMethod,
+      maximumMark,
+      criteria: parsedCriteria.criteria,
+      status
+    };
+    const validation = validateEvent(candidate, { ...state.festSetup, categories: state.categories }, state.events);
+    if (validation.errors.length) return showToast(validation.errors[0], 'error');
+
     const patch = {
-      name: byId('edit-ev-name').value.trim(),
-      category: byId('edit-ev-cat').value,
-      gender: byId('edit-ev-gender').value,
-      type: byId('edit-ev-type').value,
-      stage: byId('edit-ev-stage').value,
-      limit: Number(byId('edit-ev-limit').value || 1),
-      groupSize: Number(byId('edit-ev-grpsize').value || 1),
-      maximumMembers: Number(byId('edit-ev-grpsize').value || 1),
+      name,
+      category,
+      gender,
+      type,
+      stage,
+      limit,
+      groupSize,
+      maximumMembers: groupSize,
+      resultMethod,
+      maximumMark,
+      criteria: parsedCriteria.criteria,
+      status,
       updatedAt: Date.now()
     };
     await updateDoc(doc(db, 'events', id), patch);
     const idx = state.events.findIndex((ev) => ev.id === id);
     if (idx >= 0) state.events[idx] = { ...state.events[idx], ...patch };
     invalidateCache('events_all');
-    byId('edit-event-modal').classList.add('hidden');
-    byId('edit-event-modal').classList.remove('flex');
+    closeModal('edit-event-modal');
     renderEvents();
     renderSchedule();
+    renderRegistrations();
+    renderOverview();
+    resultsController?.renderAll();
     showToast('Event updated');
   });
-  byId('btn-cancel-edit-event')?.addEventListener('click', () => {
-    byId('edit-event-modal').classList.add('hidden');
-    byId('edit-event-modal').classList.remove('flex');
-  });
+  byId('btn-close-edit-event')?.addEventListener('click', () => closeModal('edit-event-modal'));
+  byId('btn-cancel-edit-event')?.addEventListener('click', () => closeModal('edit-event-modal'));
 
   ['reg-filter-event', 'reg-filter-team'].forEach((id) => byId(id)?.addEventListener('change', renderRegistrations));
-  byId('btn-close-admin-reg')?.addEventListener('click', () => {
-    byId('admin-reg-modal').classList.add('hidden');
-    byId('admin-reg-modal').classList.remove('flex');
-  });
+  byId('btn-close-admin-reg')?.addEventListener('click', () => closeModal('admin-reg-modal'));
 
   // Schedule breaks & print
   byId('btn-print-schedule')?.addEventListener('click', () => printPage('schedule'));
@@ -921,6 +1300,28 @@ function bindEvents() {
     showToast('Schedule break added');
   });
 
+  byId('edit-break-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = byId('edit-brk-id').value;
+    const patch = {
+      title: byId('edit-brk-title').value.trim(),
+      date: byId('edit-brk-date').value,
+      startTime: byId('edit-brk-start').value,
+      endTime: byId('edit-brk-end').value,
+      updatedAt: Date.now()
+    };
+    if (!patch.title || !patch.date || !patch.startTime || !patch.endTime) return showToast('All break fields are required', 'error');
+    await updateDoc(doc(db, 'scheduleBreaks', id), patch);
+    const item = state.scheduleBreaks.find((b) => b.id === id);
+    if (item) Object.assign(item, patch);
+    invalidateCache('schedule_breaks');
+    closeModal('edit-break-modal');
+    renderSchedule();
+    showToast('Schedule break updated');
+  });
+  byId('btn-close-edit-break')?.addEventListener('click', () => closeModal('edit-break-modal'));
+  byId('btn-cancel-edit-break')?.addEventListener('click', () => closeModal('edit-break-modal'));
+
   // Staff access
   byId('access-role')?.addEventListener('change', () => {
     const isLeader = byId('access-role').value === 'teamLeader';
@@ -928,9 +1329,8 @@ function bindEvents() {
     byId('access-gender-wrap')?.classList.toggle('hidden', !isLeader);
   });
   byId('btn-save-access')?.addEventListener('click', saveStaffAccount);
-  byId('btn-clear-access')?.addEventListener('click', () => {
-    ['access-name', 'access-identifier', 'access-password', 'access-title', 'access-phone'].forEach((id) => { byId(id).value = ''; });
-  });
+  byId('btn-clear-access')?.addEventListener('click', resetStaffForm);
+  byId('btn-cancel-access-edit')?.addEventListener('click', resetStaffForm);
 
   // Notifications
   byId('btn-send-notif')?.addEventListener('click', async () => {
@@ -939,10 +1339,10 @@ function bindEvents() {
     if (!message) return showToast('Enter a notice message', 'error');
     await addDoc(collection(db, 'notifications'), { team, title: 'Festival Notice', message, createdAt: Date.now(), createdByUid: auth.currentUser?.uid || '' });
     byId('notif-message').value = '';
-    showToast(`Notice sent to ${team}`);
+    showToast(`Notice sent to ${team === 'All' ? 'All Teams' : teamName(team)}`);
   });
 
-  // Reset scopes
+  // Reset scopes & Delegated Actions
   document.addEventListener('click', async (e) => {
     const tabBtn = e.target.closest('[data-tab]');
     if (tabBtn) return switchTab(tabBtn.dataset.tab);
@@ -959,20 +1359,69 @@ function bindEvents() {
       await navigator.clipboard.writeText(fullUrl);
       return showToast('Portal link copied');
     }
+    if (action === 'edit-team') {
+      const key = actBtn.dataset.team;
+      byId('edit-team-key').value = key;
+      byId('edit-team-label').value = state.teamDisplayNames?.[key] || key;
+      byId('edit-team-color').value = state.teamColors?.[key] || '#1D4ED8';
+      openModal('edit-team-modal');
+    }
     if (action === 'remove-team') {
-      state.teams = state.teams.filter((t) => t !== actBtn.dataset.team);
-      await saveGeneral({ teams: state.teams }, 'Team removed');
+      const key = actBtn.dataset.team;
+      const ok = await confirmAction(
+        `Remove team "${teamName(key)}" (Key: ${key}) from setup? Existing student or result records referencing this key will not be deleted.`,
+        { title: 'Remove Team / House', okLabel: 'Remove Team' }
+      );
+      if (!ok) return;
+      state.teams = state.teams.filter((t) => t !== key);
+      delete state.teamDisplayNames[key];
+      delete state.teamColors[key];
+      await saveGeneral({ teams: state.teams, teamDisplayNames: state.teamDisplayNames, teamColors: state.teamColors }, 'Team removed');
+    }
+    if (action === 'edit-category') {
+      const key = actBtn.dataset.cat;
+      byId('edit-cat-key').value = key;
+      byId('edit-cat-label').value = state.categoryDisplayNames?.[key] || key;
+      openModal('edit-category-modal');
     }
     if (action === 'remove-category') {
-      state.categories = state.categories.filter((c) => c !== actBtn.dataset.cat);
-      await saveGeneral({ categories: state.categories }, 'Category removed');
+      const key = actBtn.dataset.cat;
+      const ok = await confirmAction(
+        `Remove category "${categoryName(key)}" (Key: ${key}) from setup? Existing events and students using this key remain intact.`,
+        { title: 'Remove Category', okLabel: 'Remove Category' }
+      );
+      if (!ok) return;
+      state.categories = state.categories.filter((c) => c !== key);
+      delete state.categoryDisplayNames[key];
+      await saveGeneral({ categories: state.categories, categoryDisplayNames: state.categoryDisplayNames }, 'Category removed');
+    }
+    if (action === 'edit-stage') {
+      const s = actBtn.dataset.stage;
+      byId('edit-stage-old').value = s;
+      byId('edit-stage-name').value = s;
+      openModal('edit-stage-modal');
     }
     if (action === 'remove-stage') {
-      state.stages = state.stages.filter((s) => s !== actBtn.dataset.stage);
+      const s = actBtn.dataset.stage;
+      const ok = await confirmAction(`Remove stage "${s}" from setup?`, { title: 'Remove Stage', okLabel: 'Remove' });
+      if (!ok) return;
+      state.stages = state.stages.filter((x) => x !== s);
       await saveGeneral({ stages: state.stages }, 'Stage removed');
     }
+    if (action === 'edit-day') {
+      const idx = Number(actBtn.dataset.dayIndex);
+      const item = state.days[idx];
+      if (!item) return;
+      byId('edit-day-index').value = String(idx);
+      byId('edit-day-date').value = item.date || item || '';
+      byId('edit-day-label').value = item.label || item.date || '';
+      openModal('edit-day-modal');
+    }
     if (action === 'remove-day') {
-      state.days = state.days.filter((d) => (d.date || d) !== actBtn.dataset.date);
+      const dt = actBtn.dataset.date;
+      const ok = await confirmAction(`Remove festival day "${dt}" from setup?`, { title: 'Remove Festival Day', okLabel: 'Remove' });
+      if (!ok) return;
+      state.days = state.days.filter((d) => (d.date || d) !== dt);
       await saveGeneral({ days: state.days }, 'Day removed');
     }
     if (action === 'edit-student') {
@@ -984,15 +1433,24 @@ function bindEvents() {
       byId('edit-std-team').value = s.team || '';
       byId('edit-std-cat').value = s.category || '';
       byId('edit-std-gender').value = s.gender || 'Boys';
-      byId('edit-student-modal').classList.remove('hidden');
-      byId('edit-student-modal').classList.add('flex');
+      if (byId('edit-std-photo-data')) byId('edit-std-photo-data').value = s.photoData || '';
+      if (byId('edit-std-photo-file')) byId('edit-std-photo-file').value = '';
+      if (byId('edit-std-show-photo')) byId('edit-std-show-photo').checked = s.showPhotoInResults !== false;
+      window.refreshImageUploadPreviews?.();
+      openModal('edit-student-modal');
     }
     if (action === 'delete-student') {
       const s = state.students.find((x) => x.id === actBtn.dataset.id);
-      if (!s || !await confirmAction(`Permanently delete student ${s.name}?`)) return;
+      if (!s) return;
+      const ok = await confirmAction(
+        `Permanently delete student "${s.name}" (Chest #${s.chestNo || '—'})?`,
+        { title: 'Delete Student', okLabel: 'Delete Student' }
+      );
+      if (!ok) return;
       await deleteDoc(doc(db, 'students', s.id));
       state.students = state.students.filter((x) => x.id !== s.id);
       renderStudents();
+      renderRegistrations();
       renderOverview();
       await resultsController?.syncPublicSummary(state.results);
       showToast('Student deleted');
@@ -1008,12 +1466,24 @@ function bindEvents() {
       byId('edit-ev-stage').value = ev.stage || 'On-Stage';
       byId('edit-ev-limit').value = ev.limit || 1;
       byId('edit-ev-grpsize').value = ev.groupSize || 1;
-      byId('edit-event-modal').classList.remove('hidden');
-      byId('edit-event-modal').classList.add('flex');
+      if (byId('edit-ev-method')) byId('edit-ev-method').value = ev.resultMethod || 'criteria';
+      if (byId('edit-ev-maxmark')) byId('edit-ev-maxmark').value = ev.maximumMark || 100;
+      if (byId('edit-ev-status')) byId('edit-ev-status').value = ev.status || 'active';
+      if (byId('edit-ev-criteria')) {
+        byId('edit-ev-criteria').value = Array.isArray(ev.criteria) && ev.criteria.length
+          ? ev.criteria.map((c) => `${c.name} - ${c.maximumMark}`).join('; ')
+          : '';
+      }
+      openModal('edit-event-modal');
     }
     if (action === 'delete-event') {
       const ev = state.events.find((x) => x.id === actBtn.dataset.id);
-      if (!ev || !await confirmAction(`Permanently delete event ${ev.name} and its linked records?`)) return;
+      if (!ev) return;
+      const ok = await confirmAction(
+        `Permanently delete event "${ev.name}" and its linked registrations, judge assignments, and judge scores?`,
+        { title: 'Delete Event', okLabel: 'Delete Event' }
+      );
+      if (!ok) return;
       const batch = writeBatch(db);
       batch.delete(doc(db, 'events', ev.id));
       state.registrations.filter((r) => r.eventId === ev.id).forEach((r) => batch.delete(doc(db, 'registrations', r.id)));
@@ -1022,12 +1492,24 @@ function bindEvents() {
       await batch.commit();
       state.events = state.events.filter((x) => x.id !== ev.id);
       state.registrations = state.registrations.filter((r) => r.eventId !== ev.id);
+      state.judgeAssignments = state.judgeAssignments.filter((a) => a.eventId !== ev.id);
+      state.judgeScores = state.judgeScores.filter((s) => s.eventId !== ev.id);
       invalidateCache('events_all');
       renderAll();
       showToast('Event deleted');
     }
     if (action === 'open-admin-reg') openAdminRegModal(actBtn.dataset.eventId);
+    if (action === 'edit-reg') {
+      const reg = state.registrations.find((r) => r.id === actBtn.dataset.id);
+      if (reg) openAdminRegModal(reg.eventId, reg.id);
+    }
     if (action === 'delete-reg') {
+      const reg = state.registrations.find((r) => r.id === actBtn.dataset.id);
+      const ok = await confirmAction(
+        `Remove registration entry #${reg?.slotIndex || 1} for ${teamName(reg?.team || '')}?`,
+        { title: 'Remove Registration Entry', okLabel: 'Remove Entry' }
+      );
+      if (!ok) return;
       await deleteDoc(doc(db, 'registrations', actBtn.dataset.id));
       state.registrations = state.registrations.filter((r) => r.id !== actBtn.dataset.id);
       renderRegistrations();
@@ -1035,9 +1517,14 @@ function bindEvents() {
       showToast('Registration removed');
     }
     if (action === 'reject-req') {
+      const req = state.registrationRequests.find((x) => x.id === actBtn.dataset.id);
+      const ok = await confirmAction(
+        `Reject registration request from "${req?.name || 'Student'}"?`,
+        { title: 'Reject Request', okLabel: 'Reject' }
+      );
+      if (!ok) return;
       await updateDoc(doc(db, 'registrationRequests', actBtn.dataset.id), { status: 'rejected', decisionAt: Date.now(), decisionByUid: auth.currentUser?.uid || '' });
-      const r = state.registrationRequests.find((x) => x.id === actBtn.dataset.id);
-      if (r) r.status = 'rejected';
+      if (req) req.status = 'rejected';
       renderRegistrations();
       showToast('Request rejected');
     }
@@ -1088,17 +1575,42 @@ function bindEvents() {
       invalidateCache('events_all');
       showToast('Schedule row saved');
     }
+    if (action === 'edit-break') {
+      const b = state.scheduleBreaks.find((x) => x.id === actBtn.dataset.id);
+      if (!b) return;
+      byId('edit-brk-id').value = b.id;
+      byId('edit-brk-title').value = b.title || '';
+      byId('edit-brk-date').value = b.date || '';
+      byId('edit-brk-start').value = b.startTime || '';
+      byId('edit-brk-end').value = b.endTime || '';
+      openModal('edit-break-modal');
+    }
     if (action === 'delete-break') {
+      const b = state.scheduleBreaks.find((x) => x.id === actBtn.dataset.id);
+      const ok = await confirmAction(
+        `Remove schedule break "${b?.title || 'this break'}"?`,
+        { title: 'Remove Schedule Break', okLabel: 'Remove Break' }
+      );
+      if (!ok) return;
       await deleteDoc(doc(db, 'scheduleBreaks', actBtn.dataset.id));
-      state.scheduleBreaks = state.scheduleBreaks.filter((b) => b.id !== actBtn.dataset.id);
+      state.scheduleBreaks = state.scheduleBreaks.filter((item) => item.id !== actBtn.dataset.id);
       invalidateCache('schedule_breaks');
       renderSchedule();
       showToast('Break removed');
+    }
+    if (action === 'edit-access') {
+      loadStaffIntoForm(actBtn.dataset.id);
     }
     if (action === 'toggle-access') {
       const u = state.accessUsers.find((x) => (x.authUid || x.docId || x.id) === actBtn.dataset.id);
       if (!u) return;
       const next = u.active === false;
+      const label = next ? 'Activate' : 'Deactivate';
+      const ok = await confirmAction(
+        `${label} staff account "${u.displayName || u.username}"?`,
+        { title: `${label} Staff Account`, okLabel: label, tone: next ? 'primary' : 'danger' }
+      );
+      if (!ok) return;
       const patch = { active: next, updatedAt: Date.now() };
       await updateDoc(doc(db, 'accessUsers', actBtn.dataset.id), patch);
       if (u.role === 'teamLeader') await setDoc(doc(db, 'teamLeaders', actBtn.dataset.id), patch, { merge: true });
@@ -1111,7 +1623,12 @@ function bindEvents() {
     }
     if (action === 'delete-access') {
       const u = state.accessUsers.find((x) => (x.authUid || x.docId || x.id) === actBtn.dataset.id);
-      if (!u || !await confirmAction(`Delete staff access for ${u.displayName || u.username}?`)) return;
+      if (!u) return;
+      const ok = await confirmAction(
+        `Delete staff access for "${u.displayName || u.username}" (${u.role})?`,
+        { title: 'Delete Staff Account', okLabel: 'Delete Account' }
+      );
+      if (!ok) return;
       const id = actBtn.dataset.id;
       await deleteDoc(doc(db, 'accessUsers', id));
       if (u.username) await deleteDoc(doc(db, 'accessUsernames', u.username)).catch(() => {});
@@ -1119,6 +1636,7 @@ function bindEvents() {
       if (u.role === 'judge') await deleteDoc(doc(db, 'judges', id)).catch(() => {});
       if (['admin', 'superAdmin'].includes(u.role)) await deleteDoc(doc(db, 'adminUsers', id)).catch(() => {});
       state.accessUsers = state.accessUsers.filter((x) => (x.authUid || x.docId || x.id) !== id);
+      if (byId('access-edit-uid')?.value === id) resetStaffForm();
       renderAccessList();
       resultsController?.renderAll();
       showToast('Staff account deleted');
@@ -1131,6 +1649,7 @@ initAdminAuth({
     resultsController = createAdminResultsController(() => state, {
       toast: showToast,
       confirm: confirmAction,
+      prompt: promptAction,
       updateState: (patch) => Object.assign(state, patch)
     });
     bindEvents();

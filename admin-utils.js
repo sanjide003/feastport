@@ -6,6 +6,12 @@ export const escapeHtml = (value) =>
 
 export const jsAttr = (value) => escapeHtml(JSON.stringify(String(value ?? '')));
 
+export const resolveDisplayName = (map, key, fallback = '') => {
+  const k = String(key ?? '').trim();
+  if (!k) return fallback;
+  return String(map?.[k] || k);
+};
+
 export const normalizeStageValue = (value) =>
   String(value || '').trim().replace(/^stage\s*/i, '').replace(/\s+/g, ' ').toLowerCase();
 

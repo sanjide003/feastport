@@ -6,10 +6,12 @@ import { createScoringSnapshot, normalizeScoringRules, scoringConfigForEvent, sc
 import { judgingEnabled, normalizeFestSetup, incompleteCompetitionPolicies } from './fest-config.js';
 import { normalizeBranding, brandingName, cacheBranding, clearBrandingCache, applyBase64Image } from './branding-config.js';
 import { cachedGetDoc } from './data-cache.js';
+import { initCollapsibleSidebar } from './sidebar-shell.js';
 import { collection, onSnapshot, doc, getDoc, query, where, documentId, runTransaction } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
 
 await window.ensureAdminDependencies?.(['tailwind', 'lucide']);
+const sidebarShell = initCollapsibleSidebar();
 
 let assignments = [];
 let scores = [];
@@ -17,6 +19,8 @@ let events = [];
 let registrations = [];
 let students = [];
 let scoringRules = normalizeScoringRules();
+let teamDisplayNames = {};
+let categoryDisplayNames = {};
 let currentJudge = null;
 let activeJudgeTab = 'dashboard';
 let activeAssignmentId = '';
@@ -39,6 +43,8 @@ let lastFocusedElement = null;
 const loadState = { assignments: 'loading', scores: 'loading', events: 'loading', registrations: 'loading', students: 'loading' };
 const requiredSources = Object.keys(loadState);
 const html = escapeHtml;
+const teamLabel = (value) => teamDisplayNames?.[value] || value || '';
+const categoryLabel = (value) => categoryDisplayNames?.[value] || value || 'General';
 const safeId = (value) => String(value ?? '').replace(/[^a-zA-Z0-9_-]/g, '-');
 const unique = (values) => [...new Set(values.filter(Boolean))];
 const chunks = (values, size = 30) => {
@@ -111,8 +117,8 @@ async function logoutJudge() {
 }
 
 function toggleMenu(open) {
-  document.getElementById('judge-sidebar')?.classList.toggle('open', open);
-  document.getElementById('judge-overlay')?.classList.toggle('open', open);
+  if (open) sidebarShell.openMobile();
+  else sidebarShell.closeMobile();
 }
 
 function assignmentDate(assignment) {
@@ -165,7 +171,7 @@ function participantData(event) {
           .sort((a, b) => `${a.team}-${a.slotIndex}`.localeCompare(`${b.team}-${b.slotIndex}`, undefined, { numeric: true }))
           .map((reg, index) => ({
             id: reg.id || `${reg.team}-${reg.slotIndex || index + 1}`,
-            label: `${reg.team || 'Team'} · Entry #${reg.slotIndex || index + 1}`,
+            label: `${teamLabel(reg.team) || 'Team'} · Entry #${reg.slotIndex || index + 1}`,
             sub: `${(reg.studentIds || []).length} members`,
             chestText: (reg.studentIds || []).map((id) => students.find((s) => s.id === id)?.chestNo || '-').join(', ') || '-',
             memberIds: unique(reg.studentIds || [])
@@ -179,7 +185,7 @@ function participantData(event) {
                   ? {
                       id,
                       label: `Chest #${student.chestNo || '-'}`,
-                      sub: `${student.team} · ${student.category || 'General'} · ${studentGender(student)}`,
+                      sub: `${teamLabel(student.team)} · ${categoryLabel(student.category)} · ${studentGender(student)}`,
                       chestText: student.chestNo || '-',
                       memberIds: [id]
                     }
@@ -289,18 +295,19 @@ function renderDashboard(list) {
 
 const assignmentFilterMeta = (assignment) => {
   const event = eventFor(assignment);
+  const category = event.category || assignment.category || 'General';
   return {
-    category: event.category || assignment.category || 'General',
+    category,
     gender: eventGender(event) || assignment.gender || 'Both',
     type: event.type || assignment.type || 'Single',
-    text: [assignment.eventName, event.name, event.category, event.stage, eventGender(event), event.type].join(' ').toLowerCase()
+    text: [assignment.eventName, event.name, category, categoryLabel(category), event.stage, eventGender(event), event.type].join(' ').toLowerCase()
   };
 };
 
 const filterOptions = (rows, key) => [...new Set(rows.map((item) => assignmentFilterMeta(item)[key]).filter(Boolean))].sort();
-const judgeFilterSelect = (tab, key, label, values, current) =>
+const judgeFilterSelect = (tab, key, label, values, current, format = (v) => v) =>
   `<select data-judge-filter data-tab="${tab}" data-filter="${key}" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700"><option value="">All ${label}</option>${values
-    .map((value) => `<option value="${html(value)}" ${current === value ? 'selected' : ''}>${html(value)}</option>`)
+    .map((value) => `<option value="${html(value)}" ${current === value ? 'selected' : ''}>${html(format(value))}</option>`)
     .join('')}</select>`;
 
 function renderList(tab, list) {
@@ -322,7 +329,7 @@ function renderList(tab, list) {
   box.innerHTML = `<section class="rounded-xl border border-slate-200 bg-white p-3">
     <div class="grid gap-2 md:grid-cols-4">
       <input data-judge-filter data-tab="${tab}" data-filter="search" value="${html(filters.search || '')}" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800" placeholder="Search event, category…">
-      ${judgeFilterSelect(tab, 'category', 'Categories', filterOptions(base, 'category'), filters.category)}
+      ${judgeFilterSelect(tab, 'category', 'Categories', filterOptions(base, 'category'), filters.category, categoryLabel)}
       ${judgeFilterSelect(tab, 'gender', 'Genders', filterOptions(base, 'gender'), filters.gender)}
       ${judgeFilterSelect(tab, 'type', 'Types', filterOptions(base, 'type'), filters.type)}
     </div>
@@ -426,7 +433,7 @@ function renderWorkspace() {
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="min-w-0">
           <h2 class="truncate font-display text-lg font-bold text-slate-900">${html(assignment.eventName)}</h2>
-          <p class="text-xs text-slate-500">${html(displayDate(assignment.date))} · ${html(displayTime(assignment.time))} · ${html(assignment.stage || 'Stage TBD')} · ${html(eventGender(event))} · ${html(participantSummary(assignment))}</p>
+          <p class="text-xs text-slate-500">${html(categoryLabel(event.category || assignment.category))} · ${html(displayDate(assignment.date))} · ${html(displayTime(assignment.time))} · ${html(assignment.stage || 'Stage TBD')} · ${html(eventGender(event))} · ${html(participantSummary(assignment))}</p>
         </div>
         <div class="flex flex-wrap items-center gap-2 shrink-0">
           <span id="judge-save-state" class="text-xs text-slate-400 mr-1">${score?.updatedAt ? `Saved ${timestamp(score.updatedAt)}` : 'Not saved'}</span>
@@ -857,6 +864,8 @@ async function startJudgeData() {
       cachedGetDoc(db, 'settings', 'scoring_rules', { ttlMs: 300_000 }),
       cachedGetDoc(db, 'settings', 'home_config', { ttlMs: 300_000 })
     ]);
+    teamDisplayNames = generalData?.teamDisplayNames || {};
+    categoryDisplayNames = generalData?.categoryDisplayNames || {};
     const setup = normalizeFestSetup(generalData?.festSetup || {});
     if (!judgingEnabled(setup)) {
       showPageState('Judgement is disabled. Results are entered directly by Admin.', true);

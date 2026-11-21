@@ -22,58 +22,84 @@
     .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] antialiased">
-  <!-- Single-Row 3-Zone Institutional Header -->
-  <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
-    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-      <a href="index.html" class="flex min-w-0 items-center gap-3">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-          <img id="header-logo" class="hidden h-full w-full object-cover" alt="Festival logo" referrerpolicy="no-referrer">
-          <span id="header-logo-fallback" class="font-display text-xs font-bold text-blue-700">FM</span>
-        </div>
-        <div class="min-w-0">
-          <span id="header-fest-name" class="block truncate font-display text-base font-bold tracking-tight text-slate-900">Fest Management</span>
-        </div>
-      </a>
+<body class="min-h-screen bg-[#F8FAFC] text-[#0F172A] antialiased">
+  <div class="flex min-h-screen flex-col lg:flex-row">
+    <div id="sidebar-backdrop" data-app-sidebar-backdrop class="hidden"></div>
 
-      <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600" aria-label="Primary navigation">
-        <a href="index.html" class="text-blue-700 font-semibold whitespace-nowrap">Home</a>
-        <a href="results.html" data-public-module="results" class="hover:text-slate-900 whitespace-nowrap">Results</a>
-        <a href="#schedule" data-public-module="schedule" class="hover:text-slate-900 whitespace-nowrap">Schedule</a>
-        <a href="register.html" data-public-module="registration" class="hover:text-slate-900 whitespace-nowrap">Register</a>
-        <a href="tv.html" data-public-module="tv" class="hover:text-slate-900 whitespace-nowrap">Live TV</a>
+    <!-- Collapsible Side Menu -->
+    <aside id="sidebar" data-app-sidebar class="flex flex-col border-r border-slate-200 bg-white">
+      <div data-sidebar-header class="flex h-16 items-center justify-between gap-2 border-b border-slate-200 px-4">
+        <a href="index.html" class="flex min-w-0 items-center gap-3">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+            <img id="header-logo" class="hidden h-full w-full object-cover" alt="Festival logo" referrerpolicy="no-referrer">
+            <span id="header-logo-fallback" class="font-display text-xs font-bold text-blue-700">FM</span>
+          </div>
+          <div data-sidebar-hide-collapsed class="min-w-0">
+            <span id="header-fest-name" class="block truncate font-display text-sm font-bold tracking-tight text-slate-900">Fest Management</span>
+            <span class="block truncate text-[11px] font-medium text-slate-500">Festival Portal</span>
+          </div>
+        </a>
+        <button type="button" data-sidebar-close class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden" aria-label="Close menu">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <nav data-sidebar-nav class="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Primary navigation">
+        <a href="index.html" data-sidebar-item aria-current="page" class="flex items-center gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700">
+          <i data-lucide="home" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Home</span>
+        </a>
+        <a href="results.html" data-public-module="results" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="trophy" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Results</span>
+        </a>
+        <a href="#schedule" data-public-module="schedule" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="calendar-days" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Schedule</span>
+        </a>
+        <a href="register.html" data-public-module="registration" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="user-plus" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Register</span>
+        </a>
+        <a href="tv.html" data-public-module="tv" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="tv" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Live TV</span>
+        </a>
       </nav>
 
-      <div class="flex items-center gap-2 shrink-0">
-        <button id="refresh-public-btn" type="button" title="Refresh data" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900">
-          <i data-lucide="refresh-cw" class="h-4 w-4"></i>
-        </button>
-        <a href="login.html" data-public-module="login" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap shrink-0">
-          <i data-lucide="log-in" class="h-3.5 w-3.5"></i>
-          <span>Staff Login</span>
-        </a>
-        <button id="mobile-nav-toggle" type="button" aria-label="Toggle menu" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 md:hidden">
-          <i data-lucide="menu" class="h-4 w-4"></i>
-        </button>
-      </div>
-    </div>
-
-    <div id="mobile-nav-drawer" class="hidden border-t border-slate-200 bg-white px-4 py-3 md:hidden">
-      <div class="flex flex-col gap-2 text-sm font-medium text-slate-700">
-        <a href="index.html" class="rounded-lg bg-blue-50 px-3 py-2 font-semibold text-blue-700">Home</a>
-        <a href="results.html" data-public-module="results" class="rounded-lg px-3 py-2 hover:bg-slate-50">Results</a>
-        <a href="#schedule" data-public-module="schedule" class="rounded-lg px-3 py-2 hover:bg-slate-50">Schedule</a>
-        <a href="register.html" data-public-module="registration" class="rounded-lg px-3 py-2 hover:bg-slate-50">Student Registration</a>
-        <a href="tv.html" data-public-module="tv" class="rounded-lg px-3 py-2 hover:bg-slate-50">Live TV Display</a>
-        <a href="login.html" data-public-module="login" class="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">
-          <i data-lucide="log-in" class="h-3.5 w-3.5"></i>
-          <span>Staff Login</span>
+      <div data-sidebar-footer class="border-t border-slate-200 p-3">
+        <a href="login.html" data-public-module="login" data-sidebar-item class="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white hover:bg-slate-800">
+          <i data-lucide="log-in" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Staff Login</span>
         </a>
       </div>
-    </div>
-  </header>
+    </aside>
 
-  <main class="flex-1">
+    <!-- Main Column -->
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+        <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center gap-3 min-w-0">
+            <button type="button" data-sidebar-toggle class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" aria-label="Toggle sidebar">
+              <i data-lucide="menu" class="h-4 w-4 lg:hidden"></i>
+              <i data-lucide="panel-left-close" data-toggle-icon-desktop class="hidden h-4 w-4 lg:block"></i>
+            </button>
+            <h2 class="truncate font-display text-base font-bold text-slate-900">Festival Overview</h2>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button id="refresh-public-btn" type="button" title="Refresh data" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+              <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+            </button>
+            <a href="login.html" data-public-module="login" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap shrink-0">
+              <i data-lucide="log-in" class="h-3.5 w-3.5"></i>
+              <span>Staff Login</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1">
     <!-- Hero + Next Program Stage Card -->
     <section class="border-b border-slate-200 bg-white">
       <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-12 lg:items-center lg:px-8 lg:py-14">
@@ -282,6 +308,8 @@
       <div id="social-links" class="flex items-center gap-4 text-base text-slate-500"></div>
     </div>
   </footer>
+    </div>
+  </div>
 
   <script type="module">
     import { db, isFirebaseConfigured } from './firebase-config.js';
@@ -291,9 +319,13 @@
     import { normalizeFestSetup, eventContributesToTeamScore, teamColor, readableTextColor } from './fest-config.js';
     import { normalizeResultData } from './admin-utils.js';
     import { buildTeamScoreLedger } from './score-utils.js';
+    import { initCollapsibleSidebar } from './sidebar-shell.js';
+
+    initCollapsibleSidebar();
 
     const $ = (id) => document.getElementById(id);
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const catName = (k) => (generalConfig.categoryDisplayNames?.[k] || k || 'General');
 
     let homeConfig = {};
     let generalConfig = {};
@@ -312,9 +344,6 @@
     const PAGE_SIZE = 5;
 
     document.querySelectorAll('[data-current-year]').forEach((el) => (el.textContent = currentYear()));
-    $('mobile-nav-toggle')?.addEventListener('click', () => {
-      $('mobile-nav-drawer')?.classList.toggle('hidden');
-    });
 
     function applyBrandingUI(config) {
       const branding = normalizeBranding(config);
@@ -454,7 +483,7 @@
             return `<a href="results.html?search=${encodeURIComponent(res.eventName || '')}" class="flex items-center justify-between gap-4 py-3.5 hover:bg-slate-50 -mx-2 px-2 rounded-lg transition">
               <div class="min-w-0">
                 <h3 class="truncate text-sm font-semibold text-slate-900">${esc(res.eventName)}</h3>
-                <p class="mt-0.5 text-xs text-slate-500">${esc(res.category)} · ${esc(res.stage)} · ${esc(res.gender)}</p>
+                <p class="mt-0.5 text-xs text-slate-500">${esc(catName(res.category))} · ${esc(res.stage)} · ${esc(res.gender)}</p>
                 <p class="mt-1 truncate text-xs font-medium text-blue-700">${esc(firstLine)}</p>
               </div>
               <i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-slate-400"></i>
@@ -475,7 +504,7 @@
       const nextEv = scheduledEvents.find((e) => !publishedIds.has(e.id) && !submittedEventIds.has(e.id) && eventTimestamp(e) >= now - 30 * 60000) || scheduledEvents[0];
       if (nextEv) {
         $('next-program-name').textContent = nextEv.name || 'Scheduled Program';
-        $('next-program-meta').textContent = `${nextEv.category || 'General'} · ${nextEv.stage || 'On-Stage'} · ${nextEv.gender || 'Both'}`;
+        $('next-program-meta').textContent = `${catName(nextEv.category)} · ${nextEv.stage || 'On-Stage'} · ${nextEv.gender || 'Both'}`;
         $('next-program-date').textContent = nextEv.scheduleDate || 'TBD';
         $('next-program-time').textContent = formatTime(nextEv.time);
         $('next-program-stage').textContent = nextEv.scheduleStage || 'Main Stage';
@@ -498,7 +527,7 @@
       const stgSel = $('schedule-filter-stage');
       const curCat = catSel.value;
       const curStg = stgSel.value;
-      catSel.innerHTML = '<option value="">All Categories</option>' + cats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+      catSel.innerHTML = '<option value="">All Categories</option>' + cats.map((c) => `<option value="${esc(c)}">${esc(catName(c))}</option>`).join('');
       stgSel.innerHTML = '<option value="">All Stages</option>' + stages.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
       if (cats.includes(curCat)) catSel.value = curCat;
       if (stages.includes(curStg)) stgSel.value = curStg;
@@ -528,7 +557,7 @@
             return `<div class="flex flex-col gap-2 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div class="min-w-0">
                 <h3 class="truncate text-sm font-semibold text-slate-900">${esc(ev.name)}</h3>
-                <p class="mt-0.5 text-xs text-slate-500">${esc(ev.category || 'General')} · ${esc(ev.stage || 'On-Stage')} · ${esc(ev.gender || 'Both')}</p>
+                <p class="mt-0.5 text-xs text-slate-500">${esc(catName(ev.category))} · ${esc(ev.stage || 'On-Stage')} · ${esc(ev.gender || 'Both')}</p>
               </div>
               <div class="flex flex-wrap items-center gap-4 text-xs sm:text-right shrink-0">
                 <div>

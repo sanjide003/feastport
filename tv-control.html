@@ -22,32 +22,66 @@
   <div id="toast" class="fixed bottom-5 right-5 z-[100] hidden rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-lg"></div>
 
   <div class="flex min-h-screen flex-col lg:flex-row">
-    <aside class="w-full shrink-0 border-b border-slate-200 bg-white lg:w-64 lg:border-b-0 lg:border-r">
-      <div class="flex h-16 items-center justify-between border-b border-slate-200 px-4">
-        <div>
-          <p class="text-[11px] font-bold uppercase tracking-wider text-blue-700">Admin Broadcast</p>
-          <h1 class="font-display text-base font-bold text-slate-900">TV Control Room</h1>
+    <div id="sidebar-backdrop" data-app-sidebar-backdrop class="hidden"></div>
+
+    <aside id="sidebar" data-app-sidebar class="flex flex-col border-r border-slate-200 bg-white">
+      <div data-sidebar-header class="flex h-16 items-center justify-between gap-2 border-b border-slate-200 px-4">
+        <div class="flex min-w-0 items-center gap-3">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700">
+            <i data-lucide="tv" class="h-4 w-4"></i>
+          </div>
+          <div data-sidebar-hide-collapsed class="min-w-0">
+            <p class="truncate text-[11px] font-bold uppercase tracking-wider text-blue-700">Admin Broadcast</p>
+            <h1 class="truncate font-display text-sm font-bold text-slate-900">TV Control Room</h1>
+          </div>
         </div>
-        <a href="tv.html" target="_blank" rel="noopener noreferrer" class="rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white">Open TV</a>
+        <button type="button" data-sidebar-close class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden" aria-label="Close menu">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
       </div>
-      <nav class="flex gap-1 overflow-x-auto p-3 lg:flex-col" aria-label="TV Control Sections">
-        <button type="button" data-panel="overview" aria-selected="true" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Overview</button>
-        <button type="button" data-panel="setup" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">TV Setup</button>
-        <button type="button" data-panel="content" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Sections</button>
-        <button type="button" data-panel="results" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Result Queue</button>
-        <button type="button" data-panel="display" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Mode & Animation</button>
-        <button type="button" data-panel="media" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Video & Media</button>
-        <button type="button" data-panel="preview" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Review & Send</button>
+      <nav data-sidebar-nav class="flex-1 space-y-1 overflow-y-auto p-3" aria-label="TV Control Sections">
+        <button type="button" data-panel="overview" data-sidebar-item aria-selected="true" class="nav-item flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="layout-dashboard" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Overview</span>
+        </button>
+        <button type="button" data-panel="setup" data-sidebar-item aria-selected="false" class="nav-item flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="monitor-cog" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">TV Setup</span>
+        </button>
+        <button type="button" data-panel="content" data-sidebar-item aria-selected="false" class="nav-item flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="sliders-horizontal" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Sections</span>
+        </button>
+        <button type="button" data-panel="results" data-sidebar-item aria-selected="false" class="nav-item flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="list-ordered" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Result Queue</span>
+        </button>
+        <button type="button" data-panel="display" data-sidebar-item aria-selected="false" class="nav-item flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="sparkles" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Mode & Animation</span>
+        </button>
+        <button type="button" data-panel="media" data-sidebar-item aria-selected="false" class="nav-item flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="film" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Video & Media</span>
+        </button>
+        <button type="button" data-panel="preview" data-sidebar-item aria-selected="false" class="nav-item flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="send" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Review & Send</span>
+        </button>
       </nav>
-      <div class="hidden border-t border-slate-200 p-3 space-y-2 lg:block">
-        <a href="admin.html" class="block rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50">Back to Admin Console</a>
+      <div data-sidebar-footer class="border-t border-slate-200 p-3 space-y-2">
+        <a href="tv.html" target="_blank" rel="noopener noreferrer" data-sidebar-item class="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+          <i data-lucide="external-link" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Open TV</span>
+        </a>
+        <a href="admin.html" data-sidebar-item class="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="arrow-left" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Back to Admin</span>
+        </a>
       </div>
     </aside>
 
     <main class="flex-1 min-w-0">
-      <header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:px-6">
-        <h2 id="page-title" class="font-display text-lg font-bold text-slate-900">TV Overview</h2>
-        <div class="flex items-center gap-2">
+      <header class="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:px-6">
+        <div class="flex items-center gap-3 min-w-0">
+          <button type="button" data-sidebar-toggle class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="h-4 w-4 lg:hidden"></i>
+            <i data-lucide="panel-left-close" data-toggle-icon-desktop class="hidden h-4 w-4 lg:block"></i>
+          </button>
+          <h2 id="page-title" class="truncate font-display text-lg font-bold text-slate-900">TV Overview</h2>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
           <button id="btn-refresh" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Refresh</button>
           <button id="btn-send-live" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Send Live to TV</button>
         </div>
@@ -164,16 +198,21 @@
     import { db, auth } from './firebase-config.js';
     import { cachedGetDoc, cachedGetDocs, invalidateCache } from './data-cache.js';
     import { escapeHtml } from './admin-utils.js';
+    import { initCollapsibleSidebar } from './sidebar-shell.js';
     import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+
+    const sidebarShell = initCollapsibleSidebar();
 
     const byId = (id) => document.getElementById(id);
     const h = escapeHtml;
     let results = [];
     let events = [];
+    let categoryDisplayNames = {};
     let tvConfig = {};
     let tvControl = {};
     let selectedIds = new Set();
+    const catName = (v) => categoryDisplayNames?.[v] || v || '';
 
     const sectionDefs = [
       ['logo', 'Festival Logo'],
@@ -216,7 +255,7 @@
             <input type="checkbox" data-result-id="${h(id)}" ${selectedIds.has(id) ? 'checked' : ''} class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-700">
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs font-bold text-slate-900">${h(ev.name || r.eventName || id)}</p>
-              <p class="text-[11px] text-slate-500">${h(ev.category || r.category || '')} • ${h(winners.join(', ') || 'Published')}</p>
+              <p class="text-[11px] text-slate-500">${h(catName(ev.category || r.category || ''))} • ${h(winners.join(', ') || 'Published')}</p>
             </div>
           </label>
         `;
@@ -265,14 +304,16 @@
 
     async function loadData(force = false) {
       if (force) invalidateCache();
-      const [cfgDoc, ctrlDoc, evDocs, resSnap] = await Promise.all([
+      const [cfgDoc, ctrlDoc, genDoc, evDocs, resSnap] = await Promise.all([
         cachedGetDoc(db, 'settings', 'tv_config', { ttlMs: 60000 }),
         cachedGetDoc(db, 'settings', 'tv_control', { ttlMs: 30000 }),
+        cachedGetDoc(db, 'settings', 'general', { ttlMs: 300000 }),
         cachedGetDocs(collection(db, 'events'), { cacheKey: 'tv_ctrl_events', ttlMs: 120000 }),
         getDocs(query(collection(db, 'results'), where('status', '==', 'published')))
       ]);
       tvConfig = cfgDoc || {};
       tvControl = ctrlDoc || {};
+      categoryDisplayNames = genDoc?.categoryDisplayNames || {};
       events = evDocs || [];
       results = resSnap.docs.map((d) => ({ eventId: d.id, ...d.data() }));
       hydrate();
@@ -337,7 +378,8 @@
         const name = pBtn.dataset.panel;
         document.querySelectorAll('[data-panel]').forEach((b) => b.setAttribute('aria-selected', String(b === pBtn)));
         document.querySelectorAll('.panel').forEach((p) => { p.hidden = p.id !== `panel-${name}`; });
-        byId('page-title').textContent = pBtn.textContent;
+        byId('page-title').textContent = pBtn.querySelector('[data-sidebar-label]')?.textContent?.trim() || pBtn.textContent.trim();
+        sidebarShell.closeMobile();
       }
     });
 

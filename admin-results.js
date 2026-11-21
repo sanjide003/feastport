@@ -1,6 +1,6 @@
 import { db, auth } from './firebase-config.js';
 import { invalidateCache } from './data-cache.js';
-import { escapeHtml } from './admin-utils.js';
+import { escapeHtml, resolveDisplayName } from './admin-utils.js';
 import {
   judgeScoreToResult,
   calculateEventOutcome,
@@ -26,6 +26,8 @@ export function createAdminResultsController(getState, actions) {
   let editingResultId = '';
 
   const state = () => getState();
+  const teamLabel = (key) => resolveDisplayName(state().teamDisplayNames, key, key);
+  const catLabel = (key) => resolveDisplayName(state().categoryDisplayNames, key, key || 'General');
 
   function activeJudges() {
     const { accessUsers = [] } = state();
@@ -37,7 +39,7 @@ export function createAdminResultsController(getState, actions) {
   }
 
   function eventLabel(ev) {
-    return `${ev.name || 'Event'} (${ev.category || 'General'} • ${ev.gender || 'Both'} • ${ev.type || 'Single'})`;
+    return `${ev.name || 'Event'} (${catLabel(ev.category || 'General')} • ${ev.gender || 'Both'} • ${ev.type || 'Single'})`;
   }
 
   function participantOptionsForEvent(ev) {
@@ -48,7 +50,7 @@ export function createAdminResultsController(getState, actions) {
         const names = (r.studentIds || []).map((sid) => students.find((s) => s.id === sid)?.name).filter(Boolean);
         return {
           id: r.id,
-          label: `${r.team} — Entry #${r.slotIndex || 1}${names.length ? ` (${names.slice(0, 3).join(', ')})` : ''}`,
+          label: `${teamLabel(r.team)} — Entry #${r.slotIndex || 1}${names.length ? ` (${names.slice(0, 3).join(', ')})` : ''}`,
           team: r.team
         };
       });
@@ -60,7 +62,7 @@ export function createAdminResultsController(getState, actions) {
         if (st && !items.some((i) => i.id === st.id)) {
           items.push({
             id: st.id,
-            label: `${st.chestNo ? `[${st.chestNo}] ` : ''}${st.name} (${st.team})`,
+            label: `${st.chestNo ? `[${st.chestNo}] ` : ''}${st.name} (${teamLabel(st.team)})`,
             team: st.team
           });
         }
@@ -115,10 +117,11 @@ export function createAdminResultsController(getState, actions) {
     if (!listEl) return;
     listEl.innerHTML = active.length ? active.map((a) => `
       <tr class="hover:bg-slate-50">
-        <td class="px-4 py-2.5 font-semibold text-slate-900">${h(a.eventName || a.eventId)}<br><span class="text-[11px] font-normal text-slate-500">${h(a.category || '')} • ${h(a.gender || '')}</span></td>
+        <td class="px-4 py-2.5 font-semibold text-slate-900">${h(a.eventName || a.eventId)}<br><span class="text-[11px] font-normal text-slate-500">${h(catLabel(a.category || ''))} • ${h(a.gender || '')}</span></td>
         <td class="px-4 py-2.5 text-slate-700">${h(a.judgeName || a.judgeId)}</td>
         <td class="px-4 py-2.5 font-mono-num text-xs text-slate-500">${h(a.date || 'TBA')} ${h(a.time || '')}</td>
-        <td class="px-4 py-2.5 text-right">
+        <td class="px-4 py-2.5 text-right space-x-1.5 whitespace-nowrap">
+          <button type="button" data-results-action="edit-assignment" data-id="${h(a.id)}" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
           <button type="button" data-results-action="remove-assignment" data-id="${h(a.id)}" class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Remove</button>
         </td>
       </tr>
@@ -157,7 +160,7 @@ export function createAdminResultsController(getState, actions) {
           <div class="flex flex-wrap items-start justify-between gap-2">
             <div>
               <h4 class="font-display text-sm font-bold text-slate-900">${h(ev.name)}</h4>
-              <p class="text-[11px] text-slate-500">${h(ev.category || '')} • ${h(ev.gender || '')} • ${sheets.length} judge sheet${sheets.length === 1 ? '' : 's'} submitted</p>
+              <p class="text-[11px] text-slate-500">${h(catLabel(ev.category || ''))} • ${h(ev.gender || '')} • ${sheets.length} judge sheet${sheets.length === 1 ? '' : 's'} submitted</p>
             </div>
             <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${isPublished ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">${isPublished ? 'Published' : 'Ready to Publish'}</span>
           </div>
@@ -211,6 +214,7 @@ export function createAdminResultsController(getState, actions) {
       if (el) el.innerHTML = optHtml;
     });
     const existing = state().results.find((r) => (r.eventId || r.id) === eventId);
+    const isPublished = existing && existing.status === 'published';
     if (existing) {
       byId('direct-first').value = existing.places?.[0]?.winners?.[0] || '';
       byId('direct-second').value = existing.places?.[1]?.winners?.[0] || '';
@@ -219,6 +223,8 @@ export function createAdminResultsController(getState, actions) {
     } else {
       editingResultId = '';
     }
+    byId('direct-edit-banner')?.classList.toggle('hidden', !isPublished);
+    byId('btn-cancel-direct-edit')?.classList.toggle('hidden', !editingResultId);
   }
 
   function renderPublishedResultsTable() {
@@ -237,10 +243,10 @@ export function createAdminResultsController(getState, actions) {
       }).join(' • ');
       return `
         <tr class="hover:bg-slate-50">
-          <td class="px-4 py-3 font-semibold text-slate-900">${h(ev.name || r.eventName || id)}<br><span class="text-[11px] font-normal text-slate-500">${h(r.category || ev.category || '')} • ${h(r.gender || ev.gender || '')}</span></td>
+          <td class="px-4 py-3 font-semibold text-slate-900">${h(ev.name || r.eventName || id)}<br><span class="text-[11px] font-normal text-slate-500">${h(catLabel(r.category || ev.category || ''))} • ${h(r.gender || ev.gender || '')}</span></td>
           <td class="px-4 py-3 text-xs text-slate-700">${h(winnersSummary || 'No positions')}</td>
           <td class="px-4 py-3"><span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}">${h(status)}</span></td>
-          <td class="px-4 py-3 text-right space-x-1.5">
+          <td class="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
             <button type="button" data-results-action="edit-result" data-event-id="${h(id)}" class="rounded border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Edit</button>
             <button type="button" data-results-action="toggle-archive-result" data-event-id="${h(id)}" class="rounded border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100">${status === 'published' ? 'Archive' : 'Publish'}</button>
             <button type="button" data-results-action="delete-result" data-event-id="${h(id)}" class="rounded border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100">Delete</button>
@@ -366,9 +372,60 @@ export function createAdminResultsController(getState, actions) {
     actions.toast(`Assigned ${payload.judgeName} to ${ev.name}`);
   }
 
+  function openEditAssignmentModal(id) {
+    const a = state().judgeAssignments.find((x) => x.id === id);
+    if (!a) return;
+    const judgeSelect = byId('edit-assign-judge');
+    const judges = activeJudges();
+    if (judgeSelect) {
+      judgeSelect.innerHTML = judges
+        .map((j) => `<option value="${h(judgeCanonicalId(j))}">${h(j.displayName || j.username || j.email)}</option>`)
+        .join('');
+      judgeSelect.value = a.judgeId || '';
+    }
+    byId('edit-assign-id').value = a.id;
+    byId('edit-assign-event-name').value = `${a.eventName || a.eventId} (${catLabel(a.category || '')})`;
+    byId('edit-assign-date').value = a.date || '';
+    byId('edit-assign-time').value = a.time || '';
+    byId('edit-assignment-modal').classList.remove('hidden');
+    byId('edit-assignment-modal').classList.add('flex');
+  }
+
+  async function saveAssignmentUpdate() {
+    const id = byId('edit-assign-id')?.value;
+    const judgeId = byId('edit-assign-judge')?.value;
+    const date = byId('edit-assign-date')?.value || '';
+    const time = byId('edit-assign-time')?.value || '';
+    const a = state().judgeAssignments.find((x) => x.id === id);
+    const judge = activeJudges().find((j) => judgeCanonicalId(j) === judgeId);
+    if (!a || !judge) return actions.toast('Selected assignment or judge is unavailable', 'error');
+
+    const patch = {
+      judgeId,
+      judgeAuthId: judge.authUid || '',
+      judgeAccessDocId: judge.id || '',
+      judgeName: judge.displayName || judge.username || 'Judge',
+      date,
+      time,
+      updatedAt: Date.now()
+    };
+    await updateDoc(doc(db, 'judgeAssignments', id), patch);
+    Object.assign(a, patch);
+    byId('edit-assignment-modal').classList.add('hidden');
+    byId('edit-assignment-modal').classList.remove('flex');
+    renderJudgeAssignments();
+    actions.toast('Judge assignment updated');
+  }
+
   async function removeAssignment(id) {
+    const a = state().judgeAssignments.find((x) => x.id === id);
+    const ok = await actions.confirm(
+      `Remove judge assignment for "${a?.eventName || 'this event'}" (${a?.judgeName || 'Judge'})?`,
+      { title: 'Remove Judge Assignment', okLabel: 'Remove' }
+    );
+    if (!ok) return;
     await updateDoc(doc(db, 'judgeAssignments', id), { active: false, updatedAt: Date.now() });
-    const next = state().judgeAssignments.map((a) => (a.id === id ? { ...a, active: false } : a));
+    const next = state().judgeAssignments.map((item) => (item.id === id ? { ...item, active: false } : item));
     actions.updateState({ judgeAssignments: next });
     renderJudgeAssignments();
     actions.toast('Judge assignment removed');
@@ -377,8 +434,15 @@ export function createAdminResultsController(getState, actions) {
   async function reopenSheet(scoreId) {
     const score = state().judgeScores.find((s) => s.id === scoreId);
     if (!score) return;
-    const reason = window.prompt('Enter reason for reopening this judge sheet (minimum 5 characters):', 'Score review required');
-    if (!reason || reason.trim().length < 5) return actions.toast('Reopen cancelled: reason must be at least 5 characters', 'error');
+    const reason = await actions.prompt({
+      title: 'Reopen Judge Sheet',
+      message: `Provide a reason for reopening "${score.eventName || 'this sheet'}" (${score.judgeName || 'Judge'}).`,
+      defaultValue: 'Score review required',
+      placeholder: 'Minimum 5 characters…',
+      minLength: 5,
+      okLabel: 'Reopen Sheet'
+    });
+    if (!reason) return;
 
     const batch = writeBatch(db);
     batch.update(doc(db, 'judgeScores', scoreId), {
@@ -443,8 +507,15 @@ export function createAdminResultsController(getState, actions) {
 
     let reason = 'Direct Admin result entry';
     if (editingResultId === eventId && state().results.some((r) => (r.eventId || r.id) === eventId && r.status === 'published')) {
-      const inputReason = window.prompt('Revision reason for updating this published result:', 'Verified position update');
-      if (!inputReason || inputReason.trim().length < 5) return actions.toast('Revision cancelled: enter at least 5 characters', 'error');
+      const inputReason = await actions.prompt({
+        title: 'Publish Result Revision',
+        message: `Provide a revision reason for updating the published result of "${ev.name}".`,
+        defaultValue: 'Verified position update',
+        placeholder: 'Minimum 5 characters…',
+        minLength: 5,
+        okLabel: 'Save & Publish Revision'
+      });
+      if (!inputReason) return;
       reason = inputReason.trim();
     }
 
@@ -456,6 +527,12 @@ export function createAdminResultsController(getState, actions) {
     const res = results.find((r) => (r.eventId || r.id) === eventId);
     if (!res) return;
     const nextStatus = res.status === 'published' ? 'archived' : 'published';
+    const actionLabel = nextStatus === 'archived' ? 'Archive' : 'Republish';
+    const ok = await actions.confirm(
+      `${actionLabel} result for "${res.eventName || eventId}"?`,
+      { title: `${actionLabel} Result`, okLabel: actionLabel, tone: nextStatus === 'archived' ? 'danger' : 'primary' }
+    );
+    if (!ok) return;
     await updateDoc(doc(db, 'results', eventId), { status: nextStatus, updatedAt: Date.now() });
     res.status = nextStatus;
     await syncPublicSummary(results);
@@ -464,7 +541,12 @@ export function createAdminResultsController(getState, actions) {
   }
 
   async function deleteResult(eventId) {
-    if (!await actions.confirm(`Delete published result for this event?`)) return;
+    const res = state().results.find((r) => (r.eventId || r.id) === eventId);
+    const ok = await actions.confirm(
+      `Permanently delete the published result and team score ledger for "${res?.eventName || eventId}"?`,
+      { title: 'Delete Published Result', okLabel: 'Delete Result' }
+    );
+    if (!ok) return;
     await deleteDoc(doc(db, 'results', eventId));
     await deleteDoc(doc(db, 'teamScoreLedgers', eventId)).catch(() => {});
     const nextResults = state().results.filter((r) => (r.eventId || r.id) !== eventId);
@@ -472,6 +554,11 @@ export function createAdminResultsController(getState, actions) {
     await syncPublicSummary(nextResults);
     renderPublishedResultsTable();
     actions.toast('Result deleted');
+  }
+
+  function clearDirectEdit() {
+    if (byId('direct-result-event')) byId('direct-result-event').value = '';
+    populateDirectWinnerSelects('');
   }
 
   function renderAll() {
@@ -485,11 +572,23 @@ export function createAdminResultsController(getState, actions) {
     byId('btn-assign-judge')?.addEventListener('click', assignJudge);
     byId('direct-result-event')?.addEventListener('change', (e) => populateDirectWinnerSelects(e.target.value));
     byId('btn-save-direct-result')?.addEventListener('click', saveDirectResult);
+    byId('btn-cancel-direct-edit')?.addEventListener('click', clearDirectEdit);
+    byId('edit-assignment-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveAssignmentUpdate();
+    });
+    const closeAssignModal = () => {
+      byId('edit-assignment-modal')?.classList.add('hidden');
+      byId('edit-assignment-modal')?.classList.remove('flex');
+    };
+    byId('btn-close-edit-assignment')?.addEventListener('click', closeAssignModal);
+    byId('btn-cancel-edit-assignment')?.addEventListener('click', closeAssignModal);
 
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-results-action]');
       if (!btn) return;
       const action = btn.dataset.resultsAction;
+      if (action === 'edit-assignment') openEditAssignmentModal(btn.dataset.id);
       if (action === 'remove-assignment') removeAssignment(btn.dataset.id);
       if (action === 'reopen-sheet') reopenSheet(btn.dataset.id);
       if (action === 'publish-from-sheets') publishFromSheets(btn.dataset.eventId);

@@ -18,51 +18,84 @@
     .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] antialiased">
-  <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
-    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-      <a href="index.html" class="flex min-w-0 items-center gap-3">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-          <img id="res-logo" class="hidden h-full w-full object-cover" alt="Festival logo" referrerpolicy="no-referrer">
-          <span id="res-logo-fallback" class="font-display text-xs font-bold text-blue-700">FM</span>
-        </div>
-        <span id="res-fest-name" class="truncate font-display text-base font-bold tracking-tight text-slate-900">Fest Management</span>
-      </a>
+<body class="min-h-screen bg-[#F8FAFC] text-[#0F172A] antialiased">
+  <div class="flex min-h-screen flex-col lg:flex-row">
+    <div id="sidebar-backdrop" data-app-sidebar-backdrop class="hidden"></div>
 
-      <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600" aria-label="Primary navigation">
-        <a href="index.html" class="hover:text-slate-900 whitespace-nowrap">Home</a>
-        <a href="results.html" class="text-blue-700 font-semibold whitespace-nowrap">Results</a>
-        <a href="index.html#schedule" class="hover:text-slate-900 whitespace-nowrap">Schedule</a>
-        <a href="register.html" class="hover:text-slate-900 whitespace-nowrap">Register</a>
-        <a href="tv.html" class="hover:text-slate-900 whitespace-nowrap">Live TV</a>
+    <!-- Collapsible Side Menu -->
+    <aside id="sidebar" data-app-sidebar class="flex flex-col border-r border-slate-200 bg-white">
+      <div data-sidebar-header class="flex h-16 items-center justify-between gap-2 border-b border-slate-200 px-4">
+        <a href="index.html" class="flex min-w-0 items-center gap-3">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+            <img id="res-logo" class="hidden h-full w-full object-cover" alt="Festival logo" referrerpolicy="no-referrer">
+            <span id="res-logo-fallback" class="font-display text-xs font-bold text-blue-700">FM</span>
+          </div>
+          <div data-sidebar-hide-collapsed class="min-w-0">
+            <span id="res-fest-name" class="block truncate font-display text-sm font-bold tracking-tight text-slate-900">Fest Management</span>
+            <span class="block truncate text-[11px] font-medium text-slate-500">Official Results</span>
+          </div>
+        </a>
+        <button type="button" data-sidebar-close class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden" aria-label="Close menu">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <nav data-sidebar-nav class="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Primary navigation">
+        <a href="index.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="home" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Home</span>
+        </a>
+        <a href="results.html" data-sidebar-item aria-current="page" class="flex items-center gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700">
+          <i data-lucide="trophy" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Results</span>
+        </a>
+        <a href="index.html#schedule" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="calendar-days" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Schedule</span>
+        </a>
+        <a href="register.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="user-plus" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Register</span>
+        </a>
+        <a href="tv.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="tv" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Live TV</span>
+        </a>
       </nav>
 
-      <div class="flex items-center gap-2 shrink-0">
-        <button id="res-refresh-btn" type="button" title="Refresh results" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900">
-          <i data-lucide="refresh-cw" class="h-4 w-4"></i>
-        </button>
-        <a href="login.html" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap shrink-0">
-          <i data-lucide="log-in" class="h-3.5 w-3.5"></i>
-          <span>Staff Login</span>
+      <div data-sidebar-footer class="border-t border-slate-200 p-3">
+        <a href="login.html" data-sidebar-item class="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white hover:bg-slate-800">
+          <i data-lucide="log-in" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Staff Login</span>
         </a>
-        <button id="mobile-nav-toggle" type="button" aria-label="Toggle menu" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 md:hidden">
-          <i data-lucide="menu" class="h-4 w-4"></i>
-        </button>
       </div>
-    </div>
-    <div id="mobile-nav-drawer" class="hidden border-t border-slate-200 bg-white px-4 py-3 md:hidden">
-      <div class="flex flex-col gap-2 text-sm font-medium text-slate-700">
-        <a href="index.html" class="rounded-lg px-3 py-2 hover:bg-slate-50">Home</a>
-        <a href="results.html" class="rounded-lg bg-blue-50 px-3 py-2 font-semibold text-blue-700">Results</a>
-        <a href="index.html#schedule" class="rounded-lg px-3 py-2 hover:bg-slate-50">Schedule</a>
-        <a href="register.html" class="rounded-lg px-3 py-2 hover:bg-slate-50">Student Registration</a>
-        <a href="tv.html" class="rounded-lg px-3 py-2 hover:bg-slate-50">Live TV Display</a>
-        <a href="login.html" class="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Staff Login</a>
-      </div>
-    </div>
-  </header>
+    </aside>
 
-  <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+    <!-- Main Column -->
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+        <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center gap-3 min-w-0">
+            <button type="button" data-sidebar-toggle class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" aria-label="Toggle sidebar">
+              <i data-lucide="menu" class="h-4 w-4 lg:hidden"></i>
+              <i data-lucide="panel-left-close" data-toggle-icon-desktop class="hidden h-4 w-4 lg:block"></i>
+            </button>
+            <h2 class="truncate font-display text-base font-bold text-slate-900">Official Results</h2>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button id="res-refresh-btn" type="button" title="Refresh results" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+              <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+            </button>
+            <a href="login.html" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap shrink-0">
+              <i data-lucide="log-in" class="h-3.5 w-3.5"></i>
+              <span>Staff Login</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
     <!-- Page Header & Tab Bar -->
     <div class="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -150,6 +183,8 @@
       <a href="index.html" class="font-semibold text-slate-700 hover:text-blue-700">Back to Home</a>
     </div>
   </footer>
+    </div>
+  </div>
 
   <script type="module">
     import { db, isFirebaseConfigured } from './firebase-config.js';
@@ -159,9 +194,13 @@
     import { normalizeFestSetup, eventContributesToTeamScore, teamColor, readableTextColor } from './fest-config.js';
     import { normalizeResultData } from './admin-utils.js';
     import { buildTeamScoreLedger, normalizeScoringRules } from './score-utils.js';
+    import { initCollapsibleSidebar } from './sidebar-shell.js';
+
+    initCollapsibleSidebar();
 
     const $ = (id) => document.getElementById(id);
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const catName = (k) => (generalConfig.categoryDisplayNames?.[k] || k || 'General');
     const params = new URLSearchParams(window.location.search);
 
     let generalConfig = {};
@@ -173,7 +212,6 @@
     let activeTab = params.get('tab') === 'team' ? 'team' : 'result';
 
     document.querySelectorAll('[data-current-year]').forEach((el) => (el.textContent = currentYear()));
-    $('mobile-nav-toggle')?.addEventListener('click', () => $('mobile-nav-drawer')?.classList.toggle('hidden'));
     if (params.get('search')) $('filter-search').value = params.get('search');
 
     function setTab(tab) {
@@ -208,7 +246,7 @@
       const cats = [...new Set(normalized.map((r) => r.category).filter(Boolean))].sort();
       const catSel = $('filter-category');
       const cur = catSel.value;
-      catSel.innerHTML = '<option value="">All Categories</option>' + cats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+      catSel.innerHTML = '<option value="">All Categories</option>' + cats.map((c) => `<option value="${esc(c)}">${esc(catName(c))}</option>`).join('');
       if (cats.includes(cur)) catSel.value = cur;
     }
 
@@ -231,8 +269,8 @@
         if (stage && res.stage !== stage) return false;
         if (gender && res.gender !== gender) return false;
         if (search) {
-          const winnerText = (res.places || []).flatMap((p) => (p.winners || []).map((w) => `${w.name} ${w.team} ${w.chestNo}`)).join(' ');
-          const haystack = `${res.eventName} ${res.category} ${res.stage} ${res.gender} ${winnerText}`.toLowerCase();
+          const winnerText = (res.places || []).flatMap((p) => (p.winners || []).map((w) => `${w.name} ${w.team} ${teamNames[w.team] || ''} ${w.chestNo}`)).join(' ');
+          const haystack = `${res.eventName} ${res.category} ${catName(res.category)} ${res.stage} ${res.gender} ${winnerText}`.toLowerCase();
           if (!haystack.includes(search)) return false;
         }
         return true;
@@ -287,7 +325,7 @@
             return `<article class="flex flex-col rounded-xl border border-slate-200 bg-white p-5">
               <div class="border-b border-slate-100 pb-3">
                 <h2 class="font-display text-base font-bold text-slate-900">${esc(res.eventName)}</h2>
-                <p class="mt-1 text-xs text-slate-500">${esc(res.category)} · ${esc(res.stage)} · ${esc(res.gender)} · ${esc(res.type)}</p>
+                <p class="mt-1 text-xs text-slate-500">${esc(catName(res.category))} · ${esc(res.stage)} · ${esc(res.gender)} · ${esc(res.type)}</p>
               </div>
               <div class="mt-2 divide-y divide-slate-100 flex-1">${placesHtml || '<p class="py-4 text-xs text-slate-400">No position awards listed.</p>'}</div>
               ${gradesHtml}
@@ -385,7 +423,7 @@
       $('team-breakdown-sections').innerHTML = [...byCategory.entries()].map(([cat, map]) => {
         const rows = [...map.entries()].sort((a, b) => b[1] - a[1]);
         return `<div class="rounded-xl border border-slate-200 bg-white p-5">
-          <h3 class="font-display text-sm font-bold uppercase tracking-wider text-slate-700">${esc(cat)} Breakdown</h3>
+          <h3 class="font-display text-sm font-bold uppercase tracking-wider text-slate-700">${esc(catName(cat))} Breakdown</h3>
           <div class="mt-3 space-y-2">
             ${rows.map(([team, pts]) => `<div class="flex items-center justify-between text-sm">
               <span class="flex items-center gap-2 font-medium text-slate-700"><span class="h-2 w-2 rounded-full" style="background:${esc(teamColor(team, colors))}"></span>${esc(teamNames[team] || team)}</span>
