@@ -3,81 +3,140 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; font-src 'self' https:; connect-src 'self' https: wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Judge Desk</title>
+  <title>Judge Desk — Festival Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@1.25.0" defer></script>
   <script src="./dependency-loader.js"></script>
   <style>
-    html, body { height: 100%; touch-action: pan-x pan-y pinch-zoom; overscroll-behavior: auto; }
-    body { font-family: Inter, system-ui, sans-serif; background: #f2f3f7; }
-    .locked input, .locked select, .locked textarea { pointer-events: none; background: #f1f5f9; color: #64748b; }
-    .judge-sidebar { top: 80px; left: 20px; width: 240px; max-height: calc(100vh - 96px); border-radius: 16px; transform: scale(.9); opacity: 0; pointer-events: none; transition: transform .25s ease, opacity .25s ease; transform-origin: top left; overflow: hidden; }
-    .judge-sidebar.open { transform: scale(1); opacity: 1; pointer-events: auto; }
-    .judge-overlay { opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+    body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: #F8FAFC; color: #0F172A; }
+    h1, h2, h3, .font-display { font-family: 'Outfit', 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; }
+    .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+    .judge-sidebar { transform: translateX(-100%); transition: transform .22s ease; }
+    .judge-sidebar.open { transform: translateX(0); }
+    .judge-overlay { opacity: 0; pointer-events: none; transition: opacity .22s ease; }
     .judge-overlay.open { opacity: 1; pointer-events: auto; }
-    .judge-menu-item { width: 100%; padding: 14px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px; color: #334155; background: #fff; font-size: 14px; font-weight: 600; text-align: left; transition: background .2s, color .2s; }
-    .judge-menu-item:hover { background: #f8fafc; color: #2563eb; }
-    .judge-menu-item.active { background: #eff6ff; color: #2563eb; }
+    .judge-menu-item.active { background: #EFF6FF; color: #1D4ED8; font-weight: 600; }
   </style>
 </head>
-<body class="min-h-screen text-slate-800">
-  <div id="judge-overlay" class="judge-overlay fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm"></div>
-  <aside id="judge-sidebar" class="judge-sidebar fixed z-50 bg-white border border-slate-200 shadow-2xl overflow-y-auto">
-    <nav aria-label="Judge sections menu">
-      <button data-judge-tab="dashboard" class="judge-tab judge-menu-item active"><i data-lucide="layout-dashboard" class="w-5 h-5"></i>Dashboard</button>
-      <button data-judge-tab="assignments" class="judge-tab judge-menu-item"><i data-lucide="clipboard-list" class="w-5 h-5"></i>Assignments</button>
-      <button data-judge-tab="drafts" class="judge-tab judge-menu-item"><i data-lucide="file-pen-line" class="w-5 h-5"></i>Drafts</button>
-      <button data-judge-tab="submitted" class="judge-tab judge-menu-item"><i data-lucide="badge-check" class="w-5 h-5"></i>Submitted</button>
-      <button data-judge-action="open-profile" class="judge-menu-item"><i data-lucide="contact" class="w-5 h-5"></i>Profile</button>
+<body class="min-h-screen flex bg-[#F8FAFC] text-[#0F172A] antialiased">
+  <div id="judge-overlay" class="judge-overlay fixed inset-0 z-40 bg-slate-950/50 md:hidden"></div>
+
+  <aside id="judge-sidebar" class="judge-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white md:static md:translate-x-0">
+    <div class="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+        <img id="judge-fest-logo" class="hidden h-full w-full object-cover" alt="Fest logo" referrerpolicy="no-referrer">
+        <span id="judge-logo-fallback" class="font-display text-xs font-bold text-blue-700">FM</span>
+      </div>
+      <div class="min-w-0">
+        <p id="judge-fest-name" data-judge-fest-name class="truncate text-xs font-semibold text-blue-700">Fest Management</p>
+        <p class="text-xs font-bold text-slate-900">Judge Desk</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 space-y-1 p-3" aria-label="Judge sections menu">
+      <button data-judge-tab="dashboard" class="judge-tab judge-menu-item active flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-50">
+        <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+        <span>Overview</span>
+      </button>
+      <button data-judge-tab="assignments" class="judge-tab judge-menu-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-50">
+        <i data-lucide="clipboard-list" class="h-4 w-4"></i>
+        <span>Assigned Events</span>
+      </button>
+      <button data-judge-tab="drafts" class="judge-tab judge-menu-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-50">
+        <i data-lucide="file-pen-line" class="h-4 w-4"></i>
+        <span>Drafts</span>
+      </button>
+      <button data-judge-tab="submitted" class="judge-tab judge-menu-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-50">
+        <i data-lucide="badge-check" class="h-4 w-4"></i>
+        <span>Submitted</span>
+      </button>
+      <button data-judge-action="open-profile" class="judge-menu-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-50">
+        <i data-lucide="user-round" class="h-4 w-4"></i>
+        <span>Profile</span>
+      </button>
     </nav>
-    <button data-judge-action="logout" class="judge-menu-item border-b-0 text-red-600"><i data-lucide="log-out" class="w-5 h-5"></i>Logout</button>
+
+    <div class="border-t border-slate-200 p-3">
+      <button data-judge-action="logout" class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50">
+        <i data-lucide="log-out" class="h-4 w-4"></i>
+        <span>Sign Out</span>
+      </button>
+    </div>
   </aside>
 
-  <header class="sticky top-0 z-30 p-4">
-    <div class="mx-auto flex max-w-6xl items-center justify-between rounded-[1.5rem] border border-white/70 bg-white/95 px-4 py-3 shadow-lg shadow-slate-200/70 backdrop-blur">
-      <div class="flex items-center gap-3 min-w-0">
-        <button data-judge-action="toggle-menu" class="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-slate-700 active:scale-95" aria-label="Open judge menu"><i data-lucide="menu" class="w-5 h-5"></i></button>
-        <div class="min-w-0">
-          <p class="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-500" id="judge-fest-name" data-judge-fest-name>Fest Management</p>
-          <h1 class="truncate text-lg md:text-2xl font-black text-slate-900" id="judge-title">Judge Desk</h1>
+  <div class="flex min-w-0 flex-1 flex-col">
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white">
+      <div class="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+        <div class="flex items-center gap-3 min-w-0">
+          <button data-judge-action="toggle-menu" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 md:hidden" aria-label="Open judge menu">
+            <i data-lucide="menu" class="h-4 w-4"></i>
+          </button>
+          <div class="min-w-0">
+            <h1 id="judge-title" class="truncate font-display text-lg font-bold text-slate-900">Judge Desk</h1>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="index.html" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 whitespace-nowrap">Public Home</a>
         </div>
       </div>
-      <div class="h-11 w-11 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1"><img id="judge-fest-logo" class="h-full w-full rounded-lg object-cover" alt="Fest logo"></div>
-    </div>
-  </header>
+    </header>
 
-  <main class="mx-auto max-w-6xl p-4 md:p-6 pt-2">
-    <div id="judge-page-state" class="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-sm font-bold text-indigo-700">Loading judge workspace…</div>
-    <section id="desk-view">
-      <div id="judge-summary" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5"></div>
-      <div id="assigned-events" class="judge-panel hidden space-y-4"></div>
-      <div id="judge-drafts" class="judge-panel hidden"></div>
-      <div id="judge-submitted" class="judge-panel hidden space-y-4"></div>
-      <div id="judge-workspace" class="judge-panel hidden space-y-4"></div>
-    </section>
-  </main>
-
-  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-full text-sm font-bold opacity-0 transition-opacity pointer-events-none z-[70]">Saved</div>
-
-  <div id="judge-submit-modal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="judge-submit-title">
-    <button data-judge-action="cancel-submit" class="absolute inset-0" aria-label="Close submission review"></button>
-    <div class="relative z-10 w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><h3 id="judge-submit-title" class="text-xl font-black text-slate-900">Review & Submit</h3><div id="judge-submit-summary" class="mt-4 space-y-2 text-sm"></div><div id="judge-submit-error" class="mt-3 hidden rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700"></div><p class="mt-4 rounded-2xl bg-red-50 p-3 text-xs font-bold text-red-700">After submission this score sheet is locked. An admin must reopen it for changes.</p><div class="mt-5 flex gap-2"><button data-judge-action="cancel-submit" class="flex-1 rounded-xl bg-slate-100 px-4 py-3 font-black text-slate-600">Cancel</button><button data-judge-action="confirm-submit" class="judge-submit-button flex-1 rounded-xl bg-green-600 px-4 py-3 font-black text-white">Confirm Submit</button></div></div>
+    <main class="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
+      <div id="judge-page-state" class="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs font-semibold text-blue-800">Loading judge workspace…</div>
+      <section id="desk-view">
+        <div id="judge-summary" class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+        <div id="assigned-events" class="judge-panel hidden space-y-4"></div>
+        <div id="judge-drafts" class="judge-panel hidden space-y-4"></div>
+        <div id="judge-submitted" class="judge-panel hidden space-y-4"></div>
+        <div id="judge-workspace" class="judge-panel hidden space-y-4"></div>
+      </section>
+    </main>
   </div>
 
-  <div id="judge-profile-modal" class="fixed inset-0 z-[85] hidden items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="judge-profile-name">
+  <div id="toast" class="fixed bottom-5 right-5 z-[70] rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity pointer-events-none">Saved</div>
+
+  <div id="judge-submit-modal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="judge-submit-title">
+    <button data-judge-action="cancel-submit" class="absolute inset-0" aria-label="Close submission review"></button>
+    <div class="relative z-10 w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+      <h3 id="judge-submit-title" class="font-display text-lg font-bold text-slate-900">Confirm Score Submission</h3>
+      <div id="judge-submit-summary" class="mt-4 space-y-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-700"></div>
+      <div id="judge-submit-error" class="mt-3 hidden rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700"></div>
+      <p class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Submitted sheets are locked immediately. Only an Admin can reopen them for correction.</p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button data-judge-action="cancel-submit" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700">Cancel</button>
+        <button data-judge-action="confirm-submit" class="judge-submit-button rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700">Submit &amp; Lock</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="judge-profile-modal" class="fixed inset-0 z-[85] hidden items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="judge-profile-name">
     <button data-judge-action="close-profile" class="absolute inset-0" aria-label="Close judge profile"></button>
-    <article class="relative z-10 aspect-[3/4] w-full max-w-[390px] overflow-hidden rounded-[2.25rem] bg-white text-slate-950 shadow-[0_30px_90px_rgba(0,0,0,0.45)] ring-4 ring-white/15">
-      <div class="absolute inset-x-0 top-0 h-[29%] bg-[#000703]"></div>
-      <div class="absolute inset-x-0 top-[29%] h-[61%] bg-white"></div>
-      <div class="absolute inset-x-0 bottom-0 h-[10%] bg-[#000703]"></div>
-      <div class="absolute bottom-0 right-0 h-[7.1%] w-[32%] bg-[#24aee4]"></div>
-      <div class="absolute bottom-0 left-[58%] h-[10%] w-[26%] bg-white" style="clip-path: polygon(0 0, 38% 0, 100% 100%, 62% 100%);"></div>
-      <!-- profile avatar legacy smoke: h-20 w-20 -->
-      <div class="absolute left-1/2 top-[14.5%] z-10 aspect-square w-[48%] -translate-x-1/2 rounded-full bg-[#24aee4] p-[4.6%] shadow-[0_18px_42px_rgba(36,174,228,0.34)]"><div class="h-full w-full overflow-hidden rounded-full bg-white"><img id="judge-profile-photo" class="h-full w-full object-cover opacity-0 transition-opacity duration-300" alt="Judge profile"></div></div>
-      <div class="absolute left-6 right-6 top-[50%] z-10 text-center"><p class="text-[10px] font-black uppercase tracking-[.28em] text-[#24aee4]">Official Judge</p><h2 id="judge-profile-name" class="mt-2 truncate text-3xl font-black text-slate-950">Judge</h2><p class="mt-1 text-sm font-bold text-slate-500">Authorized adjudicator</p><div class="mt-6 grid grid-cols-2 gap-2 text-xs"><div><p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Judge ID</p><p id="judge-profile-id" class="mt-1 truncate font-black text-slate-800">—</p></div><div><p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Phone</p><p id="judge-profile-phone" class="mt-1 truncate font-black text-slate-800">—</p></div></div><p id="judge-profile-fest" class="mt-6 truncate text-[10px] font-black uppercase tracking-[.2em] text-slate-400">Fest</p><img id="judge-profile-logo" class="mx-auto mt-2 h-8 w-8 rounded-md object-cover opacity-80" alt="Fest logo"></div>
-      <button data-judge-action="close-profile" class="absolute right-4 top-4 z-20 rounded-full bg-white/10 p-2 text-white shadow-lg ring-1 ring-white/20 hover:bg-white/20" aria-label="Close profile"><i data-lucide="x" class="h-4 w-4"></i></button>
+    <article class="relative z-10 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 text-center shadow-xl">
+      <button data-judge-action="close-profile" class="absolute right-4 top-4 text-slate-400 hover:text-slate-700" aria-label="Close profile">
+        <i data-lucide="x" class="h-4 w-4"></i>
+      </button>
+      <div class="mx-auto h-20 w-20 overflow-hidden rounded-full border border-slate-200 bg-slate-50">
+        <img id="judge-profile-photo" class="h-full w-full object-cover opacity-0 transition-opacity duration-300" alt="Judge profile" referrerpolicy="no-referrer">
+      </div>
+      <p class="mt-3 text-xs font-semibold uppercase tracking-wider text-blue-700">Official Judge</p>
+      <h2 id="judge-profile-name" class="mt-1 truncate font-display text-xl font-bold text-slate-900">Judge</h2>
+      <div class="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-xs">
+        <div class="rounded-lg bg-slate-50 p-2.5">
+          <span class="block text-slate-400">Username</span>
+          <strong id="judge-profile-id" class="mt-0.5 block truncate font-mono-num text-slate-800">—</strong>
+        </div>
+        <div class="rounded-lg bg-slate-50 p-2.5">
+          <span class="block text-slate-400">Phone</span>
+          <strong id="judge-profile-phone" class="mt-0.5 block truncate font-mono-num text-slate-800">—</strong>
+        </div>
+      </div>
+      <p id="judge-profile-fest" class="mt-4 truncate text-xs text-slate-400">Fest</p>
+      <img id="judge-profile-logo" class="mx-auto mt-2 h-7 w-7 rounded object-cover hidden" alt="Fest logo" referrerpolicy="no-referrer">
     </article>
   </div>
 

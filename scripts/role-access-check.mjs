@@ -4,56 +4,54 @@ const source = (file) => readFileSync(file, 'utf8');
 const login = source('login.js');
 const adminAuth = source('admin-auth.js');
 const admin = source('admin-main.js');
+const adminResults = source('admin-results.js');
 const team = source('team.html');
 const judge = source('judge.js');
-const publish = source('publish.html');
+const tv = source('tv.html');
+const tvControl = source('tv-control.html');
 const rules = source('firestore.rules');
 
 const contracts = {
-  'role redirects': [
-    "admin: 'admin.html'", "superAdmin: 'admin.html'", "teamLeader: 'team.html'",
-    "judge: 'judge.html'", "publisher: 'publish.html'"
-  ].every(value => login.includes(value)),
+  'role redirects without publisher': [
+    "admin: 'admin.html'",
+    "superAdmin: 'admin.html'",
+    "teamLeader: 'team.html'",
+    "judge: 'judge.html'"
+  ].every((value) => login.includes(value)) && !login.includes('publish.html'),
   'admin profile gate': adminAuth.includes("doc(db, 'adminUsers', user.uid)")
-    && adminAuth.includes("ADMIN_ROLES.has(profile.role)"),
+    && adminAuth.includes('ADMIN_ROLES.has(profile.role)'),
+  'tv control admin gate': tvControl.includes("doc(db, 'adminUsers', user.uid)")
+    && tvControl.includes("['admin', 'superAdmin'].includes(profile.role)"),
   'access creation uses Firebase Auth': admin.includes('createUserWithEmailAndPassword')
     && admin.includes("setDoc(doc(db, 'accessUsers'")
     && admin.includes("setDoc(doc(db, 'adminUsers'"),
-  'team profile and team scope': team.includes("profile.role !== 'teamLeader'")
-    && team.includes('profile.team !== storedTeam')
-    && team.includes('currentTeam = storedTeam')
-    && rules.includes("hasAccessRole('teamLeader')")
-    && rules.includes('data.team == profile.team'),
-  'team registration CRUD and lock': team.includes('addDoc(collection(db, "registrations")')
-    && team.includes('updateDoc(doc(db, "registrations"')
-    && team.includes('deleteDoc(doc(db, "registrations"')
+  'team profile and strict team scope': team.includes("profile.role !== 'teamLeader'")
+    && team.includes("where('team', '==', currentTeam)")
+    && team.includes("where('team', 'in', ['All', currentTeam])")
+    && rules.includes("hasAccessRole('teamLeader')"),
+  'team registration CRUD and lock': team.includes("addDoc(collection(db, 'registrations')")
+    && team.includes("updateDoc(doc(db, 'registrations'")
+    && team.includes("deleteDoc(doc(db, 'registrations'")
     && rules.includes('registrationsOpen()'),
-  'judge profile and scoped assignments': judge.includes("access.role!=='judge'")
-    && judge.includes("where('judgeId','in',ids.slice(0,30))")
+  'judge profile and scoped assignments': judge.includes("access.role !== 'judge'")
+    && judge.includes("where('judgeId', 'in', ids.slice(0, 30))")
     && judge.includes('currentJudgeIds')
     && rules.includes('judgeOwnsAssignment'),
-  'judge draft submit transaction': judge.includes("persistScores(id,status)")
+  'judge draft submit transaction': judge.includes("persistScores(id, 'draft')")
     && judge.includes('runTransaction')
-    && judge.includes("status==='submitted'")
+    && judge.includes("status === 'submitted'")
     && rules.includes("resource.data.status == 'draft'")
-    && rules.includes('exists(assignmentDoc(scoreId))')
-    && rules.includes('judgeOwnsAssignment(scoreId')
-    && admin.includes('judgeAuthId')
-    && judge.includes('currentJudgeIds'),
-  'publisher profile gate': publish.includes("accessSnap.data().role === 'publisher'")
-    && publish.includes("['admin', 'superAdmin'].includes(adminSnap.data().role)"),
-  'publisher atomic result workflow': publish.includes("batch.set(doc(db, 'results'")
-    && publish.includes("batch.update(doc(db, 'judgeScores'")
-    && publish.includes("batch.set(doc(collection(db, 'auditLogs'))")
-    && rules.includes("hasAccessRole('publisher')"),
-  'notification writes restricted': rules.includes("allow create: if isAdmin() || hasAccessRole('publisher');"),
-  'notification reads team scoped': rules.includes("resource.data.team in ['All', get(accessDoc()).data.team]")
-    && team.includes('where("team", "in", ["All", currentTeam])'),
+    && rules.includes('judgeOwnsAssignment(scoreId'),
+  'admin direct publishing and revisions': adminResults.includes("batch.set(doc(db, 'results', eventId)")
+    && adminResults.includes("batch.update(doc(db, 'judgeScores'")
+    && adminResults.includes("batch.set(doc(collection(db, 'auditLogs'))")
+    && adminResults.includes("doc(db, 'settings', 'public_summary')")
+    && rules.includes('allow create, update, delete: if isAdmin();'),
   'public results published only': rules.includes("resource.data.status == 'published'")
-    && ['index.html', 'results.html', 'team.html'].every(file => source(file).includes('where("status", "==", "published")'))
-    && source('tv.html').includes("where('status', '==', 'published')"),
-  'poster and certificate permissions': rules.includes('match /posterCertificateModels/{modelId}')
-    && rules.includes("resource.data.status == 'published'"),
+    && source('index.html').includes("where('status', '==', 'published')")
+    && source('results.html').includes("where('status', '==', 'published')")
+    && source('team.html').includes("where('status', '==', 'published')")
+    && tv.includes("where('status', '==', 'published')"),
   'default deny': rules.includes('match /{document=**}')
     && rules.includes('allow read, write: if false;')
 };

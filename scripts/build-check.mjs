@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
-const htmlFiles = ['admin.html', 'index.html', 'judge.html', 'login.html', 'publish.html', 'register.html', 'results.html', 'team.html', 'tv.html'];
+const htmlFiles = ['admin.html', 'index.html', 'judge.html', 'login.html', 'register.html', 'results.html', 'team.html', 'tv.html', 'tv-control.html'];
 const externalScriptPages = ['admin.html', 'judge.html', 'login.html'];
-const jsFiles = ['dependency-loader.js', 'branding-config.js', 'image-upload.js', 'fest-config.js', 'poster-certificate-engine.js', 'poster-certificate-admin.js', 'admin-utils.js', 'admin-dashboard.js', 'admin-students.js', 'admin-events.js', 'admin-auth.js', 'admin-main.js', 'judge.js', 'score-utils.js', 'login.js'];
+const jsFiles = ['server.js', 'firebase-runtime-config.js', 'firebase-config.js', 'data-cache.js', 'dependency-loader.js', 'branding-config.js', 'image-upload.js', 'fest-config.js', 'event-utils.js', 'registration-utils.js', 'admin-utils.js', 'admin-dashboard.js', 'admin-students.js', 'admin-events.js', 'admin-auth.js', 'admin-results.js', 'admin-main.js', 'judge.js', 'score-utils.js', 'login.js'];
 const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
 
 function assertBalancedHtml(file, html) {
@@ -23,6 +23,7 @@ function assertBalancedHtml(file, html) {
 }
 
 readFileSync('storage.rules', 'utf8');
+readFileSync('firestore.rules', 'utf8');
 for (const file of [...htmlFiles, ...jsFiles]) readFileSync(file, 'utf8');
 for (const file of externalScriptPages) {
   const html = readFileSync(file, 'utf8');
@@ -30,8 +31,11 @@ for (const file of externalScriptPages) {
   if (/<script(?![^>]*src)/u.test(html)) throw new Error(`${file} contains inline script tags`);
   if (/\son[a-z]+="/u.test(html)) throw new Error(`${file} contains inline event handlers`);
 }
-for (const file of htmlFiles.filter(file => !externalScriptPages.includes(file))) {
+for (const file of htmlFiles.filter((file) => !externalScriptPages.includes(file))) {
   const html = readFileSync(file, 'utf8');
-  for (const match of html.matchAll(/<script type="module">([\s\S]*?)<\/script>/gu)) execFileSync(process.execPath, ['--input-type=module', '--check'], { input: match[1], stdio: ['pipe', 'pipe', 'pipe'] });
+  assertBalancedHtml(file, html);
+  for (const match of html.matchAll(/<script type="module">([\s\S]*?)<\/script>/gu)) {
+    execFileSync(process.execPath, ['--input-type=module', '--check'], { input: match[1], stdio: ['pipe', 'pipe', 'pipe'] });
+  }
 }
 console.log('Static build/load check passed');

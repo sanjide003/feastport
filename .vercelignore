@@ -1,0 +1,16 @@
+node_modules
+.env
+.env.*
+server.js
+package.json
+package-lock.json
+scripts
+functions
+firebase-applet-config.json
+firebase-blueprint.json
+firebase.json
+firestore.rules
+storage.rules
+.firebaserc
+metadata.json
+*.md

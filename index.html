@@ -1,969 +1,677 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#ffffff">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>Fest Home</title>
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Manjari:wght@100;400;700&family=Saira:wght@700&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
-
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://unpkg.com/lucide@latest" defer></script>
-
-    <style>
-        /* Optimization for Mobile Smoothness */
-        html, body { touch-action: pan-x pan-y pinch-zoom; overscroll-behavior: auto; }
-        body {
-            font-family: 'Poppins', 'Noto Sans Malayalam', sans-serif;
-            background-color: #f8fafc;
-            color: #1e293b;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-            scroll-behavior: smooth;
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* Better Touch Response */
-        a, button, .btn, .clickable {
-            touch-action: manipulation;
-            transition: transform 0.1s ease-out;
-        }
-        a:active, button:active {
-            transform: scale(0.96);
-        }
-
-        .hide { display: none !important; }
-
-        /* Floating Header */
-        .header-wrap {
-            position: fixed;
-            top: 12px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            z-index: 50;
-            padding: 0 16px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.6s ease;
-            will-change: opacity, transform;
-            transform: translate3d(0, 0, 0);
-        }
-        .header-wrap.visible { opacity: 1; pointer-events: auto; }
-
-        .app-header {
-            pointer-events: auto;
-            width: 100%;
-            max-width: 600px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 16px;
-            padding: 10px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-            position: relative;
-            border: 1px solid rgba(255,255,255,0.6);
-        }
-
-        /* Hamburger Button */
-        .menu-btn { width: 24px; height: 24px; position: relative; cursor: pointer; z-index: 60; display: flex; align-items: center; justify-content: center; }
-        .menu-btn span { position: absolute; height: 2px; width: 18px; background: #1e293b; border-radius: 4px; transition: .3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .menu-btn span:nth-child(1) { transform: translateY(-6px); }
-        .menu-btn span:nth-child(2) { }
-        .menu-btn span:nth-child(3) { transform: translateY(6px); }
-        .menu-btn.active span:nth-child(1) { transform: rotate(45deg); top: 50%; margin-top: -1px; }
-        .menu-btn.active span:nth-child(2) { opacity: 0; }
-        .menu-btn.active span:nth-child(3) { transform: rotate(-45deg); top: 50%; margin-top: -1px; }
-
-        /* Dropdown Menu */
-        .dropdown-menu {
-            position: absolute;
-            top: 50px;
-            right: 0;
-            width: auto;
-            min-width: 180px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15);
-            border: 1px solid #f1f5f9;
-            padding: 8px;
-            opacity: 0;
-            transform: translateY(-10px) scale(0.95);
-            pointer-events: none;
-            transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 55;
-            transform-origin: top right;
-        }
-        .dropdown-menu.open {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #475569;
-            text-decoration: none;
-            border-radius: 10px;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        .nav-link:hover { background: #f8fafc; color: #2563eb; }
-        .nav-link.active { background: #eff6ff; color: #2563eb; }
-        .nav-link i { width: 16px; height: 16px; }
-
-        .menu-overlay { position: fixed; inset: 0; z-index: 40; display: none; }
-        .menu-overlay.active { display: block; }
-
-        /* CARD STYLES */
-        .team-card {
-            background: #fff;
-            border-radius: 22px;
-            padding: 22px 18px 26px;
-            box-shadow: 0 8px 20px rgba(0,0,0,.04);
-            border: 1px solid #e5e9ef;
-            position: relative;
-            margin-bottom: 16px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            will-change: transform;
-            transform: translateZ(0);
-        }
-        .team-card:active { transform: scale(0.98); }
-
-        .team-rank {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #fff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .team-rank.one { background: linear-gradient(135deg, #f4b400, #d97706); }
-        .team-rank.two { background: linear-gradient(135deg, #9aa0a6, #64748b); }
-        .team-rank.three { background: linear-gradient(135deg, #cd7f32, #a05a2c); }
-        .team-rank.other { background: #f1f5f9; color: #64748b; }
-
-        .team-name {
-            text-align: center;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 10px 0 4px;
-            color: #1e293b;
-            font-family: 'Saira', sans-serif;
-        }
-
-        .score-text {
-            text-align: center;
-            color: #64748b;
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .info-row {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 10px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-            margin-bottom: 8px;
-            border: 1px solid #f1f5f9;
-        }
-        .info-label { color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
-        .info-val { font-weight: 600; color: #334155; }
-
-        .animate-float { animation: float 6s ease-in-out infinite; will-change: transform; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-        .section-title { font-family: 'Saira', sans-serif; font-size: 1.75rem; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 0.5rem; }
-        .section-subtitle { font-family: 'Saira', sans-serif; color: #64748b; letter-spacing: 1px; text-transform: uppercase; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.25rem; display: block; text-align: center; }
-
-        /* Stats */
-        .stat-card { background: #fff; border: 1px solid #e2e8f0; padding: 1.25rem; border-radius: 1rem; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); transition: transform 0.2s; }
-        .stat-card:active { transform: scale(0.95); }
-        .stat-value { font-size: 1.8rem; font-weight: 800; color: #2563eb; line-height: 1; margin-bottom: 0.25rem; }
-        .stat-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #64748b; }
-
-        /* Quick Links */
-        .quick-nav-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 99px; background: #fff; border: 1px solid #e2e8f0; color: #475569; font-size: 13px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .quick-nav-btn:active { background: #f8fafc; transform: translateY(1px); border-color: #cbd5e1; color: #1e293b; }
-
-        /* Footer */
-        footer { background: #f9f9f9; padding: 24px 16px; margin-top: auto; border-top: 1px solid #e2e8f0; padding-bottom: 40px; }
-        .follow { text-align: center; }
-        .follow h4 { font-size: 13px; margin-bottom: 10px; letter-spacing: .5px; font-family: Arial, sans-serif; font-weight: bold; color: #333; }
-        .socials { display: flex; justify-content: center; gap: 14px; }
-        .socials a { color: #333; font-size: 20px; transition: transform .2s ease, opacity .2s ease; }
-        .socials a:hover { transform: translateY(-2px) scale(1.05); opacity: .7; }
-        .footer-bottom { text-align: center; font-size: 12px; margin-top: 14px; color: #777; line-height: 1.5; font-family: Arial, sans-serif; }
-        .footer-bottom a { color: #555; text-decoration: none; }
-        .footer-bottom a:hover { text-decoration: underline; }
-
-        /* Skeleton & Fade */
-        .skeleton { background: #e2e8f0; animation: skel-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; border-radius: 6px; }
-        @keyframes skel-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-
-        .fade-img { opacity: 0; transition: opacity 0.5s ease-in-out; }
-        .fade-img.loaded { opacity: 1; }
-
-        /* Gallery Sizes */
-        .gallery-container { display: flex; flex-direction: column; gap: 16px; }
-        .gallery-strip { position: relative; }
-
-        .gallery-row {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 16px;
-            padding-left: 16px;
-            padding-right: 16px;
-            padding-bottom: 10px;
-        }
-
-        .gallery-item {
-            width: 100%;
-            aspect-ratio: 4 / 5;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #e2e8f0;
-            position: relative;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            transform: translateZ(0);
-            border: 0;
-            padding: 0;
-            cursor: zoom-in;
-        }
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-        .gallery-arrow, .gallery-lightbox-arrow { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(226,232,240,.9); border-radius: 999px; background: rgba(255,255,255,.94); color: #0f172a; box-shadow: 0 8px 24px rgba(15,23,42,.16); }
-        .gallery-arrow { position: absolute; z-index: 2; top: 50%; transform: translateY(-50%); }
-        .gallery-arrow[data-direction="-1"] { left: 4px; }
-        .gallery-arrow[data-direction="1"] { right: 4px; }
-        .gallery-lightbox { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: rgba(2,6,23,.88); }
-        .gallery-lightbox.hidden { display: none; }
-        .gallery-lightbox-panel { position: relative; display: flex; width: min(100%,980px); height: min(86vh,760px); align-items: center; justify-content: center; }
-        .gallery-lightbox-media { position: relative; display: flex; max-width: 100%; max-height: 100%; align-items: center; justify-content: center; touch-action: pan-y; }
-        .gallery-lightbox-image { max-width: 100%; max-height: 100%; border-radius: 18px; object-fit: contain; box-shadow: 0 24px 70px rgba(0,0,0,.45); }
-        .gallery-lightbox-arrow { position: absolute; top: 50%; transform: translateY(-50%); }
-        .gallery-lightbox-arrow[data-lightbox-direction="-1"] { left: 8px; }
-        .gallery-lightbox-arrow[data-lightbox-direction="1"] { right: 8px; }
-        .gallery-lightbox-close { position: absolute; z-index: 3; top: -50px; right: 0; width: 42px; height: 42px; border-radius: 999px; background: rgba(255,255,255,.94); color: #0f172a; font-size: 24px; box-shadow: 0 8px 24px rgba(15,23,42,.22); }
-        .gallery-lightbox-count { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); border-radius: 999px; background: rgba(15,23,42,.76); padding: 7px 13px; color: white; font-size: 12px; font-weight: 800; }
-        @media (max-width: 640px) { .gallery-arrow { width: 38px; height: 38px; } .gallery-lightbox { padding: 64px 10px 18px; } .gallery-lightbox-panel { height: calc(100dvh - 82px); } .gallery-lightbox-arrow { top: 50%; bottom: auto; transform: translateY(-50%); } .gallery-lightbox-arrow[data-lightbox-direction="-1"] { left: 6px; } .gallery-lightbox-arrow[data-lightbox-direction="1"] { right: 6px; } .gallery-lightbox-close { top: -52px; right: 2px; } }
-
-        /* --- LOADER --- */
-        .loader-screen { position: fixed; inset: 0; background: #ffffff; display: flex; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s ease; will-change: opacity; }
-        .loader-wrapper { position: relative; width: 120px; height: 120px; display: flex; justify-content: center; align-items: center; }
-        .loader-ring { position: absolute; inset: -4px; border-radius: 50%; border: 4px solid #f1f5f9; border-top-color: #2563eb; animation: spin 1s linear infinite; z-index: 1; opacity: 1; transition: opacity 0.3s ease; will-change: transform; }
-        .loader-logo-circle { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: #fff; overflow: hidden; z-index: 2; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); will-change: transform, left, top, width, height; }
-        .loader-logo-circle img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; }
-        .loader-logo-circle img.loaded { opacity: 1; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .ring-hidden { opacity: 0; }
-
-        .skeleton-text { color: transparent; background: #e2e8f0; border-radius: 4px; pointer-events: none; user-select: none; }
-        .skeleton-block { background: #e2e8f0; border-radius: 8px; animation: skel-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#F8FAFC">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Feastport Festival Management Portal</title>
+  <meta name="description" content="Festival management portal for events, schedules, registrations, judging, live TV display, and results.">
+  <meta property="og:title" content="Feastport Festival Management Portal">
+  <meta property="og:description" content="Festival management portal for events, schedules, registrations, judging, live TV display, and results.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://unpkg.com/lucide@1.25.0" defer></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: #F8FAFC; color: #0F172A; }
+    h1, h2, h3, .font-display { font-family: 'Outfit', 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; }
+    .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  </style>
 </head>
-<body class="pt-24 flex flex-col min-h-screen">
-
-    <!-- MAIN APP LOADER -->
-    <div class="loader-screen" id="loader-screen">
-        <div class="loader-wrapper" id="loader-wrapper">
-            <div class="loader-ring" id="loader-ring"></div>
-            <div class="loader-logo-circle" id="moving-logo">
-                 <img src="" id="loader-img-tag" alt="Fest Logo">
-            </div>
+<body class="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] antialiased">
+  <!-- Single-Row 3-Zone Institutional Header -->
+  <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <a href="index.html" class="flex min-w-0 items-center gap-3">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <img id="header-logo" class="hidden h-full w-full object-cover" alt="Festival logo" referrerpolicy="no-referrer">
+          <span id="header-logo-fallback" class="font-display text-xs font-bold text-blue-700">FM</span>
         </div>
+        <div class="min-w-0">
+          <span id="header-fest-name" class="block truncate font-display text-base font-bold tracking-tight text-slate-900">Fest Management</span>
+        </div>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600" aria-label="Primary navigation">
+        <a href="index.html" class="text-blue-700 font-semibold whitespace-nowrap">Home</a>
+        <a href="results.html" data-public-module="results" class="hover:text-slate-900 whitespace-nowrap">Results</a>
+        <a href="#schedule" data-public-module="schedule" class="hover:text-slate-900 whitespace-nowrap">Schedule</a>
+        <a href="register.html" data-public-module="registration" class="hover:text-slate-900 whitespace-nowrap">Register</a>
+        <a href="tv.html" data-public-module="tv" class="hover:text-slate-900 whitespace-nowrap">Live TV</a>
+      </nav>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="refresh-public-btn" type="button" title="Refresh data" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+        </button>
+        <a href="login.html" data-public-module="login" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap shrink-0">
+          <i data-lucide="log-in" class="h-3.5 w-3.5"></i>
+          <span>Staff Login</span>
+        </a>
+        <button id="mobile-nav-toggle" type="button" aria-label="Toggle menu" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 md:hidden">
+          <i data-lucide="menu" class="h-4 w-4"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- HEADER -->
-    <div class="header-wrap" id="main-header">
-        <div class="app-header">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200">
-                    <img src="" id="header-logo-img" class="w-full h-full object-cover fade-img" alt="Logo">
-                </div>
-                <span class="font-bold text-base text-slate-800 tracking-tight font-['Saira'] leading-tight skeleton-text transition-colors duration-300" id="header-fest-name">Fest Name</span>
-            </div>
-            <div class="relative">
-                <div class="menu-btn" onclick="toggleMenu()"><span></span><span></span><span></span></div>
-                <div class="dropdown-menu" id="dropdownMenu">
-                    <div class="flex flex-col gap-1">
-                        <a href="#" data-landing-menu-item="home" class="nav-link active"><i data-lucide="home"></i> Home</a>
-                        <a href="results.html" data-public-module="results" data-landing-menu-item="results" class="nav-link hidden"><i data-lucide="trophy"></i> Results</a>
-                        <a href="#about" data-optional-link="about" data-landing-menu-item="about" class="nav-link hidden" onclick="closeMenu()"><i data-lucide="info"></i> About</a>
-                        <a href="#leaders" data-optional-link="leaders" data-landing-menu-item="leaders" class="nav-link hidden" onclick="closeMenu()"><i data-lucide="users"></i> Leaders</a>
-                         <a href="#gallery" data-optional-link="gallery" data-landing-menu-item="gallery" class="nav-link hidden" onclick="closeMenu()"><i data-lucide="image"></i> Gallery</a><a href="#schedule" data-public-module="schedule" data-landing-menu-item="schedule" class="nav-link hidden" onclick="closeMenu()"><i data-lucide="calendar-clock"></i> Schedule</a><a href="register.html" data-public-module="registration" data-landing-menu-item="registration" class="nav-link hidden"><i data-lucide="user-plus"></i> Register</a><a href="login.html" data-public-module="login" data-landing-menu-item="login" class="nav-link hidden"><i data-lucide="log-in"></i> Login</a><a href="results.html?tab=team" data-public-module="teamStandings" data-landing-menu-item="teamStandings" class="nav-link hidden"><i data-lucide="bar-chart-3"></i> Team Standings</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div id="mobile-nav-drawer" class="hidden border-t border-slate-200 bg-white px-4 py-3 md:hidden">
+      <div class="flex flex-col gap-2 text-sm font-medium text-slate-700">
+        <a href="index.html" class="rounded-lg bg-blue-50 px-3 py-2 font-semibold text-blue-700">Home</a>
+        <a href="results.html" data-public-module="results" class="rounded-lg px-3 py-2 hover:bg-slate-50">Results</a>
+        <a href="#schedule" data-public-module="schedule" class="rounded-lg px-3 py-2 hover:bg-slate-50">Schedule</a>
+        <a href="register.html" data-public-module="registration" class="rounded-lg px-3 py-2 hover:bg-slate-50">Student Registration</a>
+        <a href="tv.html" data-public-module="tv" class="rounded-lg px-3 py-2 hover:bg-slate-50">Live TV Display</a>
+        <a href="login.html" data-public-module="login" class="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">
+          <i data-lucide="log-in" class="h-3.5 w-3.5"></i>
+          <span>Staff Login</span>
+        </a>
+      </div>
     </div>
+  </header>
 
-    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
-
-    <!-- MAIN CONTENT -->
-    <div id="landing-sections" class="flex-1 max-w-2xl mx-auto px-4 pb-10 w-full">
-
-        <!-- 1. HERO SECTION -->
-        <section id="landing-hero" data-landing-section="hero" class="text-center py-8 mb-24 relative">
-            <div id="hero-target-box" class="w-44 h-44 mx-auto bg-white rounded-2xl shadow-xl flex items-center justify-center mb-6 animate-float border-4 border-white overflow-hidden relative opacity-0">
-                <img src="" id="hero-logo" class="w-full h-full object-cover fade-img" alt="Logo" fetchpriority="high">
+  <main class="flex-1">
+    <!-- Hero + Next Program Stage Card -->
+    <section class="border-b border-slate-200 bg-white">
+      <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-12 lg:items-center lg:px-8 lg:py-14">
+        <div class="lg:col-span-7">
+          <div class="flex items-center gap-3">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              <img id="hero-logo" class="hidden h-full w-full object-cover" alt="Festival emblem" referrerpolicy="no-referrer">
+              <span id="hero-logo-fallback" class="font-display text-sm font-bold text-blue-700">FM</span>
             </div>
+            <p id="hero-eyebrow" class="text-xs font-semibold uppercase tracking-wider text-blue-700">Arts &amp; Cultural Festival</p>
+          </div>
+          <h1 id="hero-title" class="mt-4 font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">Fest Management</h1>
+          <p id="hero-tagline" class="mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">Official festival portal for schedules, student registrations, and verified competition results.</p>
 
-            <h1 class="text-4xl md:text-5xl font-black text-slate-900 mb-2 font-['Saira'] tracking-tight min-h-[48px]">
-                <span id="hero-title-1" class="skeleton-text transition-colors duration-300">Title Line 1</span> <span class="text-blue-600 skeleton-text transition-colors duration-300" id="hero-title-2">Year</span>
-            </h1>
-            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-8 min-h-[20px]" id="hero-tagline">
-                <span class="skeleton-text transition-colors duration-300">The Tagline Goes Here</span>
-            </p>
-
-            <div id="landing-quick-buttons" class="flex flex-col items-center justify-center gap-4">
-                <a href="results.html" id="view-results-btn" data-public-module="results" data-landing-quick-item="results" class="hidden inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-full font-bold text-sm shadow-xl shadow-slate-200 hover:scale-105 transition active:scale-95">
-                    View Results <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </a>
-                <div id="landing-secondary-quick-buttons" class="flex flex-wrap items-center justify-center gap-3">
-                    <a href="#about" data-optional-link="about" data-landing-quick-item="about" class="quick-nav-btn hidden"><i data-lucide="info" class="w-4 h-4 text-blue-500"></i> About</a>
-                    <a href="#leaders" data-optional-link="leaders" data-landing-quick-item="leaders" class="quick-nav-btn hidden"><i data-lucide="users" class="w-4 h-4 text-orange-500"></i> Leaders</a>
-                    <a href="#gallery" data-optional-link="gallery" data-landing-quick-item="gallery" class="quick-nav-btn hidden"><i data-lucide="image" class="w-4 h-4 text-pink-500"></i> Gallery</a>
-                    <a href="#schedule" data-public-module="schedule" data-landing-quick-item="schedule" class="quick-nav-btn hidden"><i data-lucide="calendar-clock" class="w-4 h-4 text-emerald-500"></i> Schedule</a>
-                    <a href="register.html" id="open-registration-link" data-public-module="registration" data-landing-quick-item="registration" class="quick-nav-btn hidden"><i data-lucide="user-plus" class="w-4 h-4 text-violet-500"></i> Register</a><a href="login.html" data-public-module="login" data-landing-quick-item="login" class="quick-nav-btn hidden"><i data-lucide="log-in" class="w-4 h-4 text-indigo-500"></i> Login</a><a href="results.html?tab=team" data-public-module="teamStandings" data-landing-quick-item="teamStandings" class="quick-nav-btn hidden"><i data-lucide="bar-chart-3" class="w-4 h-4 text-cyan-500"></i> Team Standings</a>
-                </div>
-            </div>
-        </section>
-
-        <!-- 2. ABOUT SECTION -->
-        <section id="about" data-landing-section="about" class="hidden scroll-mt-32 mb-24">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center mb-6 relative overflow-hidden">
-                <span class="section-subtitle skeleton-text transition-colors duration-300 mx-auto w-32" id="about-subtitle">Subtitle</span>
-                <h2 class="section-title">About The Fest</h2>
-                <div id="about-text" class="text-slate-600 leading-loose text-sm md:text-base font-medium mt-4">
-                    <div class="space-y-3" id="about-skeleton">
-                        <div class="h-3 bg-slate-100 rounded w-full skeleton-block"></div>
-                        <div class="h-3 bg-slate-100 rounded w-11/12 mx-auto skeleton-block"></div>
-                        <div class="h-3 bg-slate-100 rounded w-4/5 mx-auto skeleton-block"></div>
-                        <div class="h-3 bg-slate-100 rounded w-5/6 mx-auto skeleton-block"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="stat-card"><div class="stat-value skeleton-text transition-colors duration-300" id="stat-programs">0</div><div class="stat-label">Programs</div></div>
-                <div class="stat-card"><div class="stat-value skeleton-text transition-colors duration-300" id="stat-contestants">0</div><div class="stat-label">Contestants</div></div>
-                <div class="stat-card"><div class="stat-value skeleton-text transition-colors duration-300" id="stat-categories">0</div><div class="stat-label">Categories</div></div>
-                <div class="stat-card"><div class="stat-value skeleton-text transition-colors duration-300" id="stat-teams">0</div><div class="stat-label">Teams</div></div>
-            </div>
-        </section>
-
-        <!-- 3. LEADERS SECTION -->
-        <section id="leaders" data-landing-section="leaders" class="hidden scroll-mt-32 mb-24">
-            <h2 class="section-title mb-6">Team Leaders</h2>
-            <div id="groups-container" class="space-y-4 mb-6">
-                <!-- Skeleton Loader Cards -->
-                <div class="team-card skeleton-block"><div class="h-6 w-32 bg-slate-200 rounded mb-4 mx-auto opacity-50"></div><div class="space-y-2"><div class="h-8 bg-slate-100 rounded opacity-50"></div><div class="h-8 bg-slate-100 rounded opacity-50"></div></div></div>
-                <div class="team-card skeleton-block"><div class="h-6 w-32 bg-slate-200 rounded mb-4 mx-auto opacity-50"></div><div class="space-y-2"><div class="h-8 bg-slate-100 rounded opacity-50"></div><div class="h-8 bg-slate-100 rounded opacity-50"></div></div></div>
-            </div>
-
-            <!-- TEAM SCORE BUTTON (UPDATED) -->
-            <a href="results.html?tab=team" id="team-score-btn" data-public-module="teamStandings" class="hidden w-3/4 mx-auto bg-white text-slate-900 font-bold py-4 rounded-full border border-slate-200 shadow-xl shadow-slate-100 flex items-center justify-center hover:bg-slate-50 transition active:scale-95">
-                Team Score
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <a href="results.html" data-public-module="results" class="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 whitespace-nowrap">
+              <i data-lucide="trophy" class="h-4 w-4"></i>
+              <span>View Results</span>
             </a>
-        </section>
+            <a href="register.html" data-public-module="registration" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 whitespace-nowrap">
+              <i data-lucide="user-plus" class="h-4 w-4 text-blue-700"></i>
+              <span>Student Registration</span>
+            </a>
+            <a href="#schedule" data-public-module="schedule" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 whitespace-nowrap">
+              <i data-lucide="calendar" class="h-4 w-4 text-slate-500"></i>
+              <span>Stage Schedule</span>
+            </a>
+          </div>
+          <div id="custom-landing-links" class="mt-4 hidden flex-wrap gap-2"></div>
+        </div>
 
-
-        <!-- 4. TIME SCHEDULE SECTION -->
-        <section id="schedule" data-landing-section="schedule" class="hidden scroll-mt-32 mb-24">
-            <span class="section-subtitle">Program Plan</span>
-            <h2 class="section-title mb-6">Time Schedule</h2>
-            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-4 border-b border-slate-100 bg-slate-50 grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <select id="public-schedule-date" onchange="renderPublicSchedule(true)" class="bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 outline-none"><option value="">All Dates</option></select>
-                    <select id="public-schedule-category" onchange="renderPublicSchedule(true)" class="bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 outline-none"><option value="">All Categories</option></select>
-                    <input id="public-schedule-search" oninput="renderPublicSchedule(true)" class="bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 outline-none" placeholder="Search program / stage" dir="auto">
+        <div class="lg:col-span-5">
+          <div id="next-program-card" class="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-900 p-6 text-white">
+            <img id="next-program-bg" class="hidden absolute inset-0 h-full w-full object-cover opacity-30" alt="" referrerpolicy="no-referrer">
+            <div class="relative z-10">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-blue-300">Next Scheduled Program</span>
+                <span id="next-program-countdown" class="font-mono-num text-xs font-semibold text-amber-300">—</span>
+              </div>
+              <h2 id="next-program-name" class="mt-3 font-display text-xl font-bold text-white">Schedule awaiting update</h2>
+              <p id="next-program-meta" class="mt-1.5 text-sm text-slate-300">Check the schedule below once events are published.</p>
+              <div class="mt-5 grid grid-cols-3 gap-3 border-t border-white/15 pt-4 text-xs">
+                <div>
+                  <span class="block text-slate-400">Date</span>
+                  <strong id="next-program-date" class="mt-0.5 block font-semibold text-white">—</strong>
                 </div>
-                <div class="p-4 md:p-6">
-                    <div id="public-upcoming-schedule" class="mb-5"></div>
-                    <div id="public-schedule-list" class="space-y-5"></div>
-                    <div id="public-schedule-pagination" class="mt-5 hidden items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3"></div>
+                <div>
+                  <span class="block text-slate-400">Time</span>
+                  <strong id="next-program-time" class="mt-0.5 block font-mono-num font-semibold text-white">—</strong>
                 </div>
+                <div>
+                  <span class="block text-slate-400">Stage</span>
+                  <strong id="next-program-stage" class="mt-0.5 block truncate font-semibold text-white">—</strong>
+                </div>
+              </div>
             </div>
-        </section>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <!-- 5. GALLERY SECTION -->
-        <section id="gallery" data-landing-section="gallery" class="hidden scroll-mt-32 mb-24">
-            <span class="section-subtitle">Moments</span>
-            <h2 class="section-title mb-6">Image Gallery</h2>
-            <div class="gallery-container" id="gallery-container">
-                <div class="gallery-row"><div class="gallery-item skeleton-block"></div><div class="gallery-item skeleton-block"></div></div>
-                <div class="gallery-row"><div class="gallery-item skeleton-block"></div><div class="gallery-item skeleton-block"></div></div>
+    <!-- 4-Stat Festival Overview -->
+    <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="rounded-xl border border-slate-200 bg-white p-5">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Events</span>
+          <p id="stat-events" class="mt-2 font-mono-num text-3xl font-bold text-slate-900">0</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-5">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Published Results</span>
+          <p id="stat-results" class="mt-2 font-mono-num text-3xl font-bold text-blue-700">0</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-5">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Participating Teams</span>
+          <p id="stat-teams" class="mt-2 font-mono-num text-3xl font-bold text-slate-900">0</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-5">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Registered Students</span>
+          <p id="stat-students" class="mt-2 font-mono-num text-3xl font-bold text-emerald-700">0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team Standings & Latest Results -->
+    <section class="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+      <div class="grid gap-6 lg:grid-cols-12">
+        <!-- Team Standings -->
+        <div id="section-team-standings" class="lg:col-span-5 rounded-xl border border-slate-200 bg-white p-6">
+          <div class="flex items-center justify-between gap-2 pb-4 border-b border-slate-100">
+            <div>
+              <h2 class="font-display text-lg font-bold text-slate-900">Team Standings</h2>
+              <p class="text-xs text-slate-500">Calculated from published official results</p>
             </div>
-            <p class="text-center text-xs text-slate-400 mt-2"><i class="fas fa-arrow-right"></i> Use the arrows or swipe for more • Select an image to enlarge</p>
-        </section>
+            <a href="results.html?tab=team" class="text-xs font-semibold text-blue-700 hover:underline whitespace-nowrap">Full breakdown</a>
+          </div>
+          <div id="home-team-standings" class="mt-4 space-y-3">
+            <p class="py-6 text-center text-sm text-slate-400">Standings will appear as results are published.</p>
+          </div>
+        </div>
 
+        <!-- Latest Published Results -->
+        <div id="section-latest-results" class="lg:col-span-7 rounded-xl border border-slate-200 bg-white p-6">
+          <div class="flex items-center justify-between gap-2 pb-4 border-b border-slate-100">
+            <div>
+              <h2 class="font-display text-lg font-bold text-slate-900">Latest Published Results</h2>
+              <p class="text-xs text-slate-500">Verified winners across recently concluded events</p>
+            </div>
+            <a href="results.html" class="text-xs font-semibold text-blue-700 hover:underline whitespace-nowrap">All results</a>
+          </div>
+          <div id="home-latest-results" class="mt-4 divide-y divide-slate-100">
+            <p class="py-6 text-center text-sm text-slate-400">No published results yet.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Paginated Public Schedule -->
+    <section id="schedule" data-landing-section="schedule" class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+      <div class="rounded-xl border border-slate-200 bg-white p-6">
+        <div class="flex flex-col gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="font-display text-lg font-bold text-slate-900">Program Schedule</h2>
+            <p class="text-xs text-slate-500">Upcoming and completed stage programs</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" data-schedule-view="upcoming" class="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white whitespace-nowrap">Upcoming</button>
+            <button type="button" data-schedule-view="previous" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 whitespace-nowrap">Completed</button>
+            <select id="schedule-filter-category" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700">
+              <option value="">All Categories</option>
+            </select>
+            <select id="schedule-filter-stage" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700">
+              <option value="">All Stages</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="public-schedule-list" class="mt-4 divide-y divide-slate-100">
+          <p class="py-8 text-center text-sm text-slate-400">No scheduled events published yet.</p>
+        </div>
+
+        <div id="public-schedule-pagination" class="mt-4 hidden items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500">
+          <span id="public-schedule-page-info"></span>
+          <div class="flex items-center gap-2">
+            <button id="schedule-prev-btn" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50">Previous</button>
+            <button id="schedule-next-btn" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50">Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- About & Team Leaders -->
+    <section id="about" data-landing-section="about" class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+      <div class="grid gap-6 lg:grid-cols-12">
+        <div class="lg:col-span-5 rounded-xl border border-slate-200 bg-white p-6">
+          <span class="text-xs font-semibold uppercase tracking-wider text-blue-700">About the Festival</span>
+          <h2 id="about-subtitle" class="mt-2 font-display text-xl font-bold text-slate-900">Festival Information</h2>
+          <p id="about-text" class="mt-3 text-sm leading-relaxed text-slate-600">Festival details will appear here after the administrator completes setup.</p>
+        </div>
+
+        <div id="leaders" data-landing-section="leaders" class="lg:col-span-7 rounded-xl border border-slate-200 bg-white p-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div>
+              <h2 class="font-display text-lg font-bold text-slate-900">Team Leaders</h2>
+              <p class="text-xs text-slate-500">Institutional team coordinators</p>
+            </div>
+          </div>
+          <div id="home-leaders-grid" class="mt-4 grid gap-3 sm:grid-cols-2">
+            <p class="col-span-full py-6 text-center text-sm text-slate-400">Team leader profiles will appear here once added.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" data-landing-section="gallery" class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+      <div class="rounded-xl border border-slate-200 bg-white p-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div>
+            <h2 class="font-display text-lg font-bold text-slate-900">Festival Gallery</h2>
+            <p class="text-xs text-slate-500">Moments from the festival grounds</p>
+          </div>
+        </div>
+        <div id="home-gallery-grid" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <p class="col-span-full py-6 text-center text-sm text-slate-400">Gallery has not been published yet.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Gallery Lightbox -->
+  <div id="gallery-lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/90 p-4">
+    <button id="gallery-close" type="button" aria-label="Close" class="absolute right-4 top-4 rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20">Close</button>
+    <button id="gallery-prev" type="button" aria-label="Previous image" class="absolute left-3 top-1/2 -translate-y-1/2 rounded-lg bg-white/10 p-3 text-white hover:bg-white/20"><i data-lucide="chevron-left" class="h-5 w-5"></i></button>
+    <img id="gallery-lightbox-img" class="max-h-[85vh] max-w-full rounded-lg object-contain" alt="Gallery preview" referrerpolicy="no-referrer">
+    <button id="gallery-next" type="button" aria-label="Next image" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-white/10 p-3 text-white hover:bg-white/20"><i data-lucide="chevron-right" class="h-5 w-5"></i></button>
+  </div>
+
+  <!-- Quiet Footer -->
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:px-6 lg:px-8">
+      <div>
+        &copy; <span data-current-year></span> <span id="footer-fest-name" class="font-semibold text-slate-700">Fest Management</span>.
+        <span id="footer-subtext"></span>
+        <a href="https://www.instagram.com/muhammed_sanjide_p" target="_blank" rel="noopener noreferrer" class="ml-1 text-slate-500 hover:text-slate-800 hover:underline">Powered by hadi mahiri faizy</a>
+      </div>
+      <div id="social-links" class="flex items-center gap-4 text-base text-slate-500"></div>
     </div>
+  </footer>
 
-    <div id="gallery-lightbox" class="gallery-lightbox hidden" role="dialog" aria-modal="true" aria-label="Gallery image viewer">
-        <div class="gallery-lightbox-panel">
-            <div id="gallery-lightbox-media" class="gallery-lightbox-media">
-                <button type="button" id="gallery-lightbox-close" class="gallery-lightbox-close" aria-label="Close image viewer">×</button>
-                <button type="button" class="gallery-lightbox-arrow" data-lightbox-direction="-1" aria-label="Previous image">←</button>
-                <img id="gallery-lightbox-image" class="gallery-lightbox-image" alt="">
-                <button type="button" class="gallery-lightbox-arrow" data-lightbox-direction="1" aria-label="Next image">→</button>
-                <span id="gallery-lightbox-count" class="gallery-lightbox-count" aria-live="polite"></span>
-            </div>
-        </div>
-    </div>
+  <script type="module">
+    import { db, isFirebaseConfigured } from './firebase-config.js';
+    import { collection, query, where } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+    import { cachedGetDoc, cachedGetDocs, invalidateCache } from './data-cache.js';
+    import { normalizeBranding, brandingName, readCachedBranding, cacheBranding, clearBrandingCache, applyLogo, currentYear } from './branding-config.js';
+    import { normalizeFestSetup, eventContributesToTeamScore, teamColor, readableTextColor } from './fest-config.js';
+    import { normalizeResultData } from './admin-utils.js';
+    import { buildTeamScoreLedger } from './score-utils.js';
 
-    <footer id="landing-footer">
-        <div id="landing-social" class="follow">
-            <h4>FOLLOW US</h4>
-            <div class="socials" id="social-links">
-                <div class="flex gap-2 justify-center opacity-50"><div class="w-8 h-8 bg-slate-200 rounded-full"></div><div class="w-8 h-8 bg-slate-200 rounded-full"></div></div>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; <span data-current-year></span> <span id="footer-fest-name">Fest Name</span> media team. All Rights Reserved.<br><a href="https://www.instagram.com/muhammed_sanjide_p" target="_blank" rel="noopener noreferrer">Powered by hadi mahiri faizy</a>
-        </div>
-    </footer>
+    const $ = (id) => document.getElementById(id);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-    <script type="module">
-        import { db, auth } from './firebase-config.js';
-        import { eventContributesToTeamScore, normalizeFestSetup, scheduleEnabled } from './fest-config.js';
-        import { normalizeBranding, brandingName, cacheBranding, clearBrandingCache, currentYear, applyBase64Image } from './branding-config.js';
-        import { collection, onSnapshot, doc, getDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    let homeConfig = {};
+    let generalConfig = {};
+    let publicConfig = {};
+    let publicSummary = {};
+    let festSetup = normalizeFestSetup();
+    let events = [];
+    let scheduleBreaks = [];
+    let publishedResults = [];
+    let judgingStatuses = [];
+    let teamLeaders = [];
+    let galleryImages = [];
+    let galleryIndex = 0;
+    let publicScheduleView = 'upcoming';
+    let publicSchedulePage = 1;
+    const PAGE_SIZE = 5;
 
-        let students = [], participants = [], registrations = [], results = [], teams = [], events = [], categories = [], teamLeaders = [], scheduleBreaks = [], publicJudgingStatuses = [], publicSchedulePage = 1, publicScheduleView = 'upcoming', festSetup = normalizeFestSetup();
-        const hasPublicScheduleData=()=>festSetup.scheduleMode==='basic'?events.some(event=>event.scheduleOrder!==undefined&&event.scheduleOrder!==null&&Number.isFinite(Number(event.scheduleOrder))):events.some(event=>event.scheduleDate&&event.time&&(event.scheduleStage||event.stage))||scheduleBreaks.some(item=>item.active!==false&&item.date&&item.startTime);
-        const publicModuleEnabled = key => festSetup.publicModules?.[key] === true;
-        const landingEnabled = (scope, key) => festSetup.publicView?.landing?.[scope]?.[key] !== false;
-        const publicEsc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        const safeExternalUrl=value=>{try{const url=new URL(String(value||''),window.location.href);return ['http:','https:'].includes(url.protocol)?url.href:'';}catch{return'';}};
-        const renderCustomLandingButtons=()=>{const links=Array.isArray(festSetup.publicView?.landing?.customLinks)?festSetup.publicView.landing.customLinks:[],menu=document.querySelector('#dropdownMenu > div'),quick=document.getElementById('landing-secondary-quick-buttons');document.querySelectorAll('[data-custom-landing-link]').forEach(node=>node.remove());links.forEach((link,index)=>{const url=safeExternalUrl(link.url),label=String(link.label||'').trim();if(!url||!label)return;const icon=link.icon?`<img src="${publicEsc(link.icon)}" class="w-4 h-4 rounded object-cover" alt="">`:'<i data-lucide="link" class="w-4 h-4 text-cyan-500"></i>';const menuIcon=link.icon?`<img src="${publicEsc(link.icon)}" alt="" style="width:18px;height:18px;border-radius:5px;object-fit:cover;">`:'<i data-lucide="link"></i>';quick?.insertAdjacentHTML('beforeend',`<a href="${publicEsc(url)}" target="_blank" rel="noopener noreferrer" data-custom-landing-link="quick-${index}" class="quick-nav-btn">${icon} ${publicEsc(label)}</a>`);menu?.insertAdjacentHTML('beforeend',`<a href="${publicEsc(url)}" target="_blank" rel="noopener noreferrer" data-custom-landing-link="menu-${index}" class="nav-link">${menuIcon} ${publicEsc(label)}</a>`);});};
-        const LANDING_MODULE_KEYS = { results:'results', about:'about', leaders:'leaders', gallery:'gallery', schedule:'schedule', registration:'registration', login:'login', teamStandings:'teamStandings' };
-        const landingSectionControlsPlacement = key => Object.prototype.hasOwnProperty.call(festSetup.publicView?.landing?.sections || {}, key);
-        const landingPlacementVisible = (scope, key) => (!LANDING_MODULE_KEYS[key] || publicModuleEnabled(LANDING_MODULE_KEYS[key]))
-            && landingEnabled(scope, key)
-            && (scope === 'sections' || !landingSectionControlsPlacement(key) || landingEnabled('sections', key));
-        const applyLandingOrder = (scope, selector, container) => {
-            const host = typeof container === 'string' ? document.querySelector(container) : container;
-            if (!host) return;
-            const elements = new Map([...host.querySelectorAll(selector)].map(element => [element.dataset.landingSection || element.dataset.landingMenuItem || element.dataset.landingQuickItem, element]));
-            (festSetup.publicView?.landing?.orders?.[scope] || []).forEach(key => { const element=elements.get(key); if(element) host.append(element); });
-        };
-        const applyFestCapabilities = () => {
-            document.querySelectorAll('[data-landing-menu-item]').forEach(element => { const key=element.dataset.landingMenuItem; if(key !== 'home') element.classList.toggle('hidden', !landingPlacementVisible('menu', key)); });
-            document.querySelectorAll('[data-landing-quick-item]').forEach(element => element.classList.toggle('hidden', !landingPlacementVisible('quickButtons', element.dataset.landingQuickItem)));
-            document.querySelectorAll('[data-landing-section]').forEach(element => element.classList.toggle('hidden', !landingPlacementVisible('sections', element.dataset.landingSection)));
-            document.getElementById('team-score-btn')?.classList.toggle('hidden', !publicModuleEnabled('teamStandings') || !landingEnabled('sections','teamStandings'));
-            document.getElementById('landing-social')?.classList.toggle('hidden', !landingEnabled('sections','social'));
-            document.querySelector('#landing-footer .footer-bottom')?.classList.toggle('hidden', !landingEnabled('sections','footer'));
-            applyLandingOrder('sections','[data-landing-section]','#landing-sections');
-            applyLandingOrder('menu','[data-landing-menu-item]',document.querySelector('#dropdownMenu > div'));
-            applyLandingOrder('quickButtons','[data-landing-quick-item]:not([data-landing-quick-item="results"])','#landing-secondary-quick-buttons');
-            renderCustomLandingButtons();
-            initIcons();
-        };
-        let teamScores = {}, teamColors = {}, teamDisplayNames = {}, categoryDisplayNames = {};
-        const teamLabel=value=>String(teamDisplayNames?.[value]||value||'');
-        const categoryLabel=value=>value==='General'?'General':String(categoryDisplayNames?.[value]||value||'');
-        let homeConfig = {}, publicConfig = {};
-        let iconsCreated = false;
-        let isSplashDone = false;
+    document.querySelectorAll('[data-current-year]').forEach((el) => (el.textContent = currentYear()));
+    $('mobile-nav-toggle')?.addEventListener('click', () => {
+      $('mobile-nav-drawer')?.classList.toggle('hidden');
+    });
 
-        const debounce = (func, wait) => {
-            let timeout;
-            return (...args) => {
-                const context = this;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), wait);
-            };
-        };
+    function applyBrandingUI(config) {
+      const branding = normalizeBranding(config);
+      const name = brandingName(branding);
+      $('header-fest-name').textContent = name;
+      $('hero-title').textContent = name;
+      $('hero-tagline').textContent = branding.tagline;
+      $('about-subtitle').textContent = branding.aboutSubtitle;
+      $('about-text').textContent = branding.aboutText;
+      $('footer-fest-name').textContent = name;
+      $('footer-subtext').textContent = branding.footerText ? ` ${branding.footerText} •` : '';
+      document.title = `${name} — Festival Home`;
+      applyLogo($('header-logo'), $('header-logo-fallback'), branding);
+      applyLogo($('hero-logo'), $('hero-logo-fallback'), branding);
 
-        try {
-            const cached = localStorage.getItem('fest_home_config');
-            if(cached) {
-                homeConfig = JSON.parse(cached);
-                const loaderImg = document.getElementById('loader-img-tag');
-                if(homeConfig.logoUrl && loaderImg) {
-                    loaderImg.src = homeConfig.logoUrl;
-                    loaderImg.classList.add('loaded');
-                }
-            }
-        } catch(e) {}
+      const social = branding.social || {};
+      const links = [
+        ['wa', 'fab fa-whatsapp', 'WhatsApp'],
+        ['ig', 'fab fa-instagram', 'Instagram'],
+        ['fb', 'fab fa-facebook', 'Facebook'],
+        ['yt', 'fab fa-youtube', 'YouTube'],
+        ['tg', 'fab fa-telegram', 'Telegram']
+      ].filter(([k]) => social[k]).map(([k, cls, label]) => `<a href="${esc(social[k])}" target="_blank" rel="noopener noreferrer" aria-label="${label}" class="hover:text-slate-900"><i class="${cls}"></i></a>`).join('');
+      $('social-links').innerHTML = links;
+    }
 
-        window.toggleMenu = () => {
-            document.querySelector('.menu-btn').classList.toggle('active');
-            document.getElementById('dropdownMenu').classList.toggle('open');
-            document.getElementById('menuOverlay').classList.toggle('active');
-        };
-        window.closeMenu = () => {
-            document.querySelector('.menu-btn').classList.remove('active');
-            document.getElementById('dropdownMenu').classList.remove('open');
-            document.getElementById('menuOverlay').classList.remove('active');
-        }
+    function applyVisibility() {
+      const modules = festSetup.publicModules || {};
+      document.querySelectorAll('[data-public-module]').forEach((el) => {
+        const mod = el.dataset.publicModule;
+        el.classList.toggle('hidden', modules[mod] === false);
+      });
+      const sections = festSetup.publicView?.landing?.sections || {};
+      $('schedule')?.classList.toggle('hidden', modules.schedule === false || sections.schedule === false);
+      $('about')?.classList.toggle('hidden', modules.about === false || sections.about === false);
+      $('leaders')?.classList.toggle('hidden', modules.leaders === false || sections.leaders === false);
+      $('gallery')?.classList.toggle('hidden', modules.gallery === false || sections.gallery === false);
+      $('section-team-standings')?.classList.toggle('hidden', modules.teamStandings === false || sections.teamStandings === false);
 
+      const custom = festSetup.publicView?.landing?.customLinks || [];
+      const customWrap = $('custom-landing-links');
+      if (custom.length) {
+        customWrap.innerHTML = custom.map((item) => `<a href="${esc(item.url)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">${esc(item.label)}</a>`).join('');
+        customWrap.classList.remove('hidden');
+        customWrap.classList.add('flex');
+      } else {
+        customWrap.classList.add('hidden');
+      }
+    }
 
-        const timeToMinutes = (value = '') => {
-            const raw = String(value || '').trim();
-            if(!raw) return 99999;
-            const match = raw.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
-            if(!match) return 99999;
-            let hours = Number(match[1]);
-            const minutes = Number(match[2]);
-            const meridian = (match[3] || '').toUpperCase();
-            if(meridian === 'PM' && hours < 12) hours += 12;
-            if(meridian === 'AM' && hours === 12) hours = 0;
-            return hours * 60 + minutes;
-        };
-        const toAmPm = (value = '') => {
-            const raw = String(value || '').trim();
-            if(!raw) return '';
-            if(/AM|PM/i.test(raw)) return raw.replace(/\s*(am|pm)$/i, m => m.toUpperCase());
-            const match = raw.match(/^(\d{1,2}):(\d{2})$/);
-            if(!match) return raw;
-            let hours = Number(match[1]);
-            const meridian = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12 || 12;
-            return `${hours}:${match[2]} ${meridian}`;
-        };
-        const scheduleDateDisplay = (date = '') => {
-            const [y,m,d] = String(date || '').split('-');
-            return y && m && d ? `${d}/${m}/${y}` : (date || 'No date');
-        };
-        const scheduleGenderText = (gender = '') => String(gender || 'Both').toLowerCase() === 'boys' ? 'Boys' : (String(gender || '').toLowerCase() === 'girls' ? 'Girls' : 'Boys and Girls');
-        const scheduleSortKey = (row) => `${row.date || '9999-12-31'} ${String(timeToMinutes(row.sortTime)).padStart(5,'0')}`;
-        const scheduleEndDateTime = row => {
-            if(!row || festSetup.scheduleMode==='basic') return null;
-            const start = scheduleDateTime(row.date, row.sortTime);
-            if(!start) return null;
-            if(row.endTime) { const explicit = scheduleDateTime(row.date, row.endTime); if(explicit && explicit > start) return explicit; }
-            const duration = Math.max(0, Number(row.duration || 0));
-            return duration ? new Date(start.getTime() + duration * 60000) : start;
-        };
-        const scheduleStatusInfo = (row, now = new Date()) => {
-            if(row.type==='break') {
-                const start = scheduleDateTime(row.date, row.sortTime), end = scheduleEndDateTime(row);
-                if(end && now >= end) return {key:'completed',label:'Break completed',className:'bg-slate-700 text-white'};
-                if(start && now >= start && (!end || now < end)) return {key:'running',label:'Break running',className:'bg-amber-200 text-amber-900'};
-                return {key:'upcoming',label:'Upcoming break',className:'bg-amber-100 text-amber-800'};
-            }
-            if(festSetup.scheduleMode==='basic') return row.judged ? {key:'completed',label:'Program completed',className:'bg-slate-700 text-white'} : {key:'upcoming',label:'Upcoming',className:'bg-emerald-100 text-emerald-700'};
-            const start = scheduleDateTime(row.date, row.sortTime), end = scheduleEndDateTime(row);
-            if(row.judged || (end && now >= end)) return {key:'completed',label:'Program completed',className:'bg-slate-700 text-white'};
-            if(start && now >= start && (!end || now < end)) return {key:'running',label:'Running now',className:'bg-orange-100 text-orange-700'};
-            return {key:'upcoming',label:'Upcoming',className:'bg-emerald-100 text-emerald-700'};
-        };
-        const scheduleDateTime = (date, time) => {
-            const minutes = timeToMinutes(time);
-            if(!date || minutes >= 99999) return null;
-            const [y,m,d] = String(date).split('-').map(Number);
-            if(!y || !m || !d) return null;
-            return new Date(y, m - 1, d, Math.floor(minutes / 60), minutes % 60, 0, 0);
-        };
-        const formatCountdown = (target, now = new Date()) => {
-            if(!target) return 'NEXT';
-            const diff = Math.max(0, target - now);
-            const totalSeconds = Math.floor(diff / 1000);
-            const days = Math.floor(totalSeconds / 86400);
-            const hours = Math.floor((totalSeconds % 86400) / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            return `${days ? `${days}d ` : ''}${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-        };
-        const scheduleRows = () => festSetup.scheduleMode==='basic' ? events.filter(e=>e.cancelled!==true).slice().sort((a,b)=>Number(a.scheduleOrder||9999)-Number(b.scheduleOrder||9999)).map(e=>({type:'program',id:e.id,date:'Program Order',time:`#${e.scheduleOrder||'-'}`,sortTime:String(e.scheduleOrder||9999),category:e.category||'General',title:e.name||'',gender:e.gender||'Both',stage:'',judged:publicJudgingStatuses.some(item=>item.eventId===e.id&&item.status==='submitted')})) : [
-            ...events.filter(e => e.scheduleDate && e.time && e.cancelled!==true).map(e => ({ type:'program', id:e.id, date:e.scheduleDate, time:toAmPm(e.time), sortTime:e.time, endTime:e.scheduleEndTime || e.endTime || '', duration:Number(e.scheduleDuration || e.duration || 0), category:e.category || 'General', title:e.name || '', gender:e.gender || 'Both', stage:e.scheduleStage || e.stageNo || e.stageNumber || '', judged:publicJudgingStatuses.some(item=>item.eventId===e.id&&item.status==='submitted') })),
-            ...scheduleBreaks.filter(b => b.active !== false).map(b => ({ type:'break', id:b.id, date:b.date || '', time:`${toAmPm(b.startTime || '')}${b.endTime ? ` - ${toAmPm(b.endTime)}` : ''}`, sortTime:b.startTime || '', endTime:b.endTime || '', category:b.category || 'General', title:b.title || 'Break', gender:'-', stage:Array.isArray(b.stages)&&b.stages.length?b.stages.join(', '):(b.stage || 'All Stages') }))
-        ].sort((a,b) => scheduleSortKey(a).localeCompare(scheduleSortKey(b)));
-        const getNextScheduleProgram = (rows, now = new Date()) => {
-            if(festSetup.scheduleMode==='basic'){const program=rows.find(row=>row.type==='program'&&!row.judged);return program?{program,activeBreak:null,target:null}:null;}
-            const activeBreak = rows.find(r => r.type === 'break' && scheduleDateTime(r.date, r.sortTime) && scheduleDateTime(r.date, r.endTime) && now >= scheduleDateTime(r.date, r.sortTime) && now < scheduleDateTime(r.date, r.endTime));
-            const after = activeBreak?.endTime ? scheduleDateTime(activeBreak.date, activeBreak.endTime) : now;
-            const nextProgram = rows.find(r => r.type === 'program' && scheduleStatusInfo(r, now).key==='upcoming' && scheduleDateTime(r.date, r.sortTime) && scheduleDateTime(r.date, r.sortTime) >= after);
-            return nextProgram ? { program: nextProgram, activeBreak, target: scheduleDateTime(nextProgram.date, nextProgram.sortTime) } : null;
-        };
-        let nextCardRenderKey = '', nextCardObserver = null, nextImageTimer = null, nextImageIndex = 0, nextCardVisible = true, nextVideoFailed = false;
-        const nextMediaCommand = command => {
-            const video=document.querySelector('#public-upcoming-schedule [data-next-direct-video]');
-            if(video) { if(command==='play') video.play().catch(()=>{}); else video.pause(); }
-            const youtube=document.querySelector('#public-upcoming-schedule [data-next-youtube]');
-            youtube?.contentWindow?.postMessage(JSON.stringify({event:'command',func:command==='play'?'playVideo':'pauseVideo',args:[]}), 'https://www.youtube.com');
-        };
-        const stopNextImageSlideshow = () => { if(nextImageTimer) clearInterval(nextImageTimer); nextImageTimer=null; };
-        const startNextImageSlideshow = () => {
-            stopNextImageSlideshow();
-            const root=document.getElementById('public-upcoming-schedule'),images=[...(root?.querySelectorAll('[data-next-image]')||[])];
-            if(images.length<2 || root?.querySelector('[data-next-video]') && !nextVideoFailed) return;
-            const seconds=Math.max(2,Number(root?.dataset.imageInterval||2));
-            nextImageTimer=setInterval(()=>{if(!nextCardVisible||document.hidden)return;nextImageIndex=(nextImageIndex+1)%images.length;images.forEach((image,index)=>image.classList.toggle('opacity-100',index===nextImageIndex));images.forEach((image,index)=>image.classList.toggle('opacity-0',index!==nextImageIndex));},seconds*1000);
-        };
-        const updateNextMediaPlayback = () => {
-            const shouldPlay=nextCardVisible&&!document.hidden;
-            nextMediaCommand(shouldPlay?'play':'pause');
-            if(shouldPlay) startNextImageSlideshow(); else stopNextImageSlideshow();
-        };
-        document.addEventListener('visibilitychange', updateNextMediaPlayback);
-        const setupNextMedia = root => {
-            nextCardObserver?.disconnect();stopNextImageSlideshow();nextImageIndex=0;nextVideoFailed=false;nextCardVisible=true;
-            root.querySelectorAll('[data-next-image]').forEach(image=>image.addEventListener('error',()=>{image.remove();const remaining=[...root.querySelectorAll('[data-next-image]')];nextImageIndex=0;remaining.forEach((item,index)=>{item.classList.toggle('opacity-100',index===0);item.classList.toggle('opacity-0',index!==0);});startNextImageSlideshow();},{once:true}));
-            const directVideo=root.querySelector('[data-next-direct-video]');
-            if(directVideo) directVideo.addEventListener('error',()=>{nextVideoFailed=true;directVideo.classList.add('hidden');startNextImageSlideshow();},{once:true});
-            nextCardObserver=new IntersectionObserver(entries=>{nextCardVisible=entries[0]?.isIntersecting&&entries[0].intersectionRatio>=.2;updateNextMediaPlayback();},{threshold:[0,.2,.5]});
-            nextCardObserver.observe(root);updateNextMediaPlayback();
-        };
-        const renderNextScheduleCard = (targetId, rows) => {
-            const info = getNextScheduleProgram(rows), el = document.getElementById(targetId);
-            if(!el) return;
-            const cardConfig=publicConfig.nextProgramCard||{},configuredImages=Array.isArray(cardConfig.backgroundImages)?cardConfig.backgroundImages:[],rawImages=[...configuredImages,cardConfig.backgroundImageUrl].map(item=>String(item||'').trim()).filter((item,index,array)=>item&&array.indexOf(item)===index),videoUrl=String(cardConfig.backgroundVideoUrl||'').trim(),textColor=cardConfig.textColor||'#ffffff',imageInterval=Math.max(2,Number(cardConfig.imageIntervalSeconds||2));
-            const renderKey=JSON.stringify({program:info?.program?{id:info.program.id,title:info.program.title,gender:info.program.gender,stage:info.program.stage,time:info.program.time}:null,break:info?.activeBreak?.id||'',target:info?.target?.getTime?.()||0,images:rawImages,videoUrl,textColor,imageInterval,logo:homeConfig.logoUrl||''});
-            if(renderKey===nextCardRenderKey){const countdownEl=el.querySelector('[data-next-countdown]');if(countdownEl&&info)countdownEl.textContent=formatCountdown(info.target);return;}
-            nextCardRenderKey=renderKey;nextCardObserver?.disconnect();stopNextImageSlideshow();
-            if(!info) { el.dataset.imageInterval=String(imageInterval);el.innerHTML = `<div class="rounded-[2rem] bg-gradient-to-br from-emerald-600 via-emerald-500 to-indigo-600 p-5 text-center text-white shadow-2xl shadow-emerald-900/20">${homeConfig.logoUrl?`<img src="${homeConfig.logoUrl}" class="mx-auto h-14 w-14 rounded-2xl border border-white/30 bg-white/15 object-cover p-1" alt="Fest logo">`:''}<p class="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-white/75">Next Program</p><h3 class="mt-2 text-lg font-black">No upcoming program is scheduled.</h3><p class="mt-1 text-xs font-bold text-white/75">The schedule will update automatically when the next program is available.</p></div>`; return; }
-            const { program, activeBreak, target } = info, countdown=formatCountdown(target), label=activeBreak?'After Break':'Next Program';
-            const attr=value=>String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            const driveFileId=value=>{try{const url=new URL(value);if(url.hostname!=='drive.google.com')return '';return url.pathname.match(/\/d\/([^/]+)/)?.[1]||url.searchParams.get('id')||'';}catch{return '';}};
-            const imageUrls=rawImages.filter(value=>/^data:image\/(jpeg|png|webp|gif);base64,/i.test(value)||/^https?:\/\//i.test(value));
-            const youtubeId=value=>{try{const url=new URL(value),host=url.hostname.replace(/^www\./,'');if(host==='youtu.be')return url.pathname.split('/').filter(Boolean)[0]||'';if(host.endsWith('youtube.com')){const parts=url.pathname.split('/').filter(Boolean);return url.searchParams.get('v')||(['embed','shorts'].includes(parts[0])?parts[1]:'');}}catch{}return '';};
-            const youtube=youtubeId(videoUrl),driveVideoId=driveFileId(videoUrl),youtubeUrl=youtube?`https://www.youtube.com/embed/${youtube}?enablejsapi=1&autoplay=1&mute=1&loop=1&playlist=${youtube}&controls=0&playsinline=1&rel=0`:'';
-            const imageMedia=imageUrls.map((url,index)=>`<img data-next-image src="${attr(url)}" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${index===0?'opacity-100':'opacity-0'}">`).join('');
-            const poster=imageUrls[0]||'',directVideoUrl=driveVideoId?`https://drive.google.com/uc?export=download&id=${driveVideoId}`:videoUrl;
-            const videoMedia=youtubeUrl?`<iframe data-next-video data-next-youtube class="pointer-events-none absolute inset-0 h-full w-full scale-110 border-0" src="${attr(youtubeUrl)}" title="Next program background video" allow="autoplay; encrypted-media" tabindex="-1"></iframe>`:(directVideoUrl?`<video data-next-video data-next-direct-video class="absolute inset-0 h-full w-full object-cover" src="${attr(directVideoUrl)}" autoplay muted loop playsinline preload="metadata" poster="${attr(poster)}" aria-hidden="true"></video>`:'');
-            const media=`${imageMedia}${videoMedia}<div class="absolute inset-0 bg-slate-950/55"></div>`;
-            el.dataset.imageInterval=String(imageInterval);
-            el.innerHTML=`<div class="relative overflow-hidden rounded-[2rem] ${imageUrls.length||videoUrl?'bg-slate-900':'bg-gradient-to-br from-emerald-600 via-emerald-500 to-indigo-600'} p-5 shadow-2xl shadow-emerald-900/20" style="color:${textColor}">${media}<div class="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div class="flex min-w-0 items-start gap-3">${homeConfig.logoUrl?`<img src="${homeConfig.logoUrl}" class="h-14 w-14 shrink-0 rounded-2xl border border-white/30 bg-white/15 object-cover p-1" alt="Fest logo">`:''}<div class="min-w-0"><p class="text-[10px] font-black uppercase tracking-[0.3em]" style="color:inherit;opacity:.78">${label}</p><h3 class="mt-2 text-xl font-black leading-tight">${program.title}</h3><div class="mt-2 flex flex-wrap gap-2"><span class="inline-flex rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[10px] font-black uppercase">${scheduleGenderText(program.gender)}</span><span class="inline-flex rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[10px] font-black uppercase">${program.category}</span></div><p class="mt-2 text-xs font-bold" style="color:inherit;opacity:.85">${scheduleDateDisplay(program.date)} • ${program.time} • ${program.stage||'Stage TBD'}</p></div></div><div class="rounded-2xl border border-white/25 bg-black/15 px-5 py-4 text-center backdrop-blur"><p class="text-[10px] font-black uppercase tracking-widest" style="color:inherit;opacity:.72">Starts in</p><div data-next-countdown class="mt-1 font-mono text-2xl font-black">${countdown}</div></div></div></div>`;
-            setupNextMedia(el);
-        };
-        window.renderPublicSchedule = (resetPage = false) => {
-            if(resetPage) { publicSchedulePage = 1; publicScheduleView = 'upcoming'; }
-            const rows = scheduleRows();
-            const dateSel = document.getElementById('public-schedule-date');
-            const catSel = document.getElementById('public-schedule-category');
-            if(dateSel && !dateSel.dataset.ready) { dateSel.innerHTML = '<option value="">All Dates</option>' + [...new Set(rows.map(r=>r.date).filter(Boolean))].map(d=>`<option value="${d}">${scheduleDateDisplay(d)}</option>`).join(''); dateSel.dataset.ready = '1'; }
-            if(catSel && !catSel.dataset.ready) { catSel.innerHTML = '<option value="">All Categories</option>' + [...new Set(rows.map(r=>r.category).filter(Boolean))].map(c=>`<option value="${c}">${c}</option>`).join(''); catSel.dataset.ready = '1'; }
-            const date = dateSel?.value || '';
-            const cat = catSel?.value || '';
-            const search = (document.getElementById('public-schedule-search')?.value || '').toLowerCase().trim();
-            const matching = rows.filter(r => (!date || r.date === date) && (!cat || r.category === cat) && (!search || `${r.title} ${r.category} ${r.stage}`.toLowerCase().includes(search)));
-            const now = new Date();
-            const previousRows = matching.filter(r => scheduleStatusInfo(r, now).key==='completed').reverse();
-            const upcomingRows = matching.filter(r => scheduleStatusInfo(r, now).key!=='completed');
-            const filtered = publicScheduleView === 'previous' ? previousRows : upcomingRows;
-            renderNextScheduleCard('public-upcoming-schedule', rows);
-            const pageSize = 5, pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-            publicSchedulePage = Math.min(Math.max(1, publicSchedulePage), pageCount);
-            const paged = filtered.slice((publicSchedulePage - 1) * pageSize, publicSchedulePage * pageSize);
-            const groups = paged.reduce((acc,r)=>{ (acc[r.date || 'No date'] ||= []).push(r); return acc; }, {});
-            const list = document.getElementById('public-schedule-list');
-            if(!list) return;
-            list.innerHTML = Object.entries(groups).map(([date, items]) => `<div class="space-y-3"><div class="flex items-center justify-between px-1"><h3 class="text-sm font-black text-slate-900">${scheduleDateDisplay(date)}</h3><span class="text-[10px] font-black uppercase text-emerald-600">Program Plan</span></div>${items.map(r => { const status=scheduleStatusInfo(r, now); return r.type === 'break' ? `<article class="rounded-2xl border ${status.key==='completed'?'border-slate-200 bg-slate-50/80':'border-amber-200 bg-amber-50'} p-4 shadow-sm"><div class="flex items-start justify-between gap-3"><div><div class="flex flex-wrap gap-2"><span class="rounded-full bg-amber-200 px-3 py-1 text-[9px] font-black uppercase text-amber-800">Break</span><span class="rounded-full px-3 py-1 text-[9px] font-black uppercase ${status.className}">${status.label}</span>${status.key==='completed'?'<span class="sr-only">Previous</span>':''}</div><h4 class="mt-2 font-black text-slate-900">${r.title}</h4><p class="mt-1 text-xs font-bold text-amber-800">${r.time}</p></div><span class="rounded-xl border border-amber-200 bg-white px-3 py-2 text-[10px] font-black text-slate-600">${r.stage || 'All Stages'}</span></div></article>` : `<article class="rounded-2xl border ${status.key==='completed'?'border-slate-200 bg-slate-50/80':status.key==='running'?'border-orange-200 bg-orange-50/80':'border-emerald-100 bg-white'} p-4 shadow-sm"><div class="space-y-3"><div class="min-w-0"><div class="flex flex-wrap items-start gap-2"><h4 class="min-w-0 flex-1 break-words font-black leading-snug text-slate-900">${r.title}</h4><span class="shrink-0 rounded-full px-2 py-1 text-[8px] font-black uppercase ${status.className}">${status.label}</span>${status.key==='completed'?'<span class="sr-only">Previous</span>':''}</div><div class="mt-2 flex flex-wrap gap-2"><span class="rounded-full bg-pink-50 px-3 py-1 text-[9px] font-black uppercase text-pink-700">${scheduleGenderText(r.gender)}</span><span class="rounded-full bg-slate-100 px-3 py-1 text-[9px] font-black uppercase text-slate-600">${r.category}</span></div></div><div class="grid grid-cols-2 gap-3"><div class="rounded-2xl border-2 border-violet-200 bg-violet-50 px-4 py-3 text-left"><p class="text-[8px] font-black uppercase tracking-widest text-violet-400">Stage</p><p class="mt-1 break-words text-sm font-black text-violet-800">${r.stage || 'Stage TBD'}</p></div><div class="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-right"><p class="text-[8px] font-black uppercase tracking-widest text-indigo-400">Starts</p><p class="mt-1 whitespace-nowrap text-base font-black text-indigo-700">${r.time}</p></div></div></div></article>`; }).join('')}</div>`).join('') || '<div class="text-center text-slate-400 font-bold py-10">Schedule not published yet.</div>';
-            const pagination = document.getElementById('public-schedule-pagination');
-            const canGoPrevious = publicScheduleView === 'upcoming' ? (publicSchedulePage > 1 || previousRows.length > 0) : publicSchedulePage < pageCount;
-            const canGoNext = publicScheduleView === 'previous' || publicSchedulePage < pageCount;
-            pagination.classList.toggle('hidden', !canGoPrevious && !canGoNext); pagination.classList.toggle('flex', canGoPrevious || canGoNext);
-            pagination.innerHTML = `<button onclick="changePublicSchedulePage(-1)" ${canGoPrevious?'':'disabled'} class="rounded-xl border bg-white px-4 py-2 text-xs font-black disabled:opacity-40">Previous</button><span class="text-center text-xs font-black text-slate-500">${publicScheduleView === 'previous' ? 'Previous programs' : 'Upcoming programs'} • ${publicSchedulePage} / ${pageCount} • ${filtered.length} items</span><button onclick="changePublicSchedulePage(1)" ${canGoNext?'':'disabled'} class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white disabled:opacity-40">Next</button>`;
-            lucide?.createIcons?.();
-        };
-        window.changePublicSchedulePage = delta => { const direction=Number(delta||0);if(publicScheduleView==='upcoming'){if(direction<0&&publicSchedulePage===1){publicScheduleView='previous';publicSchedulePage=1;}else publicSchedulePage+=direction;}else if(direction>0&&publicSchedulePage===1){publicScheduleView='upcoming';publicSchedulePage=1;}else publicSchedulePage-=direction;window.renderPublicSchedule();document.getElementById('public-schedule-list')?.scrollIntoView({behavior:'smooth',block:'start'}); };
-        setInterval(() => { if(document.getElementById('public-upcoming-schedule')) renderNextScheduleCard('public-upcoming-schedule', scheduleRows()); }, 1000);
-        setInterval(() => { if(document.getElementById('public-schedule-list')) window.renderPublicSchedule(false); }, 30000);
+    function timeToMinutes(value = '') {
+      const match = String(value || '').trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+      if (!match) return 99999;
+      let h = Number(match[1]);
+      const m = Number(match[2] || 0);
+      const ap = (match[3] || '').toUpperCase();
+      if (ap === 'PM' && h < 12) h += 12;
+      if (ap === 'AM' && h === 12) h = 0;
+      return h * 60 + m;
+    }
 
-        const processData = debounce(() => {
-            teamScores = {};
-            teams.forEach(t => { teamScores[t] = 0; });
-            teamLeaders.filter(item=>item.active!==false&&item.team).forEach(item=>{if(teamScores[item.team]===undefined)teamScores[item.team]=0;});
-            Object.keys(homeConfig.leaders||{}).forEach(team=>{if(teamScores[team]===undefined)teamScores[team]=0;});
-            results.forEach(r => {
-                if (r.status && r.status !== 'published') return;
-                const resultEvent=events.find(event=>event.id===r.eventId);if(!eventContributesToTeamScore(resultEvent||r,festSetup))return;
-                const addScore = (val, pts) => {
-                    if (!val) return;
-                    const list = Array.isArray(val) ? val : [val];
-                    list.forEach(w => {
-                        let teamName = null;
-                        if (r.type === 'Group') teamName = registrations.find(registration => registration.id === w)?.team || w;
-                        else { const s = students.find(std => std.id === w)||participants.find(item=>item.id===w); if (s) teamName = s.team; }
-                        if (teamName && teamScores[teamName] !== undefined) teamScores[teamName] += pts;
-                    });
-                };
-                if(Array.isArray(r.places) || Array.isArray(r.gradeAwards)) {
-                    (r.places || []).forEach(place => addScore(place.winners, Number(place.value || 0)));
-                    (r.gradeAwards || []).forEach(grade => addScore(grade.winners, Number(grade.value || 0)));
-                } else {
-                    addScore(r.winners?.first, r.points?.first || 0);
-                    addScore(r.winners?.second, r.points?.second || 0);
-                    addScore(r.winners?.third, r.points?.third || 0);
-                }
-            });
+    function formatTime(value = '') {
+      const mins = timeToMinutes(value);
+      if (mins >= 99999) return value || 'TBD';
+      let h = Math.floor(mins / 60);
+      const m = mins % 60;
+      const ap = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${h}:${String(m).padStart(2, '0')} ${ap}`;
+    }
 
-            requestAnimationFrame(() => {
-                applyFestCapabilities();
-                updateGroupsUI();
-                updateStatsUI();
-                window.renderPublicSchedule();
-            });
-        }, 150);
+    function eventTimestamp(ev) {
+      const date = ev.scheduleDate || ev.date || '';
+      const mins = timeToMinutes(ev.time || ev.startTime || '');
+      if (!date || mins >= 99999) return Number.MAX_SAFE_INTEGER;
+      const [y, m, d] = date.split('-').map(Number);
+      return new Date(y, (m || 1) - 1, d || 1, Math.floor(mins / 60), mins % 60).getTime();
+    }
 
-        function removeSkeletonClasses(ids) {
-            ids.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.remove('skeleton-text', 'text-transparent');
-            });
-        }
+    function renderStatsAndStandings() {
+      const teams = generalConfig.teams || [];
+      const teamNames = generalConfig.teamDisplayNames || {};
+      const colors = generalConfig.teamColors || {};
 
-        const validGalleryImages = () => (Array.isArray(homeConfig.gallery)?homeConfig.gallery:[]).map(value => /^data:image\/(jpeg|png|webp|gif);base64,/i.test(String(value))||/^https?:\/\//i.test(String(value))?value:'').filter(Boolean);
-        let galleryViewerImages=[],galleryViewerIndex=0;
-        const updateGalleryLightbox=()=>{const image=document.getElementById('gallery-lightbox-image'),count=document.getElementById('gallery-lightbox-count');if(!image||!galleryViewerImages.length)return;image.src=galleryViewerImages[galleryViewerIndex];image.alt=`Gallery image ${galleryViewerIndex+1} of ${galleryViewerImages.length}`;if(count)count.textContent=`${galleryViewerIndex+1} / ${galleryViewerImages.length}`;};
-        const openGalleryLightbox=index=>{if(!galleryViewerImages.length)return;galleryViewerIndex=Math.max(0,Math.min(Number(index)||0,galleryViewerImages.length-1));updateGalleryLightbox();document.getElementById('gallery-lightbox')?.classList.remove('hidden');document.body.style.overflow='hidden';document.getElementById('gallery-lightbox-close')?.focus();};
-        const closeGalleryLightbox=()=>{document.getElementById('gallery-lightbox')?.classList.add('hidden');document.body.style.overflow='';};
-        const moveGalleryLightbox=direction=>{if(!galleryViewerImages.length)return;galleryViewerIndex=(galleryViewerIndex+direction+galleryViewerImages.length)%galleryViewerImages.length;updateGalleryLightbox();};
-        document.getElementById('gallery-lightbox-close')?.addEventListener('click',closeGalleryLightbox);
-        document.getElementById('gallery-lightbox')?.addEventListener('click',event=>{if(!event.target.closest('.gallery-lightbox-image,.gallery-lightbox-arrow,.gallery-lightbox-close,.gallery-lightbox-count'))closeGalleryLightbox();});
-        document.querySelectorAll('[data-lightbox-direction]').forEach(button=>button.addEventListener('click',()=>moveGalleryLightbox(Number(button.dataset.lightboxDirection))));
-        let galleryTouchStartX=0,galleryTouchStartY=0;
-        document.getElementById('gallery-lightbox-media')?.addEventListener('touchstart',event=>{const touch=event.changedTouches[0];galleryTouchStartX=touch.clientX;galleryTouchStartY=touch.clientY;},{passive:true});
-        document.getElementById('gallery-lightbox-media')?.addEventListener('touchend',event=>{const touch=event.changedTouches[0],dx=touch.clientX-galleryTouchStartX,dy=touch.clientY-galleryTouchStartY;if(Math.abs(dx)>=50&&Math.abs(dx)>Math.abs(dy))moveGalleryLightbox(dx<0?1:-1);},{passive:true});
-        document.addEventListener('keydown',event=>{if(document.getElementById('gallery-lightbox')?.classList.contains('hidden'))return;if(event.key==='Escape')closeGalleryLightbox();if(event.key==='ArrowLeft')moveGalleryLightbox(-1);if(event.key==='ArrowRight')moveGalleryLightbox(1);});
-        const legacyLeaderEntries = () => Object.values(homeConfig.leaders || {}).some(item => String(item?.leader||'').trim() || String(item?.assistant||'').trim());
-        const hasLeaderData = () => teamLeaders.some(item => item.active !== false && String(item.displayName||item.name||'').trim()) || legacyLeaderEntries();
-        function applyOptionalSectionVisibility() {
-            const visibility={
-                about: publicModuleEnabled('about')&&landingEnabled('sections','about'),
-                leaders: publicModuleEnabled('leaders')&&landingEnabled('sections','leaders'),
-                gallery: publicModuleEnabled('gallery')&&landingEnabled('sections','gallery')
-            };
-            Object.entries(visibility).forEach(([name,visible])=>document.getElementById(name)?.classList.toggle('hidden',!visible));
-            document.querySelectorAll('[data-optional-link]').forEach(link=>{
-                const key=link.dataset.optionalLink,scope=link.dataset.landingMenuItem?'menu':'quickButtons';
-                link.classList.toggle('hidden',!landingPlacementVisible(scope,key));
-            });
-        }
+      $('stat-events').textContent = String(events.length);
+      $('stat-results').textContent = String(publishedResults.length);
+      $('stat-teams').textContent = String(teams.length);
+      $('stat-students').textContent = String(publicSummary.studentCount ?? '—');
 
-        function applyConfigToUI(config, updateLoader) {
-            config=normalizeBranding(config); const finalName=brandingName(config);
+      const teamScores = new Map(teams.map((t) => [t, 0]));
+      if (publicSummary.teamScores && typeof publicSummary.teamScores === 'object' && Object.keys(publicSummary.teamScores).length) {
+        Object.entries(publicSummary.teamScores).forEach(([team, pts]) => teamScores.set(team, Number(pts || 0)));
+      } else {
+        const ledger = buildTeamScoreLedger(
+          publishedResults,
+          (winnerId, type, res) => res?.winnerDetails?.[winnerId]?.team || '',
+          events.filter((e) => eventContributesToTeamScore(e, festSetup))
+        );
+        ledger.forEach((entry) => {
+          teamScores.set(entry.team, (teamScores.get(entry.team) || 0) + Number(entry.points || 0));
+        });
+      }
 
-            const headerName = document.getElementById('header-fest-name');
-            if(headerName) { headerName.innerText = finalName; headerName.classList.remove('skeleton-text'); }
+      const ranked = [...teamScores.entries()].sort((a, b) => b[1] - a[1]);
+      const maxScore = Math.max(1, ...ranked.map(([, p]) => p));
+      $('home-team-standings').innerHTML = ranked.length
+        ? ranked.map(([team, pts], idx) => {
+            const color = teamColor(team, colors);
+            const pct = Math.round((pts / maxScore) * 100);
+            return `<div class="space-y-1.5">
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="font-mono-num text-xs font-bold text-slate-400 w-5">#${idx + 1}</span>
+                  <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background:${esc(color)}"></span>
+                  <span class="truncate font-semibold text-slate-800">${esc(teamNames[team] || team)}</span>
+                </div>
+                <span class="font-mono-num font-bold text-slate-900">${pts} pts</span>
+              </div>
+              <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div class="h-full rounded-full transition-all" style="width:${pct}%;background:${esc(color)}"></div>
+              </div>
+            </div>`;
+          }).join('')
+        : '<p class="py-6 text-center text-sm text-slate-400">No teams configured yet.</p>';
+    }
 
-            const title1 = document.getElementById('hero-title-1');
-            const title2 = document.getElementById('hero-title-2');
-            if(title1) { title1.innerText = config.festName1; title1.classList.remove('skeleton-text'); }
-            if(title2) { title2.innerText = config.festName2; title2.classList.remove('skeleton-text'); }
+    function renderLatestResults() {
+      const normalized = publishedResults
+        .map((r) => normalizeResultData(r, { events }))
+        .sort((a, b) => Number(b.publishedAt || b.updatedAt || 0) - Number(a.publishedAt || a.updatedAt || 0))
+        .slice(0, 5);
 
-            const footerNameEl = document.getElementById('footer-fest-name');
-            if(footerNameEl) footerNameEl.innerText = finalName;
-            document.title=`${finalName} — Home`; document.querySelectorAll('[data-current-year]').forEach(el=>el.textContent=currentYear());
+      $('home-latest-results').innerHTML = normalized.length
+        ? normalized.map((res) => {
+            const topWinner = res.places?.[0]?.winners?.[0];
+            const firstLine = topWinner ? `1st: ${topWinner.name} (${topWinner.team})` : 'Results published';
+            return `<a href="results.html?search=${encodeURIComponent(res.eventName || '')}" class="flex items-center justify-between gap-4 py-3.5 hover:bg-slate-50 -mx-2 px-2 rounded-lg transition">
+              <div class="min-w-0">
+                <h3 class="truncate text-sm font-semibold text-slate-900">${esc(res.eventName)}</h3>
+                <p class="mt-0.5 text-xs text-slate-500">${esc(res.category)} · ${esc(res.stage)} · ${esc(res.gender)}</p>
+                <p class="mt-1 truncate text-xs font-medium text-blue-700">${esc(firstLine)}</p>
+              </div>
+              <i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-slate-400"></i>
+            </a>`;
+          }).join('')
+        : '<p class="py-6 text-center text-sm text-slate-400">No published results yet.</p>';
+    }
 
-            if (config.tagline) {
-                const tagEl = document.getElementById('hero-tagline');
-                if(tagEl) {
-                    tagEl.textContent = config.tagline;
-                }
-            }
+    function renderNextProgramAndSchedule() {
+      const scheduledEvents = events
+        .filter((e) => !e.cancelled && (e.scheduleDate || e.time || e.scheduleOrder))
+        .sort((a, b) => eventTimestamp(a) - eventTimestamp(b) || Number(a.scheduleOrder || 9999) - Number(b.scheduleOrder || 9999));
 
-            applyBase64Image(document.getElementById('hero-logo'),config.logoUrl);
-            applyBase64Image(document.getElementById('header-logo-img'),config.logoUrl);
-            if(updateLoader&&!isSplashDone)applyBase64Image(document.getElementById('loader-img-tag'),config.logoUrl);
+      const now = Date.now();
+      const submittedEventIds = new Set(judgingStatuses.filter((s) => s.status === 'submitted').map((s) => s.eventId));
+      const publishedIds = new Set(publishedResults.map((r) => r.eventId || r.id));
 
-            if(config.btnColor) {
-                const btn = document.getElementById('view-results-btn');
-                if(btn) {
-                    btn.style.backgroundColor = config.btnColor;
-                    btn.style.boxShadow = `0 10px 15px -3px ${config.btnColor}40`;
-                }
-                // Removed config color override for Team Score button to keep it white as requested
-            }
+      const nextEv = scheduledEvents.find((e) => !publishedIds.has(e.id) && !submittedEventIds.has(e.id) && eventTimestamp(e) >= now - 30 * 60000) || scheduledEvents[0];
+      if (nextEv) {
+        $('next-program-name').textContent = nextEv.name || 'Scheduled Program';
+        $('next-program-meta').textContent = `${nextEv.category || 'General'} · ${nextEv.stage || 'On-Stage'} · ${nextEv.gender || 'Both'}`;
+        $('next-program-date').textContent = nextEv.scheduleDate || 'TBD';
+        $('next-program-time').textContent = formatTime(nextEv.time);
+        $('next-program-stage').textContent = nextEv.scheduleStage || 'Main Stage';
+        const diff = eventTimestamp(nextEv) - now;
+        $('next-program-countdown').textContent = !Number.isFinite(diff) || eventTimestamp(nextEv) === Number.MAX_SAFE_INTEGER
+          ? 'Scheduled'
+          : diff <= 0 ? 'In Progress' : `${Math.floor(diff / 3600000)}h ${Math.floor((diff % 3600000) / 60000)}m`;
+      }
 
-            const aboutSub=document.getElementById('about-subtitle');
-            if(aboutSub){const subtitle=String(homeConfig.aboutSubtitle||'').trim();aboutSub.textContent=subtitle;aboutSub.classList.remove('skeleton-text');aboutSub.classList.toggle('hidden',!subtitle);}
+      const bgUrl = publicConfig?.nextProgramCard?.backgroundImages?.[0] || '';
+      if (bgUrl) {
+        $('next-program-bg').src = bgUrl;
+        $('next-program-bg').classList.remove('hidden');
+      }
 
-            if (homeConfig.aboutText) {
-                const txt = document.getElementById('about-text');
-                const skel = document.getElementById('about-skeleton');
-                if(txt) { skel?.remove(); txt.innerText = homeConfig.aboutText; }
-            } else {const txt=document.getElementById('about-text');document.getElementById('about-skeleton')?.remove();if(txt)txt.textContent='About content has not been published yet.';}
+      // Populate filters
+      const cats = [...new Set(scheduledEvents.map((e) => e.category).filter(Boolean))].sort();
+      const stages = [...new Set(scheduledEvents.map((e) => e.scheduleStage).filter(Boolean))].sort();
+      const catSel = $('schedule-filter-category');
+      const stgSel = $('schedule-filter-stage');
+      const curCat = catSel.value;
+      const curStg = stgSel.value;
+      catSel.innerHTML = '<option value="">All Categories</option>' + cats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+      stgSel.innerHTML = '<option value="">All Stages</option>' + stages.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+      if (cats.includes(curCat)) catSel.value = curCat;
+      if (stages.includes(curStg)) stgSel.value = curStg;
 
-            const galleryContainer = document.getElementById('gallery-container');
-            const availableImages=validGalleryImages();
-            if(availableImages.some(Boolean) && galleryContainer) {
-                const images = availableImages;
-                galleryViewerImages=images.filter(Boolean);
-                let galleryHtml = '';
-                for(let r = 0; r < Math.ceil(images.length / 3); r++) {
-                    galleryHtml += `<div class="gallery-strip"><div class="gallery-row" data-gallery-track="${r}">`;
-                    for(let i = r * 3; i < Math.min((r + 1) * 3, images.length); i++) {
-                         if(images[i]){const viewerIndex=galleryViewerImages.indexOf(images[i]);galleryHtml += `<button type="button" class="gallery-item" data-gallery-image="${viewerIndex}" aria-label="Open gallery image ${viewerIndex+1}"><img src="${images[i]}" class="fade-img" loading="lazy" decoding="async" alt="Gallery image position ${i+1}"></button>`;}
-                    }
-                    galleryHtml += `</div></div>`;
-                }
-                galleryContainer.innerHTML = galleryHtml;
-                galleryContainer.querySelectorAll('[data-gallery-image]').forEach(button=>button.addEventListener('click',()=>openGalleryLightbox(button.dataset.galleryImage)));
-                galleryContainer.querySelectorAll('.gallery-arrow').forEach(button=>button.addEventListener('click',()=>{const track=galleryContainer.querySelector(`[data-gallery-track="${button.dataset.galleryRow}"]`);track?.scrollBy({left:Number(button.dataset.direction)*Math.max(track.clientWidth*.8,260),behavior:'smooth'});}));
-                galleryContainer.querySelectorAll('img').forEach(image=>{image.addEventListener('load',()=>image.classList.add('loaded'));image.addEventListener('error',()=>{image.closest('.gallery-item')?.remove();if(!galleryContainer.querySelector('.gallery-item'))galleryContainer.innerHTML='<p class="py-8 text-center text-sm font-bold text-slate-400">Gallery has not been published yet.</p>';});});
-            } else if(galleryContainer){galleryViewerImages=[];closeGalleryLightbox();galleryContainer.innerHTML='<p class="py-8 text-center text-sm font-bold text-slate-400">Gallery has not been published yet.</p>';}
-            applyOptionalSectionVisibility();
+      renderScheduleRows(scheduledEvents, submittedEventIds, publishedIds);
+    }
 
-            const s = config.social || {};
-            const sDiv = document.getElementById('social-links');
-            if(sDiv) {
-                let sHtml = '';
-                if(s.wa) sHtml += `<a href="${s.wa}" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>`;
-                if(s.ig) sHtml += `<a href="${s.ig}" aria-label="Instagram"><i class="fab fa-instagram"></i></a>`;
-                if(s.fb) sHtml += `<a href="${s.fb}" aria-label="Facebook"><i class="fab fa-facebook"></i></a>`;
-                if(s.yt) sHtml += `<a href="${s.yt}" aria-label="YouTube"><i class="fab fa-youtube"></i></a>`;
-                if(s.tg) sHtml += `<a href="${s.tg}" aria-label="Telegram"><i class="fab fa-telegram"></i></a>`;
-                sDiv.innerHTML = sHtml;
-            }
-        }
+    function renderScheduleRows(scheduledEvents, submittedEventIds, publishedIds) {
+      const cat = $('schedule-filter-category').value;
+      const stg = $('schedule-filter-stage').value;
+      const now = Date.now();
 
-        const updateHomeContent = () => {
-            applyConfigToUI(homeConfig, true);
-            const loaderScreen = document.getElementById('loader-screen');
-            if(loaderScreen && !isSplashDone) {
-                setTimeout(() => {
-                    document.getElementById('main-header').classList.add('visible');
-                    const movingLogo = document.getElementById('moving-logo');
-                    const targetBox = document.getElementById('hero-target-box');
-                    const loaderRing = document.getElementById('loader-ring');
+      const filtered = scheduledEvents.filter((e) => (!cat || e.category === cat) && (!stg || e.scheduleStage === stg));
+      const upcomingRows = filtered.filter((e) => !publishedIds.has(e.id) && !submittedEventIds.has(e.id) && (eventTimestamp(e) === Number.MAX_SAFE_INTEGER || eventTimestamp(e) >= now - 30 * 60000));
+      const previousRows = filtered.filter((e) => publishedIds.has(e.id) || submittedEventIds.has(e.id) || (eventTimestamp(e) < now - 30 * 60000));
 
-                    if(movingLogo && targetBox && homeConfig.logoUrl) {
-                        loaderRing.classList.add('ring-hidden');
-                        const startRect = movingLogo.getBoundingClientRect();
-                        const targetRect = targetBox.getBoundingClientRect();
-                        movingLogo.style.transition = 'none';
-                        movingLogo.style.position = 'fixed';
-                        movingLogo.style.left = startRect.left + 'px';
-                        movingLogo.style.top = startRect.top + 'px';
-                        movingLogo.style.width = startRect.width + 'px';
-                        movingLogo.style.height = startRect.height + 'px';
-                        movingLogo.style.margin = '0';
-                        movingLogo.offsetHeight;
-                        movingLogo.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
-                        requestAnimationFrame(() => {
-                            movingLogo.style.left = targetRect.left + 'px';
-                            movingLogo.style.top = targetRect.top + 'px';
-                            movingLogo.style.width = targetRect.width + 'px';
-                            movingLogo.style.height = targetRect.height + 'px';
-                            movingLogo.style.borderRadius = '16px';
-                            movingLogo.style.boxShadow = 'none';
-                        });
-                        setTimeout(() => {
-                            loaderScreen.style.opacity = '0';
-                            targetBox.style.opacity = '1';
-                            setTimeout(() => loaderScreen.remove(), 500);
-                        }, 800);
-                    } else {
-                        loaderScreen.style.opacity = '0';
-                        if(targetBox) targetBox.style.opacity = '1';
-                        setTimeout(() => loaderScreen.remove(), 500);
-                    }
-                    isSplashDone = true;
-                }, 1200);
-            }
-        };
+      const activeList = publicScheduleView === 'previous' ? previousRows : upcomingRows;
+      const totalPages = Math.max(1, Math.ceil(activeList.length / PAGE_SIZE));
+      if (publicSchedulePage > totalPages) publicSchedulePage = totalPages;
+      const pageRows = activeList.slice((publicSchedulePage - 1) * PAGE_SIZE, publicSchedulePage * PAGE_SIZE);
 
-        const updateGroupsUI = () => {
-            const container = document.getElementById('groups-container');
-            const teamHasLeader=teamName=>teamLeaders.some(item=>item.team===teamName&&item.active!==false&&String(item.displayName||item.name||'').trim())||Boolean(String(homeConfig.leaders?.[teamName]?.leader||'').trim()||String(homeConfig.leaders?.[teamName]?.assistant||'').trim());
-            const sortedTeams = Object.entries(teamScores).filter(([teamName])=>teamHasLeader(teamName)).sort((a,b) => b[1] - a[1]);
-            if(!container)return; if(!sortedTeams.length){container.innerHTML='<p class="py-8 text-center text-sm font-bold text-slate-400">Leader information has not been published yet.</p>';applyOptionalSectionVisibility();return;}
+      $('public-schedule-list').innerHTML = pageRows.length
+        ? pageRows.map((ev) => {
+            const done = publishedIds.has(ev.id) || submittedEventIds.has(ev.id);
+            const stateLabel = publishedIds.has(ev.id) ? 'Result Published' : submittedEventIds.has(ev.id) ? 'Judging Complete' : 'Scheduled';
+            const stateColor = publishedIds.has(ev.id) ? 'text-emerald-700' : submittedEventIds.has(ev.id) ? 'text-blue-700' : 'text-slate-500';
+            return `<div class="flex flex-col gap-2 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div class="min-w-0">
+                <h3 class="truncate text-sm font-semibold text-slate-900">${esc(ev.name)}</h3>
+                <p class="mt-0.5 text-xs text-slate-500">${esc(ev.category || 'General')} · ${esc(ev.stage || 'On-Stage')} · ${esc(ev.gender || 'Both')}</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-4 text-xs sm:text-right shrink-0">
+                <div>
+                  <span class="font-mono-num font-semibold text-slate-800">${esc(ev.scheduleDate || 'Date TBD')} · ${esc(formatTime(ev.time))}</span>
+                  <span class="block text-slate-500">${esc(ev.scheduleStage || 'Stage TBD')}</span>
+                </div>
+                <span class="font-semibold ${stateColor} whitespace-nowrap">${done ? '● ' : ''}${stateLabel}</span>
+              </div>
+            </div>`;
+          }).join('')
+        : `<p class="py-8 text-center text-sm text-slate-400">No ${publicScheduleView} events match the selected filters.</p>`;
 
-            const html = sortedTeams.map(([teamName, points], index) => {
-                const rank = index + 1;
-                const dynamicLeaders = teamLeaders
-                    .filter(l => l.team === teamName && l.active !== false)
-                    .sort((a,b) => (Number(a.order) || 999) - (Number(b.order) || 999) || String(a.displayName || '').localeCompare(String(b.displayName || '')));
-                const legacyLeaders = homeConfig.leaders ? homeConfig.leaders[teamName] : {};
-                const legacyRows=[['Leader',legacyLeaders?.leader],['Ass. Leader',legacyLeaders?.assistant]].filter(([,name])=>String(name||'').trim());
-                const leaderRows = dynamicLeaders.length
-                    ? dynamicLeaders.map(l => `<div class="info-row">${l.photoUrl ? `<img src="${l.photoUrl}" alt="" style="width:28px;height:28px;border-radius:999px;object-fit:cover;margin-right:8px;">` : ''}<span class="info-label">${l.title || 'Leader'}</span><span class="info-val">${l.displayName || l.name}</span></div>`).join('')
-                    : legacyRows.map(([label,name])=>`<div class="info-row"><span class="info-label">${label}</span><span class="info-val">${name}</span></div>`).join('');
-                const teamColor = teamColors[teamName] || '#4f46e5';
-                return `<div class="team-card"><div class="team-rank" style="background:${teamColor};color:white;box-shadow:0 12px 24px ${teamColor}33">#${rank}</div><div class="team-name">${teamLabel(teamName)}</div><div class="info-group">${leaderRows}</div></div>`;
-            }).join('');
-            if(container.innerHTML !== html) container.innerHTML = html;
-            applyOptionalSectionVisibility();
-        };
+      const pag = $('public-schedule-pagination');
+      if (activeList.length > PAGE_SIZE) {
+        pag.classList.remove('hidden');
+        pag.classList.add('flex');
+        $('public-schedule-page-info').textContent = `Page ${publicSchedulePage} of ${totalPages} (${activeList.length} events)`;
+        $('schedule-prev-btn').disabled = publicSchedulePage <= 1;
+        $('schedule-next-btn').disabled = publicSchedulePage >= totalPages;
+      } else {
+        pag.classList.add('hidden');
+      }
+    }
 
-        const updateStatsUI = () => {
-            const removeSkel = (id) => { const el = document.getElementById(id); if(el) el.classList.remove('skeleton-text', 'text-transparent'); };
-            const animateValue = (id, start, end, duration) => {
-                const obj = document.getElementById(id);
-                if(!obj) return;
-                removeSkel(id);
-                if(end === 0) { obj.innerText = "0+"; return; }
-                let startTimestamp = null;
-                const step = (timestamp) => {
-                    if (!startTimestamp) startTimestamp = timestamp;
-                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                    obj.innerHTML = Math.floor(progress * (end - start) + start) + "+";
-                    if (progress < 1) window.requestAnimationFrame(step);
-                };
-                window.requestAnimationFrame(step);
-            };
-            const regCount = new Set(students.map(s => s.id)).size;
-            animateValue("stat-programs", 0, events.length, 1000);
-            animateValue("stat-contestants", 0, regCount, 1000);
-            animateValue("stat-categories", 0, categories.length, 1000);
-            animateValue("stat-teams", 0, teams.length, 1000);
-        };
+    function renderLeadersAndGallery() {
+      const colors = generalConfig.teamColors || {};
+      const teamNames = generalConfig.teamDisplayNames || {};
 
-        const initIcons = () => { if(window.lucide && !iconsCreated) { window.lucide.createIcons(); iconsCreated = true; } else if (!window.lucide) { setTimeout(initIcons, 100); } };
+      $('home-leaders-grid').innerHTML = teamLeaders.length
+        ? teamLeaders.map((l) => {
+            const color = teamColor(l.team, colors);
+            const initial = String(l.name || 'L')[0].toUpperCase();
+            return `<div class="flex items-center gap-3.5 rounded-xl border border-slate-200 p-3.5">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 font-display text-sm font-bold text-slate-700">
+                ${l.photoUrl ? `<img src="${esc(l.photoUrl)}" class="h-full w-full object-cover" alt="${esc(l.name)}" referrerpolicy="no-referrer">` : esc(initial)}
+              </div>
+              <div class="min-w-0">
+                <h3 class="truncate text-sm font-semibold text-slate-900">${esc(l.name)}</h3>
+                <p class="truncate text-xs text-slate-500">${esc(l.role || 'Team Leader')} · <span class="font-semibold" style="color:${esc(color)}">${esc(teamNames[l.team] || l.team || '')}</span></p>
+              </div>
+            </div>`;
+          }).join('')
+        : '<p class="col-span-full py-6 text-center text-sm text-slate-400">Team leader profiles will appear here once added.</p>';
 
-        let publicDataStarted=false;
-        const startPublicData=async()=>{if(publicDataStarted)return;publicDataStarted=true;
-                const configSnap = await getDoc(doc(db, "settings", "home_config"));
-                if(configSnap.exists()) {
-                    homeConfig = configSnap.data();
-                    cacheBranding(homeConfig);
-                } else { homeConfig=normalizeBranding();clearBrandingCache(); }
-                applyConfigToUI(homeConfig,true);
-                updateHomeContent();
-                initIcons();
-                onSnapshot(doc(db, "settings", "general"), d => { if(d.exists()) { const data = d.data(); teams = data.teams || []; categories = data.categories || []; teamColors = data.teamColors || {}; teamDisplayNames = data.teamDisplayNames || {}; categoryDisplayNames = data.categoryDisplayNames || {}; festSetup=normalizeFestSetup(data.festSetup||{}); applyFestCapabilities(); processData(); } });
-                onSnapshot(doc(db, "settings", "public_config"), d => { publicConfig = d.exists() ? d.data() : {}; processData(); }, error => { console.warn('Public page configuration unavailable; using defaults.', error); publicConfig = {}; processData(); });
-                onSnapshot(collection(db, "students"), s => { students = s.docs.map(d=>({id:d.id, ...d.data()})); processData(); });
-                onSnapshot(collection(db, "participants"), s => { participants = s.docs.map(d=>({id:d.id, ...d.data()})); processData(); });
-                onSnapshot(collection(db, "events"), s => { events = s.docs.map(d=>({id:d.id, ...d.data()})); processData(); });
-                onSnapshot(collection(db, "publicJudgingStatuses"), s => { publicJudgingStatuses = s.docs.map(d=>({id:d.id, ...d.data()})); processData(); }, error => { console.warn('Public judging statuses unavailable; schedule will continue without completion markers.', error); publicJudgingStatuses = []; processData(); });
-                onSnapshot(collection(db, "registrations"), s => { registrations = s.docs.map(d=>({id:d.id, ...d.data()})); processData(); });
-                onSnapshot(query(collection(db, "results"), where("status", "==", "published")), s => { results = s.docs.map(d=>({eventId:d.id, ...d.data()})); processData(); });
-                onSnapshot(collection(db, "teamLeaders"), s => { teamLeaders = s.docs.map(d=>({id:d.id, ...d.data()})); processData(); });
-                onSnapshot(collection(db, "scheduleBreaks"), s => { scheduleBreaks = s.docs.map(d=>({id:d.id, ...d.data()})); document.querySelectorAll("#public-schedule-date,#public-schedule-category").forEach(el => { if(el) delete el.dataset.ready; }); processData(); });
-        };
-        startPublicData().catch(error=>{console.error('Public data failed to start',error);updateHomeContent();});
-        signInAnonymously(auth).catch(error=>console.warn('Optional anonymous sign-in unavailable; public Firestore reads continue.',error));
-        document.addEventListener('DOMContentLoaded', initIcons);
-    </script>
+      galleryImages = Array.isArray(homeConfig.gallery) ? homeConfig.gallery.filter(Boolean) : [];
+      $('home-gallery-grid').innerHTML = galleryImages.length
+        ? galleryImages.map((src, idx) => `<button type="button" data-gallery-idx="${idx}" class="group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+            <img src="${esc(src)}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" alt="Festival moment ${idx + 1}" referrerpolicy="no-referrer">
+          </button>`).join('')
+        : '<p class="col-span-full py-6 text-center text-sm text-slate-400">Gallery has not been published yet.</p>';
+    }
+
+    function openLightbox(idx) {
+      if (!galleryImages.length) return;
+      galleryIndex = (idx + galleryImages.length) % galleryImages.length;
+      $('gallery-lightbox-img').src = galleryImages[galleryIndex];
+      $('gallery-lightbox').classList.remove('hidden');
+      $('gallery-lightbox').classList.add('flex');
+    }
+
+    $('home-gallery-grid')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-gallery-idx]');
+      if (btn) openLightbox(Number(btn.dataset.galleryIdx));
+    });
+    $('gallery-close')?.addEventListener('click', () => {
+      $('gallery-lightbox').classList.add('hidden');
+      $('gallery-lightbox').classList.remove('flex');
+    });
+    $('gallery-prev')?.addEventListener('click', () => openLightbox(galleryIndex - 1));
+    $('gallery-next')?.addEventListener('click', () => openLightbox(galleryIndex + 1));
+
+    document.querySelectorAll('[data-schedule-view]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        publicScheduleView = btn.dataset.scheduleView;
+        publicSchedulePage = 1;
+        document.querySelectorAll('[data-schedule-view]').forEach((b) => {
+          const active = b.dataset.scheduleView === publicScheduleView;
+          b.className = active
+            ? 'rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white whitespace-nowrap'
+            : 'rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+        });
+        renderNextProgramAndSchedule();
+      });
+    });
+
+    $('schedule-filter-category')?.addEventListener('change', () => { publicSchedulePage = 1; renderNextProgramAndSchedule(); });
+    $('schedule-filter-stage')?.addEventListener('change', () => { publicSchedulePage = 1; renderNextProgramAndSchedule(); });
+    $('schedule-prev-btn')?.addEventListener('click', () => { if (publicSchedulePage > 1) { publicSchedulePage--; renderNextProgramAndSchedule(); } });
+    $('schedule-next-btn')?.addEventListener('click', () => { publicSchedulePage++; renderNextProgramAndSchedule(); });
+
+    async function loadPublicData(forceRefresh = false) {
+      applyBrandingUI(readCachedBranding());
+      if (!isFirebaseConfigured) {
+        applyVisibility();
+        renderStatsAndStandings();
+        renderLatestResults();
+        renderNextProgramAndSchedule();
+        renderLeadersAndGallery();
+        window.lucide?.createIcons?.();
+        return;
+      }
+
+      try {
+        if (forceRefresh) invalidateCache('');
+        const [homeDoc, genDoc, pubDoc, summaryDoc, evList, brkList, resList, statusList, leadersList] = await Promise.all([
+          cachedGetDoc(db, 'settings', 'home_config', { ttlMs: 300_000, forceRefresh }),
+          cachedGetDoc(db, 'settings', 'general', { ttlMs: 300_000, forceRefresh }),
+          cachedGetDoc(db, 'settings', 'public_config', { ttlMs: 300_000, forceRefresh }),
+          cachedGetDoc(db, 'settings', 'public_summary', { ttlMs: 120_000, forceRefresh }),
+          cachedGetDocs('col:events', collection(db, 'events'), { ttlMs: 120_000, forceRefresh }),
+          cachedGetDocs('col:scheduleBreaks', collection(db, 'scheduleBreaks'), { ttlMs: 180_000, forceRefresh }),
+          cachedGetDocs('col:results:published', query(collection(db, 'results'), where('status', '==', 'published')), { ttlMs: 60_000, forceRefresh }),
+          cachedGetDocs('col:publicJudgingStatuses', collection(db, 'publicJudgingStatuses'), { ttlMs: 90_000, forceRefresh }),
+          cachedGetDocs('col:teamLeaders', collection(db, 'teamLeaders'), { ttlMs: 300_000, forceRefresh })
+        ]);
+
+        homeConfig = homeDoc || {};
+        if (homeDoc) cacheBranding(homeDoc);
+        else clearBrandingCache();
+        generalConfig = genDoc || {};
+        publicConfig = pubDoc || {};
+        publicSummary = summaryDoc || {};
+        festSetup = normalizeFestSetup(generalConfig.festSetup || {});
+        events = (evList || []).filter((e) => e.status !== 'draft');
+        scheduleBreaks = brkList || [];
+        publishedResults = resList || [];
+        judgingStatuses = statusList || [];
+        teamLeaders = leadersList || [];
+      } catch (err) {
+        console.warn('Public data load fallback:', err);
+      }
+
+      applyBrandingUI(homeConfig);
+      applyVisibility();
+      renderStatsAndStandings();
+      renderLatestResults();
+      renderNextProgramAndSchedule();
+      renderLeadersAndGallery();
+      window.lucide?.createIcons?.();
+    }
+
+    $('refresh-public-btn')?.addEventListener('click', () => loadPublicData(true));
+    loadPublicData(false);
+  </script>
 </body>
 </html>

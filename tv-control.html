@@ -3,120 +3,376 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https: wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
-  <title>TV Display Control</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https: wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <title>TV Control Room — Feastport</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Malayalam:wght@400;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest" defer></script>
   <style>
-    html,body{height:100%;overflow:hidden}body{font-family:Inter,'Noto Sans Malayalam',sans-serif;background:#f2f3f7}#app-layout,#app-layout>main{min-height:0;height:100%}#content-container{min-height:0;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y pinch-zoom;overscroll-behavior:auto}.header-wrapper{position:sticky;top:0;z-index:40;padding:16px 16px 0;pointer-events:none}.app-header{pointer-events:auto;height:64px;display:flex;align-items:center;padding:0 20px;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.05);border:1px solid rgba(255,255,255,.5);width:100%}.header-title{font-size:18px;font-weight:800;color:#1e293b;letter-spacing:-.025em;margin-left:12px}.menu-toggle{width:24px;height:24px;position:relative;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:5px}.menu-toggle span{display:block;width:100%;height:2px;background:#334155;border-radius:2px;transition:.3s ease}.sidebar-open-btn .menu-toggle span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}.sidebar-open-btn .menu-toggle span:nth-child(2){opacity:0}.sidebar-open-btn .menu-toggle span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}#sidebar{transition:transform .3s cubic-bezier(.4,0,.2,1),width .25s ease,max-width .25s ease;will-change:transform,width}.sidebar-open{transform:translateX(0)!important}.sidebar-closed{transform:translateX(-100%)}#sidebar-overlay{transition:opacity .3s ease-in-out}.nav-item[aria-selected="true"]{background:#4f46e5;color:#fff;box-shadow:0 12px 28px rgba(79,70,229,.25)}.nav-item[aria-selected="true"] .sidebar-label,.nav-item[aria-selected="true"] .sidebar-sub{color:#c7d2fe}@media (min-width:768px){#sidebar.desktop-collapsed{width:80px!important;max-width:80px!important}#sidebar.desktop-collapsed .sidebar-brand,#sidebar.desktop-collapsed .sidebar-label,#sidebar.desktop-collapsed .sidebar-section-label,#sidebar.desktop-collapsed .sidebar-help{display:none}#sidebar.desktop-collapsed .sidebar-compact-brand{display:flex}#sidebar.desktop-collapsed nav{padding-left:.75rem;padding-right:.75rem}#sidebar.desktop-collapsed .nav-item{justify-content:center;gap:0;padding-left:0;padding-right:0}#sidebar.desktop-collapsed .nav-item>i{width:1.25rem;height:1.25rem;flex:none}#sidebar.desktop-collapsed .sidebar-footer{padding-left:.75rem;padding-right:.75rem}#sidebar.desktop-collapsed .sidebar-footer a,#sidebar.desktop-collapsed .sidebar-footer button{justify-content:center;padding-left:0;padding-right:0}}.choice:has(input:checked){border-color:#4f46e5;background:#eef2ff;box-shadow:0 0 0 3px rgba(79,70,229,.08)}.result-row:has(input:checked){border-color:#4f46e5;background:#eef2ff}.panel[hidden]{display:none}.accordion summary::-webkit-details-marker{display:none}
+    body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: #F8FAFC; color: #0F172A; }
+    h1, h2, h3, .font-display { font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
+    .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+    .nav-item[aria-selected="true"] { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
+    .panel[hidden] { display: none; }
   </style>
 </head>
-<body class="h-screen overflow-hidden text-slate-900 selection:bg-indigo-100 selection:text-indigo-700">
-  <div id="toast" class="fixed bottom-6 right-6 left-6 md:left-auto z-[90] hidden rounded-xl bg-slate-900 px-4 py-3 text-sm font-black text-white shadow-2xl"></div>
-  <div id="app-layout" class="flex h-full relative">
-    <div id="sidebar-overlay" class="fixed inset-0 z-40 hidden bg-black/50 backdrop-blur-sm"></div>
-    <aside id="sidebar" class="sidebar-closed fixed md:relative z-50 flex h-full w-[85%] max-w-[280px] flex-col border-r border-slate-200 bg-white shadow-2xl md:translate-x-0 md:shadow-none">
-      <div class="sticky top-0 z-10 flex h-[80px] items-center justify-between border-b border-slate-100 bg-white p-6"><div class="sidebar-brand min-w-0"><p class="text-[10px] font-black uppercase tracking-[.22em] text-indigo-600">Admin Display</p><h1 class="truncate text-lg font-black text-slate-900">TV Control Room</h1></div><div class="sidebar-compact-brand hidden h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white"><i data-lucide="tv" class="h-5 w-5"></i></div></div>
-      <nav class="flex-1 space-y-1 overflow-y-auto p-4" aria-label="TV control sections">
-        <p class="sidebar-section-label mb-2 mt-2 px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Live control</p>
-        <button class="nav-item flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600" aria-selected="true" data-panel="overview"><i data-lucide="layout-dashboard" class="h-5 w-5"></i><span class="sidebar-label">Overview<span class="sidebar-sub mt-0.5 block text-[10px] font-bold text-slate-400">Live state and shortcuts</span></span></button>
-        <button class="nav-item flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600" aria-selected="false" data-panel="setup"><i data-lucide="settings-2" class="h-5 w-5"></i><span class="sidebar-label">Setup<span class="sidebar-sub mt-0.5 block text-[10px] font-bold text-slate-400">Title, ticker and background</span></span></button>
-        <button class="nav-item flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600" aria-selected="false" data-panel="content"><i data-lucide="panels-top-left" class="h-5 w-5"></i><span class="sidebar-label">Sections<span class="sidebar-sub mt-0.5 block text-[10px] font-bold text-slate-400">Choose what TV shows</span></span></button>
-        <button class="nav-item flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600" aria-selected="false" data-panel="results"><i data-lucide="list-checks" class="h-5 w-5"></i><span class="sidebar-label">Result sequence<span class="sidebar-sub mt-0.5 block text-[10px] font-bold text-slate-400">Build the live queue</span></span></button>
-        <p class="sidebar-section-label mb-2 mt-6 px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Presentation</p>
-        <button class="nav-item flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600" aria-selected="false" data-panel="display"><i data-lucide="sliders-horizontal" class="h-5 w-5"></i><span class="sidebar-label">Display settings<span class="sidebar-sub mt-0.5 block text-[10px] font-bold text-slate-400">Mode, order & animation</span></span></button>
-        <button class="nav-item flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600" aria-selected="false" data-panel="media"><i data-lucide="video" class="h-5 w-5"></i><span class="sidebar-label">Video & media<span class="sidebar-sub mt-0.5 block text-[10px] font-bold text-slate-400">YouTube, Shorts and images</span></span></button>
-        <button class="nav-item flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600" aria-selected="false" data-panel="schedule"><i data-lucide="calendar-range" class="h-5 w-5"></i><span class="sidebar-label">Playback plan<span class="sidebar-sub mt-0.5 block text-[10px] font-bold text-slate-400">What happens next</span></span></button>
-        <button class="nav-item flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600" aria-selected="false" data-panel="preview"><i data-lucide="monitor" class="h-5 w-5"></i><span class="sidebar-label">Review & send<span class="sidebar-sub mt-0.5 block text-[10px] font-bold text-slate-400">Verify TV queue</span></span></button>
-      </nav>
-      <div class="sidebar-footer border-t border-slate-100 p-4"><div class="sidebar-help mb-3 rounded-2xl bg-slate-50 p-3 text-xs font-semibold leading-relaxed text-slate-500">Only <b class="text-slate-900">published</b> results appear here. Select records, then apply to TV.</div><a href="admin.html#tv-display" class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"><i data-lucide="arrow-left" class="h-4 w-4"></i><span class="sidebar-label">Back to Admin</span></a><a href="tv.html" target="_blank" rel="noopener" class="flex items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm font-black text-white"><i data-lucide="monitor-play" class="h-4 w-4"></i><span class="sidebar-label">Open TV</span></a></div>
-    </aside>
-    <main class="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden">
-      <div class="header-wrapper"><header class="app-header"><button id="mobile-sidebar-toggle" class="menu-toggle mr-2 md:hidden" aria-label="Open Menu"><span></span><span></span><span></span></button><button id="desktop-sidebar-toggle" class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 md:inline-flex" type="button" aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar"><i data-lucide="panel-left-close" class="h-5 w-5"></i></button><div class="min-w-0 flex-1"><div class="flex items-center gap-2"><h2 id="page-title" class="header-title">TV Control Room</h2><span id="page-context" class="hidden truncate text-xs font-bold text-indigo-600">Live display settings</span></div><p id="page-status" class="ml-3 truncate text-[10px] font-bold text-slate-400">Admin-style display controls</p></div><div class="flex items-center gap-2"><a href="tv.html" target="_blank" rel="noopener" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 hover:bg-slate-50">Open TV</a><button onclick="saveTVControl()" class="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-indigo-500/25"><i data-lucide="send" class="mr-1 inline h-3.5 w-3.5"></i>Apply to TV</button></div></header></div>
-      <div id="content-container" class="relative flex-1 overflow-y-auto p-4 pt-4 md:p-6 lg:p-8"><div class="mx-auto max-w-7xl space-y-4">
-      <section id="panel-overview" class="panel space-y-4">
-        <div class="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-sm"><div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-[10px] font-black uppercase tracking-[.22em] text-indigo-200">Live control centre</p><h2 class="mt-1 text-3xl font-black">TV output at a glance</h2><p class="mt-2 max-w-xl text-sm font-semibold text-white/65">Build a draft safely, check it in Preview, then send the exact plan to the live display.</p></div><span id="overview-live-badge" class="rounded-full bg-emerald-400/15 px-3 py-2 text-xs font-black text-emerald-200">LIVE DISPLAY CONNECTED</span></div><div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div class="rounded-2xl bg-white/10 p-4"><small class="font-bold text-white/55">LIVE MODE</small><b id="overview-mode" class="mt-1 block text-lg">Dashboard</b></div><div class="rounded-2xl bg-white/10 p-4"><small class="font-bold text-white/55">RESULT QUEUE</small><b id="overview-queue" class="mt-1 block text-lg">0 selected</b></div><div class="rounded-2xl bg-white/10 p-4"><small class="font-bold text-white/55">NEXT RESULT</small><b id="overview-next" class="mt-1 block truncate text-lg">—</b></div><div class="rounded-2xl bg-white/10 p-4"><small class="font-bold text-white/55">LAST SAVED</small><b id="overview-updated" class="mt-1 block text-lg">Not yet</b></div></div></div>
-        <div class="grid gap-4 xl:grid-cols-[1fr_360px]"><div class="rounded-3xl bg-white p-5 shadow-sm"><div class="flex items-center justify-between"><div><p class="text-[10px] font-black uppercase tracking-[.18em] text-indigo-600">Next on TV</p><h3 class="mt-1 text-xl font-black">Queue preview</h3></div><button data-panel-open="results" class="rounded-xl bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700">Manage queue</button></div><div id="overview-queue-list" class="mt-4 grid gap-2"></div></div><div class="rounded-3xl bg-white p-5 shadow-sm"><p class="text-[10px] font-black uppercase tracking-[.18em] text-indigo-600">Quick actions</p><div class="mt-4 grid gap-2"><button data-panel-open="media" class="rounded-xl border border-slate-200 p-3 text-left text-sm font-black">Play full-screen video</button><button data-panel-open="results" class="rounded-xl border border-slate-200 p-3 text-left text-sm font-black">Send latest result</button><button data-panel-open="content" class="rounded-xl border border-slate-200 p-3 text-left text-sm font-black">Choose TV sections</button><a href="tv.html" target="_blank" rel="noopener" class="rounded-xl bg-slate-900 p-3 text-center text-sm font-black text-white">Open TV preview</a></div></div></div>
-      </section>
-      <section id="panel-setup" class="panel" hidden><div class="rounded-3xl bg-white p-5 shadow-sm"><div class="flex flex-wrap items-start justify-between gap-3"><div><p class="text-[10px] font-black uppercase tracking-[.2em] text-indigo-600">TV setup</p><h2 class="mt-1 text-2xl font-black">Brand, ticker & background</h2><p class="mt-1 text-sm font-semibold text-slate-500">These options were moved from Admin and are saved directly to the live TV display configuration.</p></div><button onclick="saveTVDisplayConfig()" class="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white">Save setup</button></div><div class="mt-5 grid gap-4 lg:grid-cols-2"><label class="text-xs font-black uppercase tracking-wide text-slate-500">TV title<input id="config-title" class="mt-1 w-full rounded-xl border p-3 text-sm font-bold normal-case" dir="auto"></label><label class="text-xs font-black uppercase tracking-wide text-slate-500">Ticker text<input id="config-ticker" class="mt-1 w-full rounded-xl border p-3 text-sm font-bold normal-case" dir="auto"></label><label class="lg:col-span-2 text-xs font-black uppercase tracking-wide text-slate-500">Announcements<textarea id="config-announcements" rows="3" class="mt-1 w-full rounded-2xl border p-3 text-sm font-semibold normal-case" placeholder="One announcement per line"></textarea></label><label class="text-xs font-black uppercase tracking-wide text-slate-500">Background color<input id="config-bg-color" type="color" class="mt-1 h-12 w-full rounded-xl border p-1"></label><label class="text-xs font-black uppercase tracking-wide text-slate-500">Background image URL<input id="config-bg-image" class="mt-1 w-full rounded-xl border p-3 text-sm font-bold normal-case" dir="ltr" placeholder="https://example.com/tv-bg.jpg"></label><label class="lg:col-span-2 text-xs font-black uppercase tracking-wide text-slate-500">Background video URL<input id="config-bg-video" class="mt-1 w-full rounded-xl border p-3 text-sm font-bold normal-case" dir="ltr" placeholder="MP4/WebM or YouTube URL"></label><label class="text-xs font-black uppercase tracking-wide text-slate-500">Playlist video URLs<textarea id="config-videos" rows="4" class="mt-1 w-full rounded-2xl border p-3 text-sm font-semibold normal-case" dir="ltr" placeholder="One video URL per line"></textarea></label><label class="text-xs font-black uppercase tracking-wide text-slate-500">Media slide image URLs<textarea id="config-slides" rows="4" class="mt-1 w-full rounded-2xl border p-3 text-sm font-semibold normal-case" dir="ltr" placeholder="One image URL per line"></textarea></label></div></div></section>
-      <section id="panel-content" class="panel" hidden><div class="rounded-3xl bg-white p-5 shadow-sm"><div class="flex flex-wrap items-start justify-between gap-3"><div><p class="text-[10px] font-black uppercase tracking-[.2em] text-indigo-600">Sections</p><h2 class="mt-1 text-2xl font-black">Visibility & display order</h2><p class="mt-1 text-sm font-semibold text-slate-500">Choose what appears on TV and its order. The TV uses a polished fixed layout for every section, including a compact side panel for Team Standings.</p></div><button onclick="saveTVControl()" class="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-black text-white">Apply sections</button></div><div id="section-control-grid" class="mt-5 grid gap-3 lg:grid-cols-2"></div></div></section>
-      <section id="panel-results" class="panel space-y-4" hidden>
-        <div class="rounded-3xl bg-white p-5 shadow-sm"><p class="text-[10px] font-black uppercase tracking-[.2em] text-indigo-600">Step 1</p><div class="mt-1 flex flex-wrap items-end justify-between gap-3"><div><h2 class="text-2xl font-black">Result sequence</h2><p class="mt-1 text-sm font-semibold text-slate-500">Select by programme category or by the time the result was announced.</p></div><div class="flex gap-2"><button onclick="setAllResults(true)" class="rounded-xl bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700">Select visible</button><button onclick="setAllResults(false)" class="rounded-xl border px-3 py-2 text-xs font-black text-slate-600">Clear visible</button></div></div>
-          <div class="mt-5 grid gap-3 md:grid-cols-2">
-            <label class="choice cursor-pointer rounded-2xl border-2 border-slate-100 p-4"><input class="sr-only" type="radio" name="result-browse" value="category" checked><span class="flex items-center gap-3"><i data-lucide="tags" class="h-5 w-5 text-indigo-600"></i><span><b class="block">Category</b><small class="font-semibold text-slate-500">Filter published programmes by category, stage and gender.</small></span></span></label>
-            <label class="choice cursor-pointer rounded-2xl border-2 border-slate-100 p-4"><input class="sr-only" type="radio" name="result-browse" value="time"><span class="flex items-center gap-3"><i data-lucide="calendar-clock" class="h-5 w-5 text-indigo-600"></i><span><b class="block">Announced time</b><small class="font-semibold text-slate-500">Open a day to select its published result times.</small></span></span></label>
-          </div>
+<body class="min-h-screen antialiased">
+  <div id="toast" class="fixed bottom-5 right-5 z-[100] hidden rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-lg"></div>
+
+  <div class="flex min-h-screen flex-col lg:flex-row">
+    <aside class="w-full shrink-0 border-b border-slate-200 bg-white lg:w-64 lg:border-b-0 lg:border-r">
+      <div class="flex h-16 items-center justify-between border-b border-slate-200 px-4">
+        <div>
+          <p class="text-[11px] font-bold uppercase tracking-wider text-blue-700">Admin Broadcast</p>
+          <h1 class="font-display text-base font-bold text-slate-900">TV Control Room</h1>
         </div>
-        <div id="category-browser" class="rounded-3xl bg-white p-5 shadow-sm"><div class="grid gap-3 md:grid-cols-3"><label class="text-xs font-black uppercase tracking-wide text-slate-500">Category<select id="filter-category" class="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-bold text-slate-800"></select></label><label class="text-xs font-black uppercase tracking-wide text-slate-500">Stage<select id="filter-stage" class="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-bold text-slate-800"></select></label><label class="text-xs font-black uppercase tracking-wide text-slate-500">Gender<select id="filter-gender" class="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-bold text-slate-800"></select></label></div><div class="mt-5" id="category-results"></div></div>
-        <div id="time-browser" class="hidden rounded-3xl bg-white p-5 shadow-sm"><div class="mb-4"><h3 class="font-black">Published days</h3><p class="text-sm font-semibold text-slate-500">Newest day and most recently announced result appear first.</p></div><div id="time-results" class="space-y-3"></div></div>
-      </section>
+        <a href="tv.html" target="_blank" rel="noopener noreferrer" class="rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white">Open TV</a>
+      </div>
+      <nav class="flex gap-1 overflow-x-auto p-3 lg:flex-col" aria-label="TV Control Sections">
+        <button type="button" data-panel="overview" aria-selected="true" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Overview</button>
+        <button type="button" data-panel="setup" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">TV Setup</button>
+        <button type="button" data-panel="content" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Sections</button>
+        <button type="button" data-panel="results" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Result Queue</button>
+        <button type="button" data-panel="display" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Mode & Animation</button>
+        <button type="button" data-panel="media" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Video & Media</button>
+        <button type="button" data-panel="preview" aria-selected="false" class="nav-item shrink-0 rounded-lg border border-transparent px-3 py-2 text-left text-xs font-semibold text-slate-700">Review & Send</button>
+      </nav>
+      <div class="hidden border-t border-slate-200 p-3 space-y-2 lg:block">
+        <a href="admin.html" class="block rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50">Back to Admin Console</a>
+      </div>
+    </aside>
 
-      <section id="panel-display" class="panel" hidden><div class="rounded-3xl bg-white p-5 shadow-sm"><p class="text-[10px] font-black uppercase tracking-[.2em] text-indigo-600">Step 2</p><h2 class="mt-1 text-2xl font-black">Display settings</h2><div class="mt-5 grid gap-5 lg:grid-cols-2"><div><p class="text-xs font-black uppercase tracking-wide text-slate-500">Display mode</p><div class="mt-2 grid gap-2"><label class="choice block cursor-pointer rounded-2xl border-2 border-slate-100 p-3"><input class="sr-only" type="radio" name="mode" value="results" checked><b>Results sequence</b><small class="mt-1 block font-semibold text-slate-500">Play only the selected programmes: details, Third, Second, First, then the final podium and dashboard.</small></label><label class="choice block cursor-pointer rounded-2xl border-2 border-slate-100 p-3"><input class="sr-only" type="radio" name="mode" value="video-only"><b>Video only</b><small class="mt-1 block font-semibold text-slate-500">Full-screen video or image takeover without TV overlays.</small></label><label class="choice block cursor-pointer rounded-2xl border-2 border-slate-100 p-3"><input class="sr-only" type="radio" name="mode" value="media"><b>Media wall</b><small class="mt-1 block font-semibold text-slate-500">Use the normal display with media and announcements.</small></label><label class="choice block cursor-pointer rounded-2xl border-2 border-slate-100 p-3"><input class="sr-only" type="radio" name="mode" value="dashboard"><b>Dashboard auto</b><small class="mt-1 block font-semibold text-slate-500">Restore the standard automatic TV rotation.</small></label></div></div><div class="space-y-4"><label class="block text-xs font-black uppercase tracking-wide text-slate-500">Result order<select id="result-order" class="mt-1 w-full rounded-xl border p-3 text-sm font-bold normal-case"><option value="selected">Selected order</option><option value="latest">Latest announced first</option><option value="oldest">Oldest announced first</option></select></label><label class="block text-xs font-black uppercase tracking-wide text-slate-500">Animation style<select id="animation-style" class="mt-1 w-full rounded-xl border p-3 text-sm font-bold normal-case"><option value="cinematic">Cinematic reveal</option><option value="spotlight">Spotlight winner</option><option value="ticker-rise">Ticker rise</option><option value="confetti">Celebration confetti</option></select></label><div class="rounded-2xl bg-amber-50 p-4 text-sm font-semibold text-amber-900"><b>Tip:</b> Choose <em>Latest announced first</em> to make the most recent result immediately visible on TV.</div></div></div></div></section>
+    <main class="flex-1 min-w-0">
+      <header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:px-6">
+        <h2 id="page-title" class="font-display text-lg font-bold text-slate-900">TV Overview</h2>
+        <div class="flex items-center gap-2">
+          <button id="btn-refresh" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Refresh</button>
+          <button id="btn-send-live" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Send Live to TV</button>
+        </div>
+      </header>
 
-      <section id="panel-media" class="panel" hidden><div class="rounded-3xl bg-white p-5 shadow-sm"><p class="text-[10px] font-black uppercase tracking-[.2em] text-indigo-600">Step 3</p><h2 class="mt-1 text-2xl font-black">Video & media takeover</h2><p class="mt-1 text-sm font-semibold text-slate-500">Paste one direct MP4/WebM or YouTube/Shorts link per line. With multiple links, TV plays each link in the listed order; with one link, it loops continuously.</p><div class="mt-5 grid gap-4 lg:grid-cols-2"><label class="block text-xs font-black uppercase tracking-wide text-slate-500">Video playlist — one URL per line<textarea id="control-video-urls" rows="6" class="mt-1 w-full rounded-2xl border border-slate-200 p-3 text-sm font-semibold normal-case" placeholder="https://www.youtube.com/watch?v=...&#10;https://youtube.com/shorts/...&#10;https://example.com/video.mp4"></textarea><small id="video-status" class="mt-2 block normal-case font-semibold text-slate-500">Add one or more HTTPS video links to create the playback order.</small></label><label class="block text-xs font-black uppercase tracking-wide text-slate-500">Image URLs (optional)<textarea id="control-image-urls" rows="6" class="mt-1 w-full rounded-2xl border border-slate-200 p-3 text-sm font-semibold normal-case" placeholder="One HTTPS image URL per line"></textarea><small class="mt-2 block normal-case font-semibold text-slate-500">Used as a background in Video only mode when images are provided.</small></label></div></div></section>
+      <div class="mx-auto max-w-5xl p-4 lg:p-6 space-y-6">
+        <section id="panel-overview" class="panel space-y-4">
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs font-semibold text-slate-500">Live Mode</p><p id="ov-mode" class="mt-1 font-display text-xl font-bold text-slate-900">Dashboard</p></div>
+            <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs font-semibold text-slate-500">Queued Results</p><p id="ov-queue" class="mt-1 font-mono-num text-xl font-bold text-blue-700">0</p></div>
+            <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs font-semibold text-slate-500">Published Total</p><p id="ov-published" class="mt-1 font-mono-num text-xl font-bold text-slate-900">0</p></div>
+            <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs font-semibold text-slate-500">Last Updated</p><p id="ov-updated" class="mt-1 font-mono-num text-sm font-bold text-slate-700">—</p></div>
+          </div>
+        </section>
 
-      <section id="panel-schedule" class="panel" hidden><div class="rounded-3xl bg-white p-5 shadow-sm"><p class="text-[10px] font-black uppercase tracking-[.2em] text-indigo-600">Step 4 · Playback plan</p><h2 class="mt-1 text-2xl font-black">Choose what happens next</h2><div class="mt-5 grid gap-5 lg:grid-cols-2"><div class="space-y-4"><label class="block text-xs font-black uppercase tracking-wide text-slate-500">When to interrupt current TV content<select id="interrupt-policy" class="mt-1 w-full rounded-xl border p-3 text-sm font-bold normal-case"><option value="after-current">After the current item ends</option><option value="immediate">Immediately</option></select></label><div class="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900"><b>After the selected result queue:</b> TV returns to the live dashboard automatically.</div></div><div class="rounded-2xl bg-slate-50 p-4"><p class="text-[10px] font-black uppercase tracking-[.18em] text-slate-500">Playback summary</p><ol id="playback-summary" class="mt-3 space-y-3 text-sm font-semibold text-slate-700"></ol></div></div></div></section>
-      <section id="panel-preview" class="panel" hidden><div class="rounded-3xl bg-slate-950 p-5 text-white shadow-sm"><p class="text-[10px] font-black uppercase tracking-[.2em] text-indigo-300">Step 5 · review before going live</p><div id="preview" class="mt-2"></div><div class="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm font-semibold text-white/70">Sending live replaces the current TV control plan. Use <b class="text-white">Open live TV preview</b> first when you need to verify a video or queue order.</div><div class="mt-5 flex flex-wrap gap-3"><button onclick="saveTVControl(true)" class="rounded-xl border border-white/20 px-5 py-3 text-sm font-black text-white">Save draft</button><a href="tv.html" target="_blank" rel="noopener" class="rounded-xl border border-white/20 px-5 py-3 text-sm font-black text-white">Open live TV preview</a><button onclick="saveTVControl()" class="rounded-xl bg-indigo-500 px-5 py-3 text-sm font-black text-white">Send live to TV</button></div></div></section>
-      </div></div>
+        <section id="panel-setup" class="panel" hidden>
+          <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+            <div class="flex items-center justify-between"><h3 class="font-display text-base font-bold">Title, Ticker & Background</h3><button id="btn-save-config" type="button" class="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white">Save TV Setup</button></div>
+            <div class="grid gap-4 md:grid-cols-2">
+              <label class="text-xs font-semibold text-slate-700">TV Title<input id="config-title" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
+              <label class="text-xs font-semibold text-slate-700">Background Color<input id="config-bg-color" type="color" value="#0B1120" class="mt-1 h-10 w-full rounded-lg border border-slate-200 p-1"></label>
+              <label class="md:col-span-2 text-xs font-semibold text-slate-700">Ticker Text<input id="config-ticker" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
+              <label class="md:col-span-2 text-xs font-semibold text-slate-700">Announcements (one per line)<textarea id="config-announcements" rows="3" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></textarea></label>
+              <label class="text-xs font-semibold text-slate-700">Background Image URL<input id="config-bg-image" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
+              <label class="text-xs font-semibold text-slate-700">Background Video / YouTube URL<input id="config-bg-video" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
+              <label class="text-xs font-semibold text-slate-700">Slide Image URLs (one per line)<textarea id="config-slides" rows="3" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></textarea></label>
+              <label class="text-xs font-semibold text-slate-700">Media Wall Video URLs (one per line)<textarea id="config-videos" rows="3" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></textarea></label>
+            </div>
+          </div>
+        </section>
+
+        <section id="panel-content" class="panel" hidden>
+          <div class="rounded-xl border border-slate-200 bg-white p-5">
+            <h3 class="font-display text-base font-bold">Visible TV Sections</h3>
+            <div id="section-control-grid" class="mt-4 grid gap-3 sm:grid-cols-2"></div>
+          </div>
+        </section>
+
+        <section id="panel-results" class="panel" hidden>
+          <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-display text-base font-bold">Select Published Results for Queue</h3>
+              <div class="flex gap-2">
+                <button id="btn-select-all" type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-blue-700">Select All</button>
+                <button id="btn-clear-all" type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600">Clear</button>
+              </div>
+            </div>
+            <div id="category-results" class="grid gap-3 md:grid-cols-2"></div>
+          </div>
+        </section>
+
+        <section id="panel-display" class="panel" hidden>
+          <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+            <h3 class="font-display text-base font-bold">Display Mode & Animation</h3>
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-2 text-xs font-semibold">
+                <label class="flex items-center gap-2 rounded-lg border border-slate-200 p-3"><input type="radio" name="mode" value="dashboard" checked>Dashboard Auto</label>
+                <label class="flex items-center gap-2 rounded-lg border border-slate-200 p-3"><input type="radio" name="mode" value="results">Play Result Queue Sequence</label>
+                <label class="flex items-center gap-2 rounded-lg border border-slate-200 p-3"><input type="radio" name="mode" value="media">Media Wall Mode</label>
+                <label class="flex items-center gap-2 rounded-lg border border-slate-200 p-3"><input type="radio" name="mode" value="video-only">Full-Screen Video / Image Takeover</label>
+              </div>
+              <div class="space-y-3">
+                <label class="block text-xs font-semibold text-slate-700">Result Order
+                  <select id="result-order" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    <option value="latest">Latest Announced First</option>
+                    <option value="oldest">Oldest Announced First</option>
+                    <option value="selected">Selected Order</option>
+                  </select>
+                </label>
+                <label class="block text-xs font-semibold text-slate-700">Animation Style
+                  <select id="animation-style" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    <option value="cinematic">Cinematic Reveal</option>
+                    <option value="spotlight">Spotlight</option>
+                    <option value="ticker-rise">Ticker Rise</option>
+                    <option value="confetti">Celebration Pop</option>
+                  </select>
+                </label>
+                <label class="block text-xs font-semibold text-slate-700">Interrupt Policy
+                  <select id="interrupt-policy" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    <option value="after-current">After current slide</option>
+                    <option value="immediate">Immediate</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="panel-media" class="panel" hidden>
+          <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+            <h3 class="font-display text-base font-bold">Takeover Video & Image Playlist</h3>
+            <div class="grid gap-4 md:grid-cols-2">
+              <label class="text-xs font-semibold text-slate-700">Video Playlist URLs (one HTTPS URL per line)<textarea id="control-video-urls" rows="5" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></textarea></label>
+              <label class="text-xs font-semibold text-slate-700">Takeover Image URLs (one HTTPS URL per line)<textarea id="control-image-urls" rows="5" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></textarea></label>
+            </div>
+          </div>
+        </section>
+
+        <section id="panel-preview" class="panel" hidden>
+          <div class="rounded-xl border border-slate-800 bg-slate-900 p-6 text-white space-y-4">
+            <h3 class="font-display text-lg font-bold">Review & Broadcast</h3>
+            <div id="preview-summary" class="text-xs text-slate-300 space-y-1"></div>
+            <div class="flex flex-wrap gap-3">
+              <button id="btn-save-draft" type="button" class="rounded-lg border border-slate-600 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800">Save Draft</button>
+              <button id="btn-broadcast-live" type="button" class="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700">Send Live to TV</button>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
+
   <script type="module">
     import { db, auth } from './firebase-config.js';
-    import { collection, doc, getDoc, onSnapshot, query, setDoc, where } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
-    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
-    let results=[],events=[],students=[],teamDisplayNames={},tvControl={},tvConfig={},hydrated=false,configHydrated=false,selectedResultIds=new Set();
-    const sectionDefs=[['logo','Logo','Festival logo / fallback mark'],['name','FEST LIVE','TV title / festival name'],['subtitle','Live results, standings and announcements','Small text under title'],['clock','Time','Live clock block'],['ticker','Ticker','Scrolling ticker'],['officialLatest','Official latest result','Main latest result card'],['leaderboard','Team Standings','Compact side panel beside the main result'],['recentResults','Recent Results','Recent results card'],['announcements','Announcement','Notice card'],['media','Media Wall','Media wall card'],['videos','Videos','Background and playlist videos']];
-    const h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const lines=id=>(document.getElementById(id)?.value||'').split('\n').map(v=>v.trim()).filter(Boolean);
-    const value=id=>document.getElementById(id)?.value.trim()||'';
-    const setValue=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val??''};
-    const timeValue=v=>typeof v?.toMillis==='function'?v.toMillis():typeof v?.seconds==='number'?v.seconds*1000:Number(v||0);
-    const eventFor=r=>events.find(e=>e.id===r.eventId)||{};
-    const resultId=r=>r.eventId||r.id;
-    const category=r=>eventFor(r).category||eventFor(r).section||r.category||'Uncategorised';
-    const stage=r=>{const event=eventFor(r);return event.stageType||event.stageKind||r.stageType||event.stage||r.stage||event.venue||'Off-Stage'};
-    const gender=r=>eventFor(r).gender||r.gender||'Both';
-    const publishedTime=r=>timeValue(r.publishedAt||r.updatedAt||r.timestamp);
-    const eventName=r=>eventFor(r).name||r.eventName||'Event';
-    const person=id=>students.find(s=>s.id===id)||{};
-    const winners=r=>(r.places||[]).flatMap(place=>(place.winners||[]).map(id=>person(id).name||id)).slice(0,3);
-    const fmtTime=t=>t?new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'}).format(new Date(t)):'Time unavailable';
-    const fmtDay=t=>t?new Intl.DateTimeFormat(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(t)):'Date unavailable';
-    const dateKey=t=>t?new Date(t).toLocaleDateString('en-CA'):'undated';
-    const toast=msg=>{const el=document.getElementById('toast');el.textContent=msg;el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),2600)};
-    const selected=()=>new Set(selectedResultIds);
-    const published=()=>results.filter(r=>r.status==='published').sort((a,b)=>publishedTime(b)-publishedTime(a));
-    const fillSelect=(id,values,label)=>{const select=document.getElementById(id),current=select.value;select.innerHTML=`<option value="">All ${label}</option>`+[...new Set(values)].filter(Boolean).sort().map(v=>`<option value="${h(v)}">${h(v)}</option>`).join('');select.value=[...select.options].some(o=>o.value===current)?current:'';};
-    function resultRow(r){const id=resultId(r);return `<label class="result-row block cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition"><div class="flex gap-3"><input data-result-check type="checkbox" value="${h(id)}" ${selected().has(id)?'checked':''} onchange="toggleResult(this.value,this.checked)" class="mt-1 h-5 w-5 accent-indigo-600"><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-black">${h(eventName(r))}</h3><time class="text-xs font-black text-indigo-700">${h(fmtTime(publishedTime(r)))}</time></div><p class="mt-1 text-[10px] font-black uppercase tracking-wide text-slate-400">${h(category(r))} · ${h(stage(r))} · ${h(gender(r))}</p><p class="mt-2 truncate text-xs font-semibold text-slate-600">${h(winners(r).join(' • ')||'Published result')}</p></div></div></label>`}
-    function renderFilters(){const rows=published();fillSelect('filter-category',rows.map(category),'categories');fillSelect('filter-stage',rows.map(stage),'stages');fillSelect('filter-gender',rows.map(gender),'genders');}
-    function renderCategory(){const c=document.getElementById('filter-category').value,s=document.getElementById('filter-stage').value,g=document.getElementById('filter-gender').value,rows=published().filter(r=>(!c||category(r)===c)&&(!s||stage(r)===s)&&(!g||gender(r)===g));document.getElementById('category-results').innerHTML=`<div class="mb-3 flex items-center justify-between"><b class="text-sm">${rows.length} published programme${rows.length===1?'':'s'}</b><span class="text-xs font-semibold text-slate-500">Newest first</span></div><div class="grid gap-3 xl:grid-cols-2">${rows.map(resultRow).join('')||'<p class="rounded-2xl border border-dashed p-8 text-center text-sm font-bold text-slate-400 xl:col-span-2">No published results match these filters.</p>'}</div>`;}
-    function renderTime(){const groups=new Map();published().forEach(r=>{const key=dateKey(publishedTime(r));if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)});document.getElementById('time-results').innerHTML=[...groups.entries()].map(([key,rows])=>`<details class="accordion rounded-2xl border border-slate-200" ${key===[...groups.keys()][0]?'open':''}><summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4"><span><b class="block">${h(fmtDay(publishedTime(rows[0])))}</b><small class="font-semibold text-slate-500">${rows.length} result${rows.length===1?'':'s'} announced</small></span><span class="rounded-lg bg-indigo-50 px-2 py-1 text-xs font-black text-indigo-700">Latest ${h(fmtTime(publishedTime(rows[0])))}</span></summary><div class="grid gap-3 border-t border-slate-100 p-3 xl:grid-cols-2">${rows.map(resultRow).join('')}</div></details>`).join('')||'<p class="rounded-2xl border border-dashed p-8 text-center text-sm font-bold text-slate-400">No published results yet.</p>';}
-    function validateVideo(){const urls=lines('control-video-urls'),out=document.getElementById('video-status');if(!urls.length){out.textContent='Add one or more HTTPS video links to create the playback order.';out.className='mt-2 block normal-case font-semibold text-slate-500';return;}const invalid=urls.map((url,index)=>{try{return new URL(url).protocol==='https:'?null:index+1}catch{return index+1}}).filter(Boolean);if(invalid.length){out.textContent=`Line ${invalid.join(', ')} needs a full HTTPS YouTube, Shorts, MP4, or WebM URL.`;out.className='mt-2 block normal-case font-semibold text-red-600';return;}const youtubeCount=urls.filter(url=>{try{return ['youtube.com','m.youtube.com','music.youtube.com','youtu.be'].includes(new URL(url).hostname.replace(/^www\./,'').toLowerCase())}catch{return false}}).length;out.textContent=`${urls.length} video${urls.length===1?'':'s'} saved in this order${youtubeCount?` · ${youtubeCount} YouTube link${youtubeCount===1?'':'s'} will play muted`:''}. ${urls.length===1?'This video loops continuously.':'Each video continues to the next link in this listed order.'}`;out.className='mt-2 block normal-case font-semibold text-emerald-600';}
-    function hydrateConfig(){const bg=tvConfig.background||{};setValue('config-title',tvConfig.title||'FEST LIVE');setValue('config-ticker',tvConfig.ticker||'Welcome to Fest Live • Results • Updates');setValue('config-announcements',(tvConfig.announcements||[]).join('\n'));setValue('config-bg-color',bg.color||'#020617');setValue('config-bg-image',bg.imageUrl||'');setValue('config-bg-video',bg.videoUrl||'');setValue('config-videos',(bg.videos||[]).join('\n'));setValue('config-slides',(bg.slides||[]).join('\n'));Object.entries(tvConfig.show||{}).forEach(([key,val])=>{const el=document.querySelector(`[data-content="${key}"]`);if(el&&!tvControl.content?.hasOwnProperty?.(key))el.checked=val!==false});configHydrated=true;}
-    const buildTVDisplayConfig=()=>({title:value('config-title')||'FEST LIVE',ticker:value('config-ticker'),announcements:lines('config-announcements'),interruptPolicy:document.getElementById('interrupt-policy')?.value||'after-current',show:contentSettings(),background:{color:value('config-bg-color')||'#020617',imageUrl:value('config-bg-image'),videoUrl:value('config-bg-video'),videos:lines('config-videos'),slides:lines('config-slides')},sections:sectionSettings(),updatedAt:Date.now(),updatedByUid:auth.currentUser?.uid||''});
-    window.saveTVDisplayConfig=async()=>{const payload=buildTVDisplayConfig();await setDoc(doc(db,'settings','tv_config'),payload,{merge:true});tvConfig={...tvConfig,...payload};toast('TV setup saved');renderAll();};
+    import { cachedGetDoc, cachedGetDocs, invalidateCache } from './data-cache.js';
+    import { escapeHtml } from './admin-utils.js';
+    import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
 
-    function renderSectionControls(){const grid=document.getElementById('section-control-grid');if(!grid)return;const saved={...(tvConfig.sections||{}),...(tvControl.sections||{})},show={...(tvConfig.show||{}),...(tvControl.content||{})};grid.innerHTML=sectionDefs.map(([key,label,help],idx)=>{const section=saved[key]||{};const order=Number(section.order||idx+1);const legacyResults=['officialLatest','recentResults'].includes(key)?show.results!==false:true;const enabled=show[key]!==false&&section.visible!==false&&legacyResults;return `<article class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div class="flex items-start justify-between gap-3"><label class="min-w-0 cursor-pointer"><input data-content="${key}" data-section-visible="${key}" type="checkbox" class="mr-2 h-5 w-5 accent-indigo-600" ${enabled?'checked':''}><b>${h(label)}</b><small class="mt-1 block font-semibold text-slate-500">${h(help)}</small></label><label class="w-24 text-[10px] font-black uppercase tracking-wide text-slate-500">Order<input data-section-order="${key}" type="number" min="1" max="20" value="${order}" class="mt-1 w-full rounded-lg border bg-white p-2 text-sm font-black text-slate-800"></label></div></article>`}).join('');}
-    const sectionSettings=()=>Object.fromEntries(sectionDefs.map(([key],idx)=>[key,{visible:document.querySelector(`[data-section-visible="${key}"]`)?.checked!==false,order:Number(document.querySelector(`[data-section-order="${key}"]`)?.value||idx+1)}]));
-    const contentSettings=()=>Object.fromEntries([...document.querySelectorAll('[data-content]')].map(el=>[el.dataset.content,el.checked]));
-    function renderOverview(){const rows=published().filter(r=>selectedResultIds.has(resultId(r))),mode=(document.querySelector('input[name="mode"]:checked')?.value||'dashboard').replace('-',' ');document.getElementById('overview-mode').textContent=mode.replace(/\b\w/g,v=>v.toUpperCase());document.getElementById('overview-queue').textContent=`${rows.length} selected`;document.getElementById('overview-next').textContent=rows[0]?eventName(rows[0]):'No queued result';document.getElementById('overview-updated').textContent=tvControl.updatedAt?fmtTime(timeValue(tvControl.updatedAt)):'Not yet';document.getElementById('overview-queue-list').innerHTML=rows.slice(0,4).map((r,i)=>`<div class="flex items-center gap-3 rounded-xl border border-slate-100 p-3"><b class="grid h-6 w-6 place-items-center rounded-full bg-indigo-50 text-xs text-indigo-700">${i+1}</b><span class="min-w-0 flex-1 truncate text-sm font-black">${h(eventName(r))}</span><small class="text-xs font-bold text-slate-400">${h(fmtTime(publishedTime(r)))}</small></div>`).join('')||'<p class="rounded-xl border border-dashed p-5 text-sm font-semibold text-slate-400">Build a result queue to see upcoming items here.</p>';document.getElementById('playback-summary').innerHTML=`<li><b>1.</b> ${rows.length?`${rows.length} selected result${rows.length===1?'':'s'} will play`:'No results selected yet'}</li><li><b>2.</b> ${h('Return to live dashboard')}</li><li><b>3.</b> ${h(document.getElementById('interrupt-policy').selectedOptions[0]?.textContent||'After the current item ends')}</li>`;}
-    function renderPreview(){const ids=selected(),rows=published().filter(r=>ids.has(resultId(r))),mode=document.querySelector('input[name="mode"]:checked')?.value||'results',after='Return to live dashboard',animation=document.getElementById('animation-style').selectedOptions[0]?.textContent||'Cinematic reveal',videos=lines('control-video-urls');const warnings=[];if(mode==='results'&&!rows.length)warnings.push('Select at least one published result before sending a results sequence.');if(mode==='video-only'&&!videos.length&&!lines('control-image-urls').length)warnings.push('Video only mode needs a video URL or at least one image URL.');document.getElementById('preview').innerHTML=`<div class="grid gap-4 xl:grid-cols-[1fr_320px]"><div><p class="text-xs font-black uppercase tracking-[.28em] text-indigo-200">Professional TV preview</p><h2 class="mt-2 text-3xl font-black capitalize">${h(mode.replace('-',' '))} is ready</h2><p class="mt-2 text-sm font-semibold text-white/60">${rows.length} selected result${rows.length===1?'':'s'} · ${h(animation)} · After queue: ${h(after)}</p><div class="mt-5 grid gap-3">${rows.slice(0,6).map((r,i)=>`<div class="rounded-2xl bg-white/10 p-4"><div class="flex items-start justify-between gap-3"><span><b class="block text-lg">${i+1}. ${h(eventName(r))}</b><small class="text-white/50">${h(category(r))} · ${h(stage(r))} · ${h(fmtDay(publishedTime(r)))}, ${h(fmtTime(publishedTime(r)))}</small></span><span class="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black text-emerald-200">OFFICIAL</span></div><p class="mt-2 text-sm font-semibold text-white/70">${h(winners(r).join(' • ')||'Published result')}</p></div>`).join('')||'<p class="rounded-xl bg-white/10 p-4 text-sm font-semibold text-white/60">No result selected yet.</p>'}</div></div><aside class="rounded-2xl bg-white/10 p-4"><p class="text-xs font-black uppercase tracking-[.2em] text-indigo-200">Readiness</p><ul class="mt-3 space-y-2 text-sm font-semibold text-white/70"><li>Mode: <b class="text-white">${h(mode)}</b></li><li>Queue: <b class="text-white">${rows.length}</b></li><li>Video playlist: <b class="text-white">${videos.length?`${videos.length} item${videos.length===1?'':'s'} in order`:'No video URL'}</b></li></ul>${warnings.length?`<div class="mt-4 rounded-xl bg-amber-400/15 p-3 text-sm font-bold text-amber-100">${warnings.map(h).join('<br>')}</div>`:`<div class="mt-4 rounded-xl bg-emerald-400/15 p-3 text-sm font-bold text-emerald-100">Ready to send live.</div>`}</aside></div>`;}
-    function renderAll(){renderCategory();renderTime();renderPreview();renderOverview();renderSectionControls();lucide.createIcons();}
-    function hydrate(){if(hydrated)return;hydrated=true;selectedResultIds=new Set(tvControl.selectedResultIds||[]);document.querySelector(`input[name="mode"][value="${tvControl.mode||'results'}"]`)?.click();document.getElementById('animation-style').value=tvControl.animationStyle||'cinematic';document.getElementById('result-order').value=tvControl.resultOrder||'latest';document.getElementById('interrupt-policy').value=tvControl.interruptPolicy||'after-current';document.getElementById('control-video-urls').value=(Array.isArray(tvControl.videoUrls)&&tvControl.videoUrls.length?tvControl.videoUrls:[tvControl.videoUrl]).filter(Boolean).join('\n');document.getElementById('control-image-urls').value=(tvControl.imageUrls||[]).join('\n');Object.entries(tvControl.content||{}).forEach(([key,value])=>{const el=document.querySelector(`[data-content="${key}"]`);if(el)el.checked=value!==false});validateVideo();renderAll();}
-    window.toggleResult=(id,checked)=>{checked?selectedResultIds.add(id):selectedResultIds.delete(id);renderAll()};
-    const visibleResultChecks=()=>[...document.querySelectorAll('#panel-results [data-result-check]')].filter(cb=>!cb.closest('.hidden,[hidden],details:not([open])'));
-    window.setAllResults=checked=>{visibleResultChecks().forEach(cb=>checked?selectedResultIds.add(cb.value):selectedResultIds.delete(cb.value));renderAll()};
-    window.saveTVControl=async draft=>{const ids=[...selected()],order=document.getElementById('result-order').value,sorted=published().filter(r=>ids.includes(resultId(r))).sort((a,b)=>order==='oldest'?publishedTime(a)-publishedTime(b):order==='latest'?publishedTime(b)-publishedTime(a):ids.indexOf(resultId(a))-ids.indexOf(resultId(b))).map(resultId),videoUrls=lines('control-video-urls'),payload={mode:document.querySelector('input[name="mode"]:checked')?.value||'results',animationStyle:document.getElementById('animation-style').value,resultOrder:order,selectedResultIds:sorted,content:contentSettings(),interruptPolicy:document.getElementById('interrupt-policy').value,afterQueue:'dashboard',videoUrls,videoUrl:videoUrls[0]||'',imageUrls:lines('control-image-urls'),sections:sectionSettings(),updatedAt:Date.now(),updatedByUid:auth.currentUser?.uid||''};if(draft){await setDoc(doc(db,'settings','tv_control_draft'),payload);toast('Draft saved. Live TV has not changed.');return;}if(!confirm(`Send this plan live? ${sorted.length} selected result(s) will replace the current TV queue.`))return;await setDoc(doc(db,'settings','tv_control'),payload,{merge:true});tvControl=payload;toast('TV display updated successfully');renderAll();};
-    const panelTitles={overview:'TV Control Room',setup:'TV Setup',content:'Section Visibility',results:'Result Queue',display:'Mode & Animation',media:'Media Takeover',schedule:'Playback Plan',preview:'Review & Send'};
-    const closeSidebar=()=>{document.getElementById('sidebar')?.classList.replace('sidebar-open','sidebar-closed');document.getElementById('sidebar-overlay')?.classList.add('hidden');document.body.classList.remove('sidebar-open-btn')};
-    const openSidebar=()=>{document.getElementById('sidebar')?.classList.replace('sidebar-closed','sidebar-open');document.getElementById('sidebar-overlay')?.classList.remove('hidden');document.body.classList.add('sidebar-open-btn')};
-    const toggleDesktopSidebar=()=>{const sidebar=document.getElementById('sidebar'),button=document.getElementById('desktop-sidebar-toggle');if(!sidebar||!button)return;const collapsed=!sidebar.classList.contains('desktop-collapsed');sidebar.classList.toggle('desktop-collapsed',collapsed);button.setAttribute('aria-expanded',String(!collapsed));button.title=collapsed?'Expand sidebar':'Collapse sidebar';button.innerHTML=`<i data-lucide="${collapsed?'panel-left-open':'panel-left-close'}" class="h-5 w-5"></i>`;lucide.createIcons();};
-    const openPanel=name=>{const button=document.querySelector(`[data-panel="${name}"]`);document.querySelectorAll('[data-panel]').forEach(b=>b.setAttribute('aria-selected',String(b===button)));document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!==`panel-${name}`);const title=document.getElementById('page-title');if(title)title.textContent=panelTitles[name]||'TV Control Room';document.getElementById('content-container')?.scrollTo({top:0,behavior:'smooth'});if(window.innerWidth<768)closeSidebar();};
-    document.querySelectorAll('[data-panel]').forEach(button=>button.addEventListener('click',()=>openPanel(button.dataset.panel)));document.querySelectorAll('[data-panel-open]').forEach(button=>button.addEventListener('click',()=>openPanel(button.dataset.panelOpen)));document.getElementById('mobile-sidebar-toggle')?.addEventListener('click',openSidebar);document.getElementById('sidebar-overlay')?.addEventListener('click',closeSidebar);document.getElementById('desktop-sidebar-toggle')?.addEventListener('click',toggleDesktopSidebar);
-    document.addEventListener('change',e=>{if(e.target.matches('input[name="result-browse"]')){const categoryView=e.target.value==='category';document.getElementById('category-browser').classList.toggle('hidden',!categoryView);document.getElementById('time-browser').classList.toggle('hidden',categoryView);}if(e.target.matches('input[name="mode"],#animation-style,#result-order,[data-content],#interrupt-policy,[data-section-order]')){renderPreview();renderOverview();}});document.getElementById('control-video-urls').addEventListener('input',()=>{validateVideo();renderPreview();});
-    onAuthStateChanged(auth,async user=>{if(!user){location.replace('login.html?next=tv-control.html');return;}const snap=await getDoc(doc(db,'adminUsers',user.uid));if(!snap.exists()||snap.data().active!==true||!['admin','superAdmin'].includes(snap.data().role)){await signOut(auth);location.replace('login.html?next=tv-control.html');return;}onSnapshot(query(collection(db,'results'),where('status','==','published')),s=>{results=s.docs.map(d=>({eventId:d.id,...d.data()}));renderFilters();renderAll()});onSnapshot(collection(db,'events'),s=>{events=s.docs.map(d=>({id:d.id,...d.data()}));renderFilters();renderAll()});onSnapshot(collection(db,'students'),s=>{students=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()});onSnapshot(doc(db,'settings','general'),s=>{teamDisplayNames=s.data()?.teamDisplayNames||{};renderAll()});onSnapshot(doc(db,'settings','tv_control'),s=>{tvControl=s.data()||{};hydrate()});onSnapshot(doc(db,'settings','tv_config'),s=>{tvConfig=s.data()||{};hydrateConfig();renderAll()});});
-    lucide.createIcons();
+    const byId = (id) => document.getElementById(id);
+    const h = escapeHtml;
+    let results = [];
+    let events = [];
+    let tvConfig = {};
+    let tvControl = {};
+    let selectedIds = new Set();
+
+    const sectionDefs = [
+      ['logo', 'Festival Logo'],
+      ['name', 'TV Title'],
+      ['subtitle', 'Subtitle'],
+      ['clock', 'Live Clock'],
+      ['ticker', 'Scrolling Ticker'],
+      ['officialLatest', 'Latest Published Result'],
+      ['leaderboard', 'Team Standings'],
+      ['recentResults', 'Recent Results'],
+      ['announcements', 'Announcements'],
+      ['media', 'Media Wall'],
+      ['videos', 'Video Playback']
+    ];
+
+    const showToast = (msg) => {
+      const el = byId('toast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 2600);
+    };
+
+    const lines = (id) => (byId(id)?.value || '').split('\n').map((s) => s.trim()).filter(Boolean);
+    const timeValue = (v) => (typeof v?.toMillis === 'function' ? v.toMillis() : typeof v?.seconds === 'number' ? v.seconds * 1000 : Number(v || 0));
+    const eventFor = (r) => events.find((e) => e.id === r.eventId) || {};
+
+    function renderAll() {
+      const sorted = results.slice().sort((a, b) => timeValue(b.publishedAt || b.updatedAt) - timeValue(a.publishedAt || a.updatedAt));
+      byId('ov-mode').textContent = (document.querySelector('input[name="mode"]:checked')?.value || 'dashboard').toUpperCase();
+      byId('ov-queue').textContent = String(selectedIds.size);
+      byId('ov-published').textContent = String(sorted.length);
+      byId('ov-updated').textContent = tvControl.updatedAt ? new Date(timeValue(tvControl.updatedAt)).toLocaleTimeString() : 'Not yet';
+
+      byId('category-results').innerHTML = sorted.length ? sorted.map((r) => {
+        const id = r.eventId || r.id;
+        const ev = eventFor(r);
+        const winners = (r.places || []).flatMap((p) => (p.winners || []).map((wid) => r.winnerDetails?.[wid]?.name || wid)).slice(0, 3);
+        return `
+          <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+            <input type="checkbox" data-result-id="${h(id)}" ${selectedIds.has(id) ? 'checked' : ''} class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-700">
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-xs font-bold text-slate-900">${h(ev.name || r.eventName || id)}</p>
+              <p class="text-[11px] text-slate-500">${h(ev.category || r.category || '')} • ${h(winners.join(', ') || 'Published')}</p>
+            </div>
+          </label>
+        `;
+      }).join('') : '<p class="text-xs text-slate-500">No published results available.</p>';
+
+      const savedSec = { ...(tvConfig.sections || {}), ...(tvControl.sections || {}) };
+      const savedShow = { ...(tvConfig.show || {}), ...(tvControl.content || {}) };
+      byId('section-control-grid').innerHTML = sectionDefs.map(([key, label], idx) => `
+        <div class="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-xs">
+          <label class="flex items-center gap-2 font-semibold text-slate-800">
+            <input type="checkbox" data-sec-vis="${key}" ${savedShow[key] !== false && savedSec[key]?.visible !== false ? 'checked' : ''}>
+            ${h(label)}
+          </label>
+          <input type="number" data-sec-ord="${key}" value="${Number(savedSec[key]?.order || idx + 1)}" min="1" max="20" class="w-16 rounded border border-slate-200 px-2 py-1 text-center font-mono-num">
+        </div>
+      `).join('');
+
+      byId('preview-summary').innerHTML = `
+        <p>Mode: <strong>${h(document.querySelector('input[name="mode"]:checked')?.value || 'dashboard')}</strong></p>
+        <p>Selected Results: <strong>${selectedIds.size}</strong></p>
+        <p>Takeover Videos: <strong>${lines('control-video-urls').length}</strong></p>
+      `;
+    }
+
+    function hydrate() {
+      const bg = tvConfig.background || {};
+      byId('config-title').value = tvConfig.title || 'FEST LIVE';
+      byId('config-ticker').value = tvConfig.ticker || 'Welcome to Fest Live';
+      byId('config-announcements').value = (tvConfig.announcements || []).join('\n');
+      byId('config-bg-color').value = bg.color || '#0B1120';
+      byId('config-bg-image').value = bg.imageUrl || '';
+      byId('config-bg-video').value = bg.videoUrl || '';
+      byId('config-slides').value = (bg.slides || []).join('\n');
+      byId('config-videos').value = (bg.videos || []).join('\n');
+
+      selectedIds = new Set(tvControl.selectedResultIds || []);
+      const modeInput = document.querySelector(`input[name="mode"][value="${tvControl.mode || 'dashboard'}"]`);
+      if (modeInput) modeInput.checked = true;
+      byId('result-order').value = tvControl.resultOrder || 'latest';
+      byId('animation-style').value = tvControl.animationStyle || 'cinematic';
+      byId('interrupt-policy').value = tvControl.interruptPolicy || 'after-current';
+      byId('control-video-urls').value = (tvControl.videoUrls || []).join('\n');
+      byId('control-image-urls').value = (tvControl.imageUrls || []).join('\n');
+      renderAll();
+    }
+
+    async function loadData(force = false) {
+      if (force) invalidateCache();
+      const [cfgDoc, ctrlDoc, evDocs, resSnap] = await Promise.all([
+        cachedGetDoc(db, 'settings', 'tv_config', { ttlMs: 60000 }),
+        cachedGetDoc(db, 'settings', 'tv_control', { ttlMs: 30000 }),
+        cachedGetDocs(collection(db, 'events'), { cacheKey: 'tv_ctrl_events', ttlMs: 120000 }),
+        getDocs(query(collection(db, 'results'), where('status', '==', 'published')))
+      ]);
+      tvConfig = cfgDoc || {};
+      tvControl = ctrlDoc || {};
+      events = evDocs || [];
+      results = resSnap.docs.map((d) => ({ eventId: d.id, ...d.data() }));
+      hydrate();
+    }
+
+    const collectSections = () => Object.fromEntries(sectionDefs.map(([k], i) => [k, {
+      visible: document.querySelector(`[data-sec-vis="${k}"]`)?.checked !== false,
+      order: Number(document.querySelector(`[data-sec-ord="${k}"]`)?.value || i + 1)
+    }]));
+
+    const collectContent = () => Object.fromEntries(sectionDefs.map(([k]) => [k, document.querySelector(`[data-sec-vis="${k}"]`)?.checked !== false]));
+
+    async function saveConfig() {
+      const payload = {
+        title: byId('config-title').value.trim() || 'FEST LIVE',
+        ticker: byId('config-ticker').value.trim(),
+        announcements: lines('config-announcements'),
+        interruptPolicy: byId('interrupt-policy').value,
+        show: collectContent(),
+        sections: collectSections(),
+        background: {
+          color: byId('config-bg-color').value || '#0B1120',
+          imageUrl: byId('config-bg-image').value.trim(),
+          videoUrl: byId('config-bg-video').value.trim(),
+          slides: lines('config-slides'),
+          videos: lines('config-videos')
+        },
+        updatedAt: Date.now(),
+        updatedByUid: auth.currentUser?.uid || ''
+      };
+      await setDoc(doc(db, 'settings', 'tv_config'), payload, { merge: true });
+      tvConfig = payload;
+      showToast('TV Setup saved');
+    }
+
+    async function saveControl(draft = false) {
+      const videoUrls = lines('control-video-urls');
+      const payload = {
+        mode: document.querySelector('input[name="mode"]:checked')?.value || 'dashboard',
+        animationStyle: byId('animation-style').value,
+        resultOrder: byId('result-order').value,
+        selectedResultIds: [...selectedIds],
+        content: collectContent(),
+        sections: collectSections(),
+        interruptPolicy: byId('interrupt-policy').value,
+        afterQueue: 'dashboard',
+        videoUrls,
+        videoUrl: videoUrls[0] || '',
+        imageUrls: lines('control-image-urls'),
+        updatedAt: Date.now(),
+        updatedByUid: auth.currentUser?.uid || ''
+      };
+      await setDoc(doc(db, 'settings', draft ? 'tv_control_draft' : 'tv_control'), payload, { merge: true });
+      if (!draft) tvControl = payload;
+      renderAll();
+      showToast(draft ? 'TV draft saved' : 'Sent live to TV');
+    }
+
+    document.addEventListener('click', (e) => {
+      const pBtn = e.target.closest('[data-panel]');
+      if (pBtn) {
+        const name = pBtn.dataset.panel;
+        document.querySelectorAll('[data-panel]').forEach((b) => b.setAttribute('aria-selected', String(b === pBtn)));
+        document.querySelectorAll('.panel').forEach((p) => { p.hidden = p.id !== `panel-${name}`; });
+        byId('page-title').textContent = pBtn.textContent;
+      }
+    });
+
+    document.addEventListener('change', (e) => {
+      if (e.target.matches('[data-result-id]')) {
+        if (e.target.checked) selectedIds.add(e.target.dataset.resultId);
+        else selectedIds.delete(e.target.dataset.resultId);
+        renderAll();
+      }
+    });
+
+    byId('btn-select-all')?.addEventListener('click', () => {
+      results.forEach((r) => selectedIds.add(r.eventId || r.id));
+      renderAll();
+    });
+    byId('btn-clear-all')?.addEventListener('click', () => {
+      selectedIds.clear();
+      renderAll();
+    });
+    byId('btn-refresh')?.addEventListener('click', () => loadData(true).then(() => showToast('Refreshed')));
+    byId('btn-save-config')?.addEventListener('click', saveConfig);
+    byId('btn-send-live')?.addEventListener('click', () => saveControl(false));
+    byId('btn-broadcast-live')?.addEventListener('click', () => saveControl(false));
+    byId('btn-save-draft')?.addEventListener('click', () => saveControl(true));
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return window.location.replace('login.html?next=tv-control.html');
+      const snap = await getDoc(doc(db, 'adminUsers', user.uid));
+      const profile = snap.exists() ? snap.data() : null;
+      if (!profile || profile.active !== true || !['admin', 'superAdmin'].includes(profile.role)) {
+        return window.location.replace('login.html?next=tv-control.html');
+      }
+      await loadData();
+      window.lucide?.createIcons?.();
+    });
   </script>
 </body>
 </html>

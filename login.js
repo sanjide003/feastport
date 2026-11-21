@@ -1,22 +1,23 @@
-import { auth, db } from './firebase-config.js';
+import { auth, db, isFirebaseConfigured } from './firebase-config.js';
 import { collection, doc, getDoc, getDocs, limit, query, setDoc, where } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
 import { normalizeBranding, brandingName, readCachedBranding, cacheBranding, clearBrandingCache, applyLogo } from './branding-config.js';
+import { cachedGetDoc } from './data-cache.js';
 
 const ADMIN_ROLES = new Set(['admin', 'superAdmin']);
-const ROLE_REDIRECTS = { admin: 'admin.html', superAdmin: 'admin.html', teamLeader: 'team.html', judge: 'judge.html', publisher: 'publish.html' };
+const ROLE_REDIRECTS = { admin: 'admin.html', superAdmin: 'admin.html', teamLeader: 'team.html', judge: 'judge.html' };
 const byId = (id) => document.getElementById(id);
 const setText = (id, text) => { const el = byId(id); if (el) el.textContent = text || ''; };
 const params = new URLSearchParams(window.location.search);
 const requestedNext = params.get('next') || '';
-const clearRoleSessions = () => ['team_access_uid', 'team_leader_team', 'judge_access_uid', 'judge_user', 'publisher_access_uid', 'media_access_uid'].forEach(key => sessionStorage.removeItem(key));
+const clearRoleSessions = () => ['team_access_uid', 'team_leader_team', 'judge_access_uid', 'judge_user', 'publisher_access_uid', 'media_access_uid'].forEach((key) => sessionStorage.removeItem(key));
 
 const normalizeUsername = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, '_');
 const normalizeEmailKey = (value) => `email_${normalizeUsername(value).replace(/[^a-z0-9_@.-]/g, '_')}`;
 
 let accessLoginInProgress = false;
 let navigationStarted = false;
-const authPersistenceReady = setPersistence(auth, browserLocalPersistence);
+const authPersistenceReady = isFirebaseConfigured ? setPersistence(auth, browserLocalPersistence).catch(() => {}) : Promise.resolve();
 let loginBranding = {};
 
 function applyLoginBranding(config = {}) {
@@ -24,21 +25,28 @@ function applyLoginBranding(config = {}) {
   const festName = brandingName(loginBranding);
   setText('login-fest-name', festName);
   setText('transition-fest-name', festName);
-  document.title = `${festName} Login`;
-  document.querySelectorAll('[data-fest-logo]').forEach(image => applyLogo(image,image.parentElement?.querySelector('[data-logo-fallback]'),loginBranding));
+  document.title = `${festName} — Staff Login`;
+  document.querySelectorAll('[data-fest-logo]').forEach((image) =>
+    applyLogo(image, image.parentElement?.querySelector('[data-logo-fallback]'), loginBranding)
+  );
 }
 
 async function loadLoginBranding() {
   try {
     applyLoginBranding(readCachedBranding());
-  } catch (_) { /* Ignore malformed legacy cache. */ }
+  } catch (_) {}
+  if (!isFirebaseConfigured) return;
   try {
-    const snapshot = await getDoc(doc(db, 'settings', 'home_config'));
-    if (snapshot.exists()) {
-      const config = snapshot.data();
-      applyLoginBranding(cacheBranding(config));
-    } else { clearBrandingCache(); applyLoginBranding({}); }
-  } catch (error) { console.warn('Login branding could not be refreshed', error); }
+    const data = await cachedGetDoc(db, 'settings', 'home_config', { ttlMs: 300_000 });
+    if (data) {
+      applyLoginBranding(cacheBranding(data));
+    } else {
+      clearBrandingCache();
+      applyLoginBranding({});
+    }
+  } catch (error) {
+    console.warn('Login branding could not be refreshed', error);
+  }
 }
 
 function showLoginTransition() {
@@ -48,7 +56,7 @@ function showLoginTransition() {
   overlay?.classList.add('flex');
 }
 
-const loginBrandingReady = Promise.race([loadLoginBranding(), new Promise(resolve => window.setTimeout(resolve, 1200))]);
+const loginBrandingReady = Promise.race([loadLoginBranding(), new Promise((resolve) => window.setTimeout(resolve, 1200))]);
 
 async function navigateOnce(target) {
   if (navigationStarted) return;
@@ -105,10 +113,9 @@ function redirectForProfile(profile) {
     sessionStorage.setItem('team_leader_team', profile.team || '');
   }
   if (profile.role === 'judge') sessionStorage.setItem('judge_access_uid', profile.uid || '');
-  if (profile.role === 'publisher') sessionStorage.setItem('publisher_access_uid', profile.uid || '');
   const roleTarget = ROLE_REDIRECTS[profile.role] || 'admin.html';
   const requestedPage = requestedNext.split(/[?#]/)[0].split('/').pop() || '';
-  const allowedNextPages = ADMIN_ROLES.has(profile.role) ? new Set(['admin.html', 'publish.html']) : new Set([roleTarget]);
+  const allowedNextPages = ADMIN_ROLES.has(profile.role) ? new Set(['admin.html', 'tv-control.html']) : new Set([roleTarget]);
   if (allowedNextPages.has(requestedPage)) return requestedPage;
   return roleTarget;
 }
@@ -119,17 +126,19 @@ function setBusy(isBusy) {
   btn.disabled = isBusy;
   btn.classList.toggle('opacity-70', isBusy);
   btn.classList.toggle('cursor-not-allowed', isBusy);
-  btn.querySelector('[data-login-label]').textContent = isBusy ? 'Checking...' : 'Login';
+  const label = btn.querySelector('[data-login-label]');
+  if (label) label.textContent = isBusy ? 'Verifying…' : 'Sign In';
 }
 
 function loginError(error) {
+  if (!isFirebaseConfigured) return 'Firebase is not configured yet. Connect Firebase environment variables first.';
   if (error.message === 'username-not-found' || error.message === 'username-disabled') {
     return 'Username/email or password is incorrect.';
   }
   if (error.code === 'permission-denied') {
     return 'Unable to verify access right now. Please try again.';
   }
-  return 'Invalid username/email, password, or missing active access role.';
+  return 'Invalid username/email, password, or missing active role.';
 }
 
 async function completeLogin(user) {
@@ -137,7 +146,7 @@ async function completeLogin(user) {
   const profile = await loadAccessProfile(user);
   if (!profile) {
     await signOut(auth);
-    setText('login-error', 'This account is not active or does not have page access.');
+    setText('login-error', 'This account is not active or does not have portal access.');
     setBusy(false);
     return;
   }
@@ -156,6 +165,10 @@ byId('login-toggle-password')?.addEventListener('click', () => {
 
 byId('standalone-login-form')?.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (!isFirebaseConfigured) {
+    setText('login-error', loginError({}));
+    return;
+  }
   setBusy(true);
   setText('login-error', '');
   try {
@@ -168,20 +181,25 @@ byId('standalone-login-form')?.addEventListener('submit', async (event) => {
     const credential = await signInWithEmailAndPassword(auth, email, password);
     await completeLogin(credential.user);
   } catch (error) {
-    console.error('Standalone admin login failed', error);
+    console.error('Staff login failed', error);
     setText('login-error', loginError(error));
     setBusy(false);
     accessLoginInProgress = false;
   }
 });
 
-onAuthStateChanged(auth, async (user) => {
-  if (user && !accessLoginInProgress && !navigationStarted) {
-    accessLoginInProgress = true;
-    try { await completeLogin(user); }
-    finally { if(!navigationStarted) accessLoginInProgress = false; }
-  }
-});
+if (isFirebaseConfigured) {
+  onAuthStateChanged(auth, async (user) => {
+    if (user && !accessLoginInProgress && !navigationStarted) {
+      accessLoginInProgress = true;
+      try {
+        await completeLogin(user);
+      } finally {
+        if (!navigationStarted) accessLoginInProgress = false;
+      }
+    }
+  });
+}
 
 const initialMessage = params.get('message') || sessionStorage.getItem('admin_login_message') || '';
 sessionStorage.removeItem('admin_login_message');

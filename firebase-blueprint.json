@@ -1,0 +1,172 @@
+{
+  "entities": {
+    "Setting": {
+      "title": "Setting",
+      "description": "Festival configuration documents including home_config, general, public_config, scoring_rules, schedule_config, registration_config, tv_config, tv_control, and public_summary.",
+      "type": "object",
+      "properties": {
+        "updatedAt": { "type": "number" }
+      }
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Administrator user profile keyed by Firebase Auth UID.",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "superAdmin"] },
+        "active": { "type": "boolean" }
+      },
+      "required": ["username", "email", "role", "active"]
+    },
+    "AccessUser": {
+      "title": "AccessUser",
+      "description": "Staff portal access profile for Team Leaders, Judges, and Admins.",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "superAdmin", "teamLeader", "judge"] },
+        "team": { "type": "string" },
+        "genderScope": { "type": "string", "enum": ["Boys", "Girls", "Both"] },
+        "active": { "type": "boolean" }
+      },
+      "required": ["username", "email", "role", "active"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Institutional student participant record.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "team": { "type": "string" },
+        "category": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Boys", "Girls"] },
+        "chestNo": { "type": "string" },
+        "photoData": { "type": "string" },
+        "showPhotoInResults": { "type": "boolean" }
+      },
+      "required": ["name", "team", "category", "gender"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Competition event with category, stage, gender, limits, and schedule fields.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Boys", "Girls", "Both", "Mixed"] },
+        "type": { "type": "string", "enum": ["Single", "Group"] },
+        "stage": { "type": "string", "enum": ["On-Stage", "Off-Stage"] },
+        "limit": { "type": "number" },
+        "groupSize": { "type": "number" },
+        "resultMethod": { "type": "string" },
+        "maximumMark": { "type": "number" },
+        "scheduleDate": { "type": "string" },
+        "scheduleStage": { "type": "string" },
+        "time": { "type": "string" }
+      },
+      "required": ["name", "category", "gender", "type", "stage"]
+    },
+    "Registration": {
+      "title": "Registration",
+      "description": "Confirmed team or admin registration linking students to an event.",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string" },
+        "team": { "type": "string" },
+        "managedGender": { "type": "string", "enum": ["Boys", "Girls", "Both"] },
+        "slotIndex": { "type": "number" },
+        "studentIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["eventId", "team", "studentIds"]
+    },
+    "RegistrationRequest": {
+      "title": "RegistrationRequest",
+      "description": "Student self-registration request awaiting Team Leader or Admin review.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "participantType": { "type": "string", "enum": ["student"] },
+        "gender": { "type": "string", "enum": ["Boys", "Girls"] },
+        "team": { "type": "string" },
+        "category": { "type": "string" },
+        "relatedStudentId": { "type": "string" },
+        "eventIds": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string" }
+      },
+      "required": ["name", "participantType", "gender", "team", "eventIds", "status"]
+    },
+    "JudgeAssignment": {
+      "title": "JudgeAssignment",
+      "description": "Assignment of a judge to a competition event.",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string" },
+        "eventName": { "type": "string" },
+        "judgeId": { "type": "string" },
+        "judgeName": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["eventId", "judgeId"]
+    },
+    "JudgeScore": {
+      "title": "JudgeScore",
+      "description": "Judge score sheet keyed by assignment ID.",
+      "type": "object",
+      "properties": {
+        "assignmentId": { "type": "string" },
+        "judgeId": { "type": "string" },
+        "eventId": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "submitted"] },
+        "marks": { "type": "array" }
+      },
+      "required": ["assignmentId", "judgeId", "eventId", "status", "marks"]
+    },
+    "Result": {
+      "title": "Result",
+      "description": "Self-contained competition result with pre-resolved winnerDetails for zero-extra-read public rendering.",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string" },
+        "eventName": { "type": "string" },
+        "category": { "type": "string" },
+        "gender": { "type": "string" },
+        "stage": { "type": "string" },
+        "type": { "type": "string" },
+        "status": { "type": "string", "enum": ["ready", "published", "archived"] },
+        "places": { "type": "array" },
+        "gradeAwards": { "type": "array" },
+        "winnerDetails": { "type": "object" },
+        "publishedAt": { "type": "number" }
+      },
+      "required": ["eventId", "eventName", "status", "places"]
+    }
+  },
+  "firestore": {
+    "/settings/{settingId}": { "schema": { "$ref": "#/entities/Setting" }, "description": "Festival configuration and public_summary cache" },
+    "/adminUsers/{userId}": { "schema": { "$ref": "#/entities/AdminUser" }, "description": "Administrator profiles" },
+    "/adminUsernames/{username}": { "schema": { "type": "object" }, "description": "Username to email lookup for admins" },
+    "/accessUsers/{userId}": { "schema": { "$ref": "#/entities/AccessUser" }, "description": "Staff portal profiles" },
+    "/accessUsernames/{username}": { "schema": { "type": "object" }, "description": "Username to email lookup for staff" },
+    "/teamLeaders/{leaderId}": { "schema": { "type": "object" }, "description": "Public showcase cards for team leaders" },
+    "/students/{studentId}": { "schema": { "$ref": "#/entities/Student" }, "description": "Institutional student roster" },
+    "/events/{eventId}": { "schema": { "$ref": "#/entities/Event" }, "description": "Competition events and schedule" },
+    "/registrations/{registrationId}": { "schema": { "$ref": "#/entities/Registration" }, "description": "Confirmed registrations" },
+    "/registrationRequests/{requestId}": { "schema": { "$ref": "#/entities/RegistrationRequest" }, "description": "Student self-registration requests" },
+    "/teamRegistrationPolicies/{teamId}": { "schema": { "type": "object" }, "description": "Per-team registration mode policy" },
+    "/scheduleBreaks/{breakId}": { "schema": { "type": "object" }, "description": "Scheduled breaks between events" },
+    "/judgeAssignments/{assignmentId}": { "schema": { "$ref": "#/entities/JudgeAssignment" }, "description": "Event-to-judge assignments" },
+    "/judgeScores/{scoreId}": { "schema": { "$ref": "#/entities/JudgeScore" }, "description": "Submitted and draft judge score sheets" },
+    "/publicJudgingStatuses/{assignmentId}": { "schema": { "type": "object" }, "description": "Public-safe judging completion marker" },
+    "/results/{resultId}": { "schema": { "$ref": "#/entities/Result" }, "description": "Published and ready event results" },
+    "/resultRevisions/{revisionId}": { "schema": { "type": "object" }, "description": "Audit trail of published result revisions" },
+    "/teamScoreLedgers/{eventId}": { "schema": { "type": "object" }, "description": "Team score breakdown by event" },
+    "/notifications/{notificationId}": { "schema": { "type": "object" }, "description": "Team leader notifications" },
+    "/auditLogs/{logId}": { "schema": { "type": "object" }, "description": "Administrative audit log entries" },
+    "/deletedBackups/{backupId}": { "schema": { "type": "object" }, "description": "Pre-reset backup snapshots" }
+  }
+}
