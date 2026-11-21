@@ -1,10 +1,11 @@
 const dependencyCatalog = {
     tailwind: { globalName: 'tailwind', label: 'Tailwind Play CDN' },
-    lucide: { globalName: 'lucide', label: 'Lucide Icons', fallback: 'https://unpkg.com/lucide@1.25.0' }
+    lucide: { globalName: 'lucide', label: 'Lucide Icons', fallback: 'https://unpkg.com/lucide@1.25.0' },
+    xlsx: { globalName: 'XLSX', label: 'SheetJS Excel Engine', fallback: 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js' }
 };
 
 const loadedFallbacks = new Map();
-const LOAD_TIMEOUT_MS = 5000;
+const LOAD_TIMEOUT_MS = 12000;
 const hasDependency = (spec) => spec.test ? spec.test() : Boolean(window[spec.globalName]);
 
 function loadFallback(src) {

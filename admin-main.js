@@ -9,6 +9,7 @@ import { normalizeRegistrationConfig } from './registration-utils.js';
 import { defaultScoringRules, normalizeScoringRules, buildTeamScoreLedger } from './score-utils.js';
 import { escapeHtml, printPage, resolveDisplayName } from './admin-utils.js';
 import { createAdminResultsController } from './admin-results.js';
+import { createAdminExcelController } from './admin-excel.js';
 import { initCollapsibleSidebar } from './sidebar-shell.js';
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
 import { getAuth as getSecondaryAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
@@ -55,6 +56,7 @@ let state = {
 
 let activeTab = 'overview';
 let resultsController = null;
+let excelController = null;
 
 const teamName = (key) => resolveDisplayName(state.teamDisplayNames, key, key);
 const categoryName = (key) => resolveDisplayName(state.categoryDisplayNames, key, key);
@@ -603,6 +605,7 @@ function renderAll() {
   renderSchedule();
   renderAccessList();
   resultsController?.renderAll();
+  excelController?.renderAllWorkspaces();
   window.lucide?.createIcons?.();
 }
 
@@ -1651,6 +1654,18 @@ initAdminAuth({
       confirm: confirmAction,
       prompt: promptAction,
       updateState: (patch) => Object.assign(state, patch)
+    });
+    excelController = createAdminExcelController(() => state, {
+      db,
+      toast: showToast,
+      confirm: confirmAction,
+      onCommitted: async (scope) => {
+        populateSelectOptions();
+        renderAll();
+        if (scope === 'students') {
+          await resultsController?.syncPublicSummary(state.results);
+        }
+      }
     });
     bindEvents();
     await loadAllAdminData();

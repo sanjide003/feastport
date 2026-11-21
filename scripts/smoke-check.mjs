@@ -19,7 +19,7 @@ const rules = read('firestore.rules');
 
 const checks = {
   'obsolete bloat files removed': !existsSync('publish.html') && !existsSync('poster-certificate-engine.js') && !existsSync('poster-certificate-admin.js'),
-  'heavy export dependencies removed': !dependencyLoader.includes('xlsx') && !dependencyLoader.includes('jspdf') && !dependencyLoader.includes('html2canvas'),
+  'heavy pdf/canvas dependencies removed and xlsx lazy-loaded': !dependencyLoader.includes('jspdf') && !dependencyLoader.includes('html2canvas') && !indexHtml.includes('xlsx') && !resultsHtml.includes('xlsx') && !tvHtml.includes('xlsx'),
   'shared data cache implemented': dataCache.includes('cachedGetDoc') && dataCache.includes('cachedGetDocs') && dataCache.includes('invalidateCache'),
   'public index uses cached reads without students or listeners': indexHtml.includes('cachedGetDoc') && indexHtml.includes('cachedGetDocs') && !indexHtml.includes('onSnapshot') && !indexHtml.includes("collection(db, 'students')") && !indexHtml.includes('collection(db, "students")'),
   'public results uses cached reads and winnerDetails': resultsHtml.includes('cachedGetDoc') && resultsHtml.includes('cachedGetDocs') && !resultsHtml.includes('onSnapshot') && !resultsHtml.includes("collection(db, 'students')"),

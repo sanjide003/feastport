@@ -17,6 +17,7 @@
     .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
     .hide { display: none !important; }
     .nav-btn[aria-selected="true"] { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
+    .subtab-btn[aria-selected="true"] { background: #FFFFFF; color: #1D4ED8; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
     @media print {
       .no-print { display: none !important; }
       body { background: #FFF !important; }
@@ -314,109 +315,149 @@
 
           <!-- TAB 3: STUDENTS -->
           <section id="view-students" class="admin-view hidden space-y-6">
-            <form id="form-student" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <h2 class="font-display text-base font-bold text-slate-900">Add Student</h2>
-                <button id="btn-gen-chest" type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Auto Chest No.</button>
+            <div class="no-print flex flex-wrap items-center justify-between gap-3">
+              <div role="tablist" aria-label="Students mode" class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+                <button type="button" role="tab" aria-selected="true" data-subtab-group="students" data-subtab="single"
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  Single Entry &amp; Roster
+                </button>
+                <button type="button" role="tab" aria-selected="false" data-subtab-group="students" data-subtab="excel"
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  Excel Import / Export
+                </button>
               </div>
-              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 text-xs">
-                <label class="font-semibold text-slate-700">Full Name *<input id="inp-std-name" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
-                <label class="font-semibold text-slate-700">Chest No. *<input id="inp-std-chest" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-                <label class="font-semibold text-slate-700">Team *<select id="inp-std-team" required class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
-                <label class="font-semibold text-slate-700">Category *<select id="inp-std-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
-                <label class="font-semibold text-slate-700">Gender *
-                  <select id="inp-std-gender" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                    <option value="Boys">Boys</option>
-                    <option value="Girls">Girls</option>
-                  </select>
-                </label>
-              </div>
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                  <input id="inp-std-photo-file" type="file" accept="image/*" data-image-file data-image-value="inp-std-photo-data" data-image-preview="inp-std-photo-preview" data-image-error="inp-std-photo-error" class="text-xs text-slate-600">
-                  <input id="inp-std-photo-data" type="hidden">
-                  <div id="inp-std-photo-preview" class="flex gap-2"></div>
-                  <span id="inp-std-photo-error" class="text-[11px] text-red-600"></span>
-                </div>
-                <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Add Student</button>
-              </div>
-            </form>
+              <span class="text-xs text-slate-500">Switch to Excel Import / Export for template download &amp; live sheet editing</span>
+            </div>
 
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-wrap gap-2">
-                  <input id="filter-std-search" type="search" placeholder="Search name or chest no…" class="w-56 rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                  <select id="filter-std-team" class="select-team-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Teams</option></select>
-                  <select id="filter-std-cat" class="select-cat-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Categories</option></select>
+            <div id="students-subview-single" class="space-y-6">
+              <form id="form-student" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <h2 class="font-display text-base font-bold text-slate-900">Add Student</h2>
+                  <button id="btn-gen-chest" type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Auto Chest No.</button>
                 </div>
-                <span id="std-count-label" class="font-mono-num text-xs font-bold text-slate-600">0 students</span>
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 text-xs">
+                  <label class="font-semibold text-slate-700">Full Name *<input id="inp-std-name" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
+                  <label class="font-semibold text-slate-700">Chest No. *<input id="inp-std-chest" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
+                  <label class="font-semibold text-slate-700">Team *<select id="inp-std-team" required class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
+                  <label class="font-semibold text-slate-700">Category *<select id="inp-std-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
+                  <label class="font-semibold text-slate-700">Gender *
+                    <select id="inp-std-gender" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                      <option value="Boys">Boys</option>
+                      <option value="Girls">Girls</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <input id="inp-std-photo-file" type="file" accept="image/*" data-image-file data-image-value="inp-std-photo-data" data-image-preview="inp-std-photo-preview" data-image-error="inp-std-photo-error" class="text-xs text-slate-600">
+                    <input id="inp-std-photo-data" type="hidden">
+                    <div id="inp-std-photo-preview" class="flex gap-2"></div>
+                    <span id="inp-std-photo-error" class="text-[11px] text-red-600"></span>
+                  </div>
+                  <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Add Student</button>
+                </div>
+              </form>
+
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div class="flex flex-wrap gap-2">
+                    <input id="filter-std-search" type="search" placeholder="Search name or chest no…" class="w-56 rounded-lg border border-slate-200 px-3 py-2 text-xs">
+                    <select id="filter-std-team" class="select-team-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Teams</option></select>
+                    <select id="filter-std-cat" class="select-cat-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Categories</option></select>
+                  </div>
+                  <span id="std-count-label" class="font-mono-num text-xs font-bold text-slate-600">0 students</span>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs">
+                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <tr><th class="px-3 py-2.5">Chest No</th><th class="px-3 py-2.5">Name</th><th class="px-3 py-2.5">Team</th><th class="px-3 py-2.5">Category</th><th class="px-3 py-2.5">Gender</th><th class="px-3 py-2.5 text-right">Actions</th></tr>
+                    </thead>
+                    <tbody id="students-tbody" class="divide-y divide-slate-100"></tbody>
+                  </table>
+                </div>
               </div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                  <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    <tr><th class="px-3 py-2.5">Chest No</th><th class="px-3 py-2.5">Name</th><th class="px-3 py-2.5">Team</th><th class="px-3 py-2.5">Category</th><th class="px-3 py-2.5">Gender</th><th class="px-3 py-2.5 text-right">Actions</th></tr>
-                  </thead>
-                  <tbody id="students-tbody" class="divide-y divide-slate-100"></tbody>
-                </table>
-              </div>
+            </div>
+
+            <div id="students-subview-excel" class="hidden space-y-5">
+              <div id="excel-workspace-students" class="space-y-5"></div>
             </div>
           </section>
 
           <!-- TAB 4: EVENTS -->
           <section id="view-events" class="admin-view hidden space-y-6">
-            <form id="form-event" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-              <h2 class="font-display text-base font-bold text-slate-900">Create Event (Single or Multi-line Quick Add)</h2>
-              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
-                <label class="sm:col-span-2 font-semibold text-slate-700">Event Name(s) * (one per line for quick multi-add)<textarea id="inp-ev-names" rows="2" required placeholder="Malayalam Speech" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></textarea></label>
-                <label class="font-semibold text-slate-700">Category *<select id="inp-ev-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
-                <label class="font-semibold text-slate-700">Gender
-                  <select id="inp-ev-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                    <option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option>
-                  </select>
-                </label>
-                <label class="font-semibold text-slate-700">Type
-                  <select id="inp-ev-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                    <option value="Single">Single</option><option value="Group">Group</option>
-                  </select>
-                </label>
-                <label class="font-semibold text-slate-700">Entries / Team<input id="inp-ev-limit" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-                <label class="font-semibold text-slate-700">Members / Entry (Group)<input id="inp-ev-grpsize" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-                <label class="font-semibold text-slate-700">Stage Type
-                  <select id="inp-ev-stage" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                    <option value="On-Stage">On-Stage</option><option value="Off-Stage">Off-Stage</option>
-                  </select>
-                </label>
-                <label class="font-semibold text-slate-700">Judging Method
-                  <select id="inp-ev-method" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                    <option value="criteria">Criteria / Mark Scoring</option>
-                    <option value="direct">Direct Rank / Manual</option>
-                  </select>
-                </label>
-                <label class="font-semibold text-slate-700">Maximum Mark<input id="inp-ev-maxmark" type="number" min="1" value="100" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
-                <label class="sm:col-span-2 font-semibold text-slate-700">Criteria (optional, e.g. Content - 40, Delivery - 60)<input id="inp-ev-criteria" placeholder="Content - 50; Presentation - 50" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
+            <div class="no-print flex flex-wrap items-center justify-between gap-3">
+              <div role="tablist" aria-label="Events mode" class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+                <button type="button" role="tab" aria-selected="true" data-subtab-group="events" data-subtab="single"
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  Create &amp; Manage
+                </button>
+                <button type="button" role="tab" aria-selected="false" data-subtab-group="events" data-subtab="excel"
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  Excel Import / Export
+                </button>
               </div>
-              <div class="flex justify-end">
-                <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Create Event(s)</button>
-              </div>
-            </form>
+              <span class="text-xs text-slate-500">Bulk upload events with live criteria &amp; duplicate checking</span>
+            </div>
 
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div class="flex flex-wrap gap-2">
-                  <input id="filter-ev-search" type="search" placeholder="Search event…" class="w-52 rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                  <select id="filter-ev-cat" class="select-cat-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Categories</option></select>
-                  <select id="filter-ev-gender" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Genders</option><option value="Boys">Boys</option><option value="Girls">Girls</option><option value="Both">Both</option></select>
+            <div id="events-subview-single" class="space-y-6">
+              <form id="form-event" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+                <h2 class="font-display text-base font-bold text-slate-900">Create Event (Single or Multi-line Quick Add)</h2>
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
+                  <label class="sm:col-span-2 font-semibold text-slate-700">Event Name(s) * (one per line for quick multi-add)<textarea id="inp-ev-names" rows="2" required placeholder="Malayalam Speech" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></textarea></label>
+                  <label class="font-semibold text-slate-700">Category *<select id="inp-ev-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></select></label>
+                  <label class="font-semibold text-slate-700">Gender
+                    <select id="inp-ev-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                      <option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option>
+                    </select>
+                  </label>
+                  <label class="font-semibold text-slate-700">Type
+                    <select id="inp-ev-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                      <option value="Single">Single</option><option value="Group">Group</option>
+                    </select>
+                  </label>
+                  <label class="font-semibold text-slate-700">Entries / Team<input id="inp-ev-limit" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
+                  <label class="font-semibold text-slate-700">Members / Entry (Group)<input id="inp-ev-grpsize" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
+                  <label class="font-semibold text-slate-700">Stage Type
+                    <select id="inp-ev-stage" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                      <option value="On-Stage">On-Stage</option><option value="Off-Stage">Off-Stage</option>
+                    </select>
+                  </label>
+                  <label class="font-semibold text-slate-700">Judging Method
+                    <select id="inp-ev-method" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                      <option value="criteria">Criteria / Mark Scoring</option>
+                      <option value="direct">Direct Rank / Manual</option>
+                    </select>
+                  </label>
+                  <label class="font-semibold text-slate-700">Maximum Mark<input id="inp-ev-maxmark" type="number" min="1" value="100" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono-num text-sm"></label>
+                  <label class="sm:col-span-2 font-semibold text-slate-700">Criteria (optional, e.g. Content - 40, Delivery - 60)<input id="inp-ev-criteria" placeholder="Content - 50; Presentation - 50" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></label>
                 </div>
-                <span id="ev-count-label" class="font-mono-num text-xs font-bold text-slate-600">0 events</span>
+                <div class="flex justify-end">
+                  <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">Create Event(s)</button>
+                </div>
+              </form>
+
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex flex-wrap gap-2">
+                    <input id="filter-ev-search" type="search" placeholder="Search event…" class="w-52 rounded-lg border border-slate-200 px-3 py-2 text-xs">
+                    <select id="filter-ev-cat" class="select-cat-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Categories</option></select>
+                    <select id="filter-ev-gender" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All Genders</option><option value="Boys">Boys</option><option value="Girls">Girls</option><option value="Both">Both</option></select>
+                  </div>
+                  <span id="ev-count-label" class="font-mono-num text-xs font-bold text-slate-600">0 events</span>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs">
+                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <tr><th class="px-3 py-2.5">Event</th><th class="px-3 py-2.5">Category</th><th class="px-3 py-2.5">Gender</th><th class="px-3 py-2.5">Type &amp; Slots</th><th class="px-3 py-2.5">Stage</th><th class="px-3 py-2.5 text-right">Actions</th></tr>
+                    </thead>
+                    <tbody id="events-tbody" class="divide-y divide-slate-100"></tbody>
+                  </table>
+                </div>
               </div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                  <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    <tr><th class="px-3 py-2.5">Event</th><th class="px-3 py-2.5">Category</th><th class="px-3 py-2.5">Gender</th><th class="px-3 py-2.5">Type & Slots</th><th class="px-3 py-2.5">Stage</th><th class="px-3 py-2.5 text-right">Actions</th></tr>
-                  </thead>
-                  <tbody id="events-tbody" class="divide-y divide-slate-100"></tbody>
-                </table>
-              </div>
+            </div>
+
+            <div id="events-subview-excel" class="hidden space-y-5">
+              <div id="excel-workspace-events" class="space-y-5"></div>
             </div>
           </section>
 
@@ -440,31 +481,51 @@
 
           <!-- TAB 6: SCHEDULE -->
           <section id="view-schedule" class="admin-view hidden space-y-6">
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <h2 class="font-display text-base font-bold text-slate-900">Event Schedule Builder</h2>
-                <button id="btn-print-schedule" type="button" class="no-print rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Print Schedule</button>
+            <div class="no-print flex flex-wrap items-center justify-between gap-3">
+              <div role="tablist" aria-label="Schedule mode" class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+                <button type="button" role="tab" aria-selected="true" data-subtab-group="schedule" data-subtab="single"
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  Schedule Builder &amp; Breaks
+                </button>
+                <button type="button" role="tab" aria-selected="false" data-subtab-group="schedule" data-subtab="excel"
+                  class="subtab-btn rounded-md px-3.5 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900">
+                  Excel Import / Export
+                </button>
               </div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                  <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    <tr><th class="px-3 py-2.5">Event</th><th class="px-3 py-2.5">Date</th><th class="px-3 py-2.5">Stage</th><th class="px-3 py-2.5">Start Time</th><th class="px-3 py-2.5">Duration (m)</th><th class="px-3 py-2.5 text-right">Save</th></tr>
-                  </thead>
-                  <tbody id="schedule-builder-body" class="divide-y divide-slate-100"></tbody>
-                </table>
+              <span class="text-xs text-slate-500">Export event schedule, upload updates, and detect stage time conflicts</span>
+            </div>
+
+            <div id="schedule-subview-single" class="space-y-6">
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <h2 class="font-display text-base font-bold text-slate-900">Event Schedule Builder</h2>
+                  <button id="btn-print-schedule" type="button" class="no-print rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Print Schedule</button>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs">
+                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <tr><th class="px-3 py-2.5">Event</th><th class="px-3 py-2.5">Date</th><th class="px-3 py-2.5">Stage</th><th class="px-3 py-2.5">Start Time</th><th class="px-3 py-2.5">Duration (m)</th><th class="px-3 py-2.5 text-right">Save</th></tr>
+                    </thead>
+                    <tbody id="schedule-builder-body" class="divide-y divide-slate-100"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+                <h3 class="font-display text-base font-bold text-slate-900">Schedule Breaks (Lunch / Prayer / Interval)</h3>
+                <div class="grid gap-3 sm:grid-cols-5 text-xs">
+                  <input id="brk-title" placeholder="Break Title (e.g. Lunch Break)" class="rounded-lg border border-slate-200 px-3 py-2">
+                  <input id="brk-date" type="date" class="rounded-lg border border-slate-200 px-3 py-2">
+                  <input id="brk-start" type="time" class="rounded-lg border border-slate-200 px-3 py-2">
+                  <input id="brk-end" type="time" class="rounded-lg border border-slate-200 px-3 py-2">
+                  <button id="btn-add-break" type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white">Add Break</button>
+                </div>
+                <div id="breaks-list" class="space-y-2 text-xs"></div>
               </div>
             </div>
 
-            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-              <h3 class="font-display text-base font-bold text-slate-900">Schedule Breaks (Lunch / Prayer / Interval)</h3>
-              <div class="grid gap-3 sm:grid-cols-5 text-xs">
-                <input id="brk-title" placeholder="Break Title (e.g. Lunch Break)" class="rounded-lg border border-slate-200 px-3 py-2">
-                <input id="brk-date" type="date" class="rounded-lg border border-slate-200 px-3 py-2">
-                <input id="brk-start" type="time" class="rounded-lg border border-slate-200 px-3 py-2">
-                <input id="brk-end" type="time" class="rounded-lg border border-slate-200 px-3 py-2">
-                <button id="btn-add-break" type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white">Add Break</button>
-              </div>
-              <div id="breaks-list" class="space-y-2 text-xs"></div>
+            <div id="schedule-subview-excel" class="hidden space-y-5">
+              <div id="excel-workspace-schedule" class="space-y-5"></div>
             </div>
           </section>
 
