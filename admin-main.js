@@ -4,7 +4,7 @@ import { cachedGetDoc, invalidateCache } from './data-cache.js';
 import { initImageUploads, assertPayloadSize, normalizeGallerySlots } from './image-upload.js';
 import { normalizeBranding, brandingName, applyBase64Image, clearBrandingCache } from './branding-config.js';
 import { normalizeFestSetup } from './fest-config.js';
-import { parseCriteria, validateEvent, eventToFirestore } from './event-utils.js';
+import { parseCriteria, validateEvent, eventToFirestore, normalizeResultMethod, normalizeStage } from './event-utils.js';
 import { normalizeRegistrationConfig } from './registration-utils.js';
 import { defaultScoringRules, normalizeScoringRules, buildTeamScoreLedger } from './score-utils.js';
 import { escapeHtml, printPage, resolveDisplayName } from './admin-utils.js';
@@ -29,7 +29,7 @@ import { createAdminResultsController } from './admin-results.js';
 import { createAdminExcelController } from './admin-excel.js';
 import { initCollapsibleSidebar } from './sidebar-shell.js';
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
-import { getAuth as getSecondaryAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+import { getAuth as getSecondaryAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as signOutSecondary } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
 import {
   addDoc,
   collection,
@@ -72,15 +72,18 @@ let state = {
   accessUsers: [],
   judgeAssignments: [],
   judgeScores: [],
-  results: []
+  results: [],
+  notifications: [],
+  tvConfig: {},
+  tvControl: {},
+  tvSelectedResultIds: new Set()
 };
 
 let activeTab = 'overview';
 const activeSubTabs = {
   setup: 'identity',
   registrations: 'entries',
-  results: 'assign',
-  system: 'staff'
+  results: 'assign'
 };
 let resultsController = null;
 let excelController = null;
@@ -344,7 +347,10 @@ async function loadAllAdminData(force = false) {
     accessSnap,
     assignSnap,
     scoresSnap,
-    resultsSnap
+    resultsSnap,
+    notifsSnap,
+    tvCfgDoc,
+    tvCtrlDoc
   ] = await Promise.all([
     cachedGetDoc(db, 'settings', 'home_config', { ttlMs: 60000 }),
     cachedGetDoc(db, 'settings', 'general', { ttlMs: 60000 }),
@@ -359,7 +365,10 @@ async function loadAllAdminData(force = false) {
     getDocs(collection(db, 'accessUsers')),
     getDocs(collection(db, 'judgeAssignments')),
     getDocs(collection(db, 'judgeScores')),
-    getDocs(collection(db, 'results'))
+    getDocs(collection(db, 'results')),
+    getDocs(collection(db, 'notifications')).catch(() => ({ docs: [] })),
+    cachedGetDoc(db, 'settings', 'tv_config', { ttlMs: 60000 }),
+    cachedGetDoc(db, 'settings', 'tv_control', { ttlMs: 30000 })
   ]);
 
   state.homeConfig = homeDoc || {};
@@ -392,10 +401,15 @@ async function loadAllAdminData(force = false) {
   state.judgeAssignments = assignSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
   state.judgeScores = scoresSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
   state.results = resultsSnap.docs.map((d) => ({ id: d.id, eventId: d.data().eventId || d.id, ...d.data() }));
+  state.notifications = notifsSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  state.tvConfig = tvCfgDoc || {};
+  state.tvControl = tvCtrlDoc || {};
+  state.tvSelectedResultIds = new Set(state.tvControl.selectedResultIds || []);
 
   applyAdminBranding();
   populateSelectOptions();
   hydrateSetupForms();
+  hydrateTvForms();
   renderAll();
   byId('admin-sync-status').textContent = `Synced ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
@@ -942,32 +956,61 @@ function renderStudents() {
   }).join('') : `<tr><td colspan="${showMetaCol ? 7 : 6}" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">No students match this filter.</td></tr>`;
 }
 
+const METHOD_LABELS = {
+  criteria: 'Criteria Scoring',
+  direct_rank: 'Direct Rank',
+  manual: 'Manual',
+  objective: 'Objective / Quiz',
+  time: 'Time Based',
+  count: 'Count Based',
+  elimination: 'Elimination',
+  display_only: 'Display Only'
+};
+
+function formatJudgingMethodLabel(rawMethod, name = '') {
+  const norm = normalizeResultMethod(rawMethod || 'criteria', name);
+  return METHOD_LABELS[norm] || norm;
+}
+
 function renderEvents() {
   const search = (byId('filter-ev-search')?.value || '').trim().toLowerCase();
   const cat = byId('filter-ev-cat')?.value || '';
   const gender = byId('filter-ev-gender')?.value || '';
+  const stage = byId('filter-ev-stage')?.value || '';
+  const method = byId('filter-ev-method')?.value || '';
 
   const filtered = state.events.filter((e) => {
+    const evStage = normalizeStage(e.stage || 'On-Stage');
+    const evMethod = normalizeResultMethod(e.resultMethod || 'criteria', e.name);
     if (cat && e.category !== cat) return false;
     if (gender && e.gender !== gender) return false;
+    if (stage && evStage !== stage) return false;
+    if (method && evMethod !== method) return false;
     if (search && !`${e.name || ''} ${e.code || ''}`.toLowerCase().includes(search)) return false;
     return true;
   }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   byId('ev-count-label').textContent = `${filtered.length} events`;
-  byId('events-tbody').innerHTML = filtered.length ? filtered.map((e) => `
-    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-      <td class="px-3 py-2.5 font-semibold text-slate-900 dark:text-slate-100">${h(e.name)}${e.status && e.status !== 'active' ? ` <span class="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">(${h(e.status)})</span>` : ''}</td>
-      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(categoryName(e.category || 'General'))}</td>
-      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(e.gender || 'Both')}</td>
-      <td class="px-3 py-2.5 font-mono-num text-slate-700 dark:text-slate-300">${h(e.type || 'Single')} (${e.limit || 1}×${e.groupSize || 1})</td>
-      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(e.stage || 'On-Stage')}</td>
-      <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
-        <button type="button" data-admin-action="edit-event" data-id="${h(e.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
-        <button type="button" data-admin-action="delete-event" data-id="${h(e.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Delete</button>
-      </td>
-    </tr>
-  `).join('') : '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">No events match this filter.</td></tr>';
+  byId('events-tbody').innerHTML = filtered.length ? filtered.map((e) => {
+    const methodLabel = formatJudgingMethodLabel(e.resultMethod, e.name);
+    const critCount = Array.isArray(e.criteria) ? e.criteria.length : 0;
+    return `
+      <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+        <td class="px-3 py-2.5 font-semibold text-slate-900 dark:text-slate-100">${h(e.name)}${e.status && !['active', 'validated'].includes(e.status) ? ` <span class="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">(${h(e.status)})</span>` : ''}</td>
+        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(categoryName(e.category || 'General'))}</td>
+        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(e.gender || 'Both')}</td>
+        <td class="px-3 py-2.5 font-mono-num text-slate-700 dark:text-slate-300">${h(e.type || 'Single')} (${e.limit || 1}×${e.groupSize || 1})</td>
+        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(normalizeStage(e.stage || 'On-Stage'))}</td>
+        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">
+          <span class="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">${h(methodLabel)}${critCount ? ` (${critCount})` : ''}</span>
+        </td>
+        <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
+          <button type="button" data-admin-action="edit-event" data-id="${h(e.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
+          <button type="button" data-admin-action="delete-event" data-id="${h(e.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join('') : '<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">No events match this filter.</td></tr>';
 }
 
 function renderRegistrations() {
@@ -1060,33 +1103,174 @@ function renderSchedule() {
 }
 
 function renderAccessList() {
+  const search = (byId('filter-staff-search')?.value || '').trim().toLowerCase();
+  const roleFilter = byId('filter-staff-role')?.value || '';
   const map = new Map();
   state.accessUsers.forEach((u) => {
     const key = `${u.role}:${u.email || u.username || u.id}`;
     if (!map.has(key) || u.authUid) map.set(key, u);
   });
-  const list = [...map.values()].sort((a, b) => (a.role || '').localeCompare(b.role || ''));
+  const all = [...map.values()].sort((a, b) => (a.role || '').localeCompare(b.role || '') || (a.displayName || '').localeCompare(b.displayName || ''));
+  const list = all.filter((u) => {
+    if (roleFilter === 'admin') {
+      if (!['admin', 'superAdmin'].includes(u.role)) return false;
+    } else if (roleFilter && u.role !== roleFilter) {
+      return false;
+    }
+    if (search && !`${u.displayName || ''} ${u.username || ''} ${u.email || ''} ${u.team || ''} ${u.role || ''}`.toLowerCase().includes(search)) {
+      return false;
+    }
+    return true;
+  });
+
+  if (byId('staff-count-label')) byId('staff-count-label').textContent = `${list.length} account${list.length === 1 ? '' : 's'}`;
+  const currentUid = auth.currentUser?.uid || '';
+  const roleLabels = { teamLeader: 'Team Leader', judge: 'Judge', admin: 'Admin', superAdmin: 'Super Admin' };
+
   byId('access-list').innerHTML = list.length ? list.map((u) => {
     const docId = u.authUid || u.docId || u.id;
     const active = u.active !== false;
+    const isSelf = Boolean(currentUid && docId === currentUid);
+    const hasRealEmail = Boolean(u.email && !String(u.email).endsWith('@fest.local'));
     return `
       <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs space-y-2 dark:border-slate-800 dark:bg-slate-800/60">
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
-            <p class="truncate font-bold text-slate-900 dark:text-slate-100">${h(u.displayName || u.username)}</p>
-            <p class="text-[11px] text-slate-600 dark:text-slate-300">${h(u.role)} ${u.team ? `• ${h(teamName(u.team))} (${h(u.genderScope || 'Both')})` : ''}</p>
-            <p class="truncate text-[11px] text-slate-400 dark:text-slate-400">${h(u.email || u.username || '')}</p>
+            <p class="truncate font-bold text-slate-900 dark:text-slate-100">${h(u.displayName || u.username)}${isSelf ? ' <span class="text-[10px] font-bold text-blue-700 dark:text-blue-400">(You)</span>' : ''}</p>
+            <p class="text-[11px] text-slate-600 dark:text-slate-300">${h(roleLabels[u.role] || u.role)}${u.team ? ` • ${h(teamName(u.team))} (${h(u.genderScope || 'Both')})` : ''}</p>
+            <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">Login: ${h(u.username || u.email || '')}${u.email && u.username && !u.email.startsWith(`${u.username}@fest.local`) ? ` (${h(u.email)})` : ''}</p>
           </div>
           <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase ${active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-950/70 dark:text-red-300'}">${active ? 'Active' : 'Inactive'}</span>
         </div>
         <div class="flex flex-wrap gap-1.5">
           <button type="button" data-admin-action="edit-access" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
-          <button type="button" data-admin-action="toggle-access" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">${active ? 'Deactivate' : 'Activate'}</button>
-          <button type="button" data-admin-action="delete-access" data-id="${h(docId)}" class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Delete</button>
+          <button type="button" data-admin-action="toggle-access" data-id="${h(docId)}" ${isSelf ? 'disabled title="Cannot deactivate your active session"' : ''} class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">${active ? 'Deactivate' : 'Activate'}</button>
+          ${hasRealEmail ? `<button type="button" data-admin-action="reset-access-password" data-id="${h(docId)}" class="rounded border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">Reset Pass</button>` : ''}
+          <button type="button" data-admin-action="delete-access" data-id="${h(docId)}" ${isSelf ? 'disabled title="Cannot delete your active session"' : ''} class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Delete</button>
         </div>
       </div>
     `;
-  }).join('') : '<p class="text-xs text-slate-400 dark:text-slate-500">No staff accounts created yet.</p>';
+  }).join('') : '<p class="col-span-full text-xs text-slate-400 dark:text-slate-500">No staff accounts match this filter.</p>';
+}
+
+const TV_SECTION_DEFS = [
+  ['logo', 'Festival Logo'],
+  ['name', 'TV Title'],
+  ['subtitle', 'Subtitle'],
+  ['clock', 'Live Clock'],
+  ['ticker', 'Scrolling Ticker'],
+  ['officialLatest', 'Latest Published Result'],
+  ['leaderboard', 'Team Standings'],
+  ['recentResults', 'Recent Results'],
+  ['announcements', 'Announcements'],
+  ['media', 'Media Wall'],
+  ['videos', 'Video Playback']
+];
+
+function hydrateTvForms() {
+  const cfg = state.tvConfig || {};
+  const ctrl = state.tvControl || {};
+  const bg = cfg.background || {};
+  const setVal = (id, v) => { const el = byId(id); if (el) el.value = v ?? ''; };
+  setVal('admin-tv-title', cfg.title || 'FEST LIVE');
+  setVal('admin-tv-bg-color', bg.color || '#0B1120');
+  setVal('admin-tv-ticker', cfg.ticker || '');
+  setVal('admin-tv-announcements', (cfg.announcements || []).join('\n'));
+  setVal('admin-tv-bg-image', bg.imageUrl || '');
+  setVal('admin-tv-bg-video', bg.videoUrl || '');
+  setVal('admin-tv-slides', (bg.slides || []).join('\n'));
+  setVal('admin-tv-videos', (bg.videos || []).join('\n'));
+  setVal('admin-tv-mode', ctrl.mode || 'dashboard');
+  setVal('admin-tv-animation', ctrl.animationStyle || 'cinematic');
+  setVal('admin-tv-order', ctrl.resultOrder || 'latest');
+  setVal('admin-tv-interrupt', ctrl.interruptPolicy || cfg.interruptPolicy || 'after-current');
+}
+
+function renderTvPanel() {
+  const ctrl = state.tvControl || {};
+  const cfg = state.tvConfig || {};
+  const mode = byId('admin-tv-mode')?.value || ctrl.mode || 'dashboard';
+  if (byId('admin-tv-stat-mode')) byId('admin-tv-stat-mode').textContent = String(mode).toUpperCase();
+  if (byId('admin-tv-stat-queue')) byId('admin-tv-stat-queue').textContent = String(state.tvSelectedResultIds.size);
+  if (byId('admin-tv-stat-updated')) {
+    const ts = Number(ctrl.updatedAt || cfg.updatedAt || 0);
+    byId('admin-tv-stat-updated').textContent = ts ? new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not set';
+  }
+
+  const secGrid = byId('admin-tv-sections-grid');
+  if (secGrid) {
+    const savedShow = { ...(cfg.show || {}), ...(ctrl.content || {}) };
+    secGrid.innerHTML = TV_SECTION_DEFS.map(([key, label]) => `
+      <label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-200">
+        <input type="checkbox" data-admin-tv-sec="${h(key)}" ${savedShow[key] !== false ? 'checked' : ''} class="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-600 dark:bg-slate-800">
+        <span>${h(label)}</span>
+      </label>
+    `).join('');
+  }
+
+  const resList = byId('admin-tv-results-list');
+  if (resList) {
+    const published = state.results
+      .filter((r) => !r.status || r.status === 'published')
+      .slice()
+      .sort((a, b) => Number(b.publishedAt || b.updatedAt || 0) - Number(a.publishedAt || a.updatedAt || 0));
+    resList.innerHTML = published.length ? published.map((r) => {
+      const id = r.eventId || r.id;
+      const ev = state.events.find((e) => e.id === id);
+      const winners = (r.places || []).flatMap((p) => (p.winners || []).map((wid) => r.winnerDetails?.[wid]?.name || wid)).slice(0, 3);
+      return `
+        <label class="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 bg-slate-50 p-2.5 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800/50 dark:hover:bg-slate-800">
+          <input type="checkbox" data-admin-tv-result="${h(id)}" ${state.tvSelectedResultIds.has(id) ? 'checked' : ''} class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-600 dark:bg-slate-800">
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-bold text-slate-900 dark:text-slate-100">${h(ev?.name || r.eventName || id)}</p>
+            <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">${h(categoryName(ev?.category || r.category || ''))}${winners.length ? ` • ${h(winners.join(', '))}` : ''}</p>
+          </div>
+        </label>
+      `;
+    }).join('') : '<p class="text-xs text-slate-400 dark:text-slate-500">No published results available to queue yet.</p>';
+  }
+}
+
+function renderNotices() {
+  const list = state.notifications || [];
+  if (byId('notices-count-label')) byId('notices-count-label').textContent = `${list.length} notice${list.length === 1 ? '' : 's'}`;
+  const container = byId('notices-list');
+  if (!container) return;
+  container.innerHTML = list.length ? list.map((n) => {
+    const dt = n.createdAt ? new Date(Number(n.createdAt)).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '';
+    const target = n.team === 'All' || !n.team ? 'All Teams' : teamName(n.team);
+    return `
+      <div class="flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+        <div class="min-w-0 flex-1 space-y-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-800 dark:bg-blue-950/70 dark:text-blue-300">${h(target)}</span>
+            <strong class="text-slate-900 dark:text-slate-100">${h(n.title || 'Festival Notice')}</strong>
+            ${dt ? `<span class="font-mono-num text-[11px] text-slate-400 dark:text-slate-500">${h(dt)}</span>` : ''}
+          </div>
+          <p class="text-slate-700 dark:text-slate-300">${h(n.message || '')}</p>
+        </div>
+        <button type="button" data-admin-action="delete-notice" data-id="${h(n.id)}" class="shrink-0 rounded border border-red-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Delete</button>
+      </div>
+    `;
+  }).join('') : '<p class="text-xs text-slate-400 dark:text-slate-500">No team notices sent yet.</p>';
+}
+
+function renderResetCounts() {
+  const scheduledEventsCount = state.events.filter((e) => e.scheduleDate || e.time || e.scheduleStage).length;
+  const nonAdminCount = state.accessUsers.filter((u) => !['admin', 'superAdmin'].includes(u.role)).length;
+  const counts = {
+    registrations: state.registrations.length + state.registrationRequests.length,
+    results: state.results.length + state.judgeScores.length,
+    students: state.students.length,
+    events: state.events.length,
+    schedule: state.scheduleBreaks.length + scheduledEventsCount,
+    notices: state.notifications.length,
+    nonAdminStaff: nonAdminCount
+  };
+  Object.entries(counts).forEach(([scope, val]) => {
+    const el = document.querySelector(`[data-reset-count="${scope}"]`);
+    if (el) el.textContent = String(val);
+  });
 }
 
 function renderAll() {
@@ -1099,6 +1283,9 @@ function renderAll() {
   renderRegistrations();
   renderSchedule();
   renderAccessList();
+  renderTvPanel();
+  renderNotices();
+  renderResetCounts();
   resultsController?.renderAll();
   excelController?.renderAllWorkspaces();
   window.lucide?.createIcons?.();
@@ -1128,10 +1315,14 @@ function switchTab(tab) {
     registrations: 'Registrations & Requests',
     schedule: 'Schedule & Breaks',
     results: 'Judging & Result Publishing',
-    system: 'Staff Access, TV & Maintenance'
+    staff: 'Staff & Login Management',
+    tv: 'Live TV & Broadcast Control',
+    notices: 'Team Notices & Announcements',
+    reset: 'Data Reset & Maintenance'
   };
   byId('admin-page-title').textContent = titles[tab] || 'Admin Console';
   sidebarShell?.closeMobile?.();
+  window.lucide?.createIcons?.();
 }
 
 // Secondary Auth user creator (does not sign out Admin)
@@ -1347,7 +1538,7 @@ async function saveStaffAccount() {
     if (!existing) return showToast('Staff account not found', 'error');
     const now = Date.now();
     const prevRole = existing.role;
-    const username = existing.username || normalizeUsername(displayName);
+    const username = normalizeUsername(existing.username || displayName);
     const email = existing.email || '';
     const emailKey = email ? `email_${normalizeUsername(email).replace(/[^a-z0-9_@.-]/g, '_')}` : '';
     const patch = {
@@ -1360,28 +1551,40 @@ async function saveStaffAccount() {
       active,
       updatedAt: now
     };
-    await setDoc(doc(db, 'accessUsers', editUid), patch, { merge: true });
-    if (username) await setDoc(doc(db, 'accessUsernames', username), { ...patch, accessDocId: editUid }, { merge: true }).catch(() => {});
-    if (emailKey) await setDoc(doc(db, 'accessUsernames', emailKey), { ...patch, accessDocId: editUid }, { merge: true }).catch(() => {});
+    try {
+      await setDoc(doc(db, 'accessUsers', editUid), patch, { merge: true });
+      if (username) await setDoc(doc(db, 'accessUsernames', username), { ...patch, accessDocId: editUid }, { merge: true }).catch(() => {});
+      if (emailKey) await setDoc(doc(db, 'accessUsernames', emailKey), { ...patch, accessDocId: editUid }, { merge: true }).catch(() => {});
 
-    if (prevRole !== role) {
-      if (prevRole === 'teamLeader') await deleteDoc(doc(db, 'teamLeaders', editUid)).catch(() => {});
-      if (prevRole === 'judge') await deleteDoc(doc(db, 'judges', editUid)).catch(() => {});
-      if (['admin', 'superAdmin'].includes(prevRole)) await deleteDoc(doc(db, 'adminUsers', editUid)).catch(() => {});
-    }
-    if (role === 'teamLeader') {
-      await setDoc(doc(db, 'teamLeaders', editUid), { uid: editUid, authUid: editUid, username, displayName, phone, team, genderScope: genderScope || 'Both', title: patch.title, active, updatedAt: now }, { merge: true });
-    } else if (role === 'judge') {
-      await setDoc(doc(db, 'judges', editUid), { uid: editUid, authUid: editUid, username, name: displayName, phone, active, updatedAt: now }, { merge: true });
-    } else if (['admin', 'superAdmin'].includes(role)) {
-      await setDoc(doc(db, 'adminUsers', editUid), { username, email, displayName, role, active, updatedAt: now }, { merge: true });
-    }
+      if (prevRole !== role) {
+        if (prevRole === 'teamLeader') await deleteDoc(doc(db, 'teamLeaders', editUid)).catch(() => {});
+        if (prevRole === 'judge') await deleteDoc(doc(db, 'judges', editUid)).catch(() => {});
+        if (['admin', 'superAdmin'].includes(prevRole)) {
+          await deleteDoc(doc(db, 'adminUsers', editUid)).catch(() => {});
+          if (username) await deleteDoc(doc(db, 'adminUsernames', username)).catch(() => {});
+        }
+      }
+      if (role === 'teamLeader') {
+        await setDoc(doc(db, 'teamLeaders', editUid), { uid: editUid, authUid: editUid, username, displayName, phone, team, genderScope: genderScope || 'Both', title: patch.title, active, updatedAt: now }, { merge: true });
+      } else if (role === 'judge') {
+        await setDoc(doc(db, 'judges', editUid), { uid: editUid, authUid: editUid, username, name: displayName, phone, active, updatedAt: now }, { merge: true });
+      } else if (['admin', 'superAdmin'].includes(role)) {
+        await setDoc(doc(db, 'adminUsers', editUid), { username, email, displayName, role, active, updatedAt: now }, { merge: true });
+        if (username) {
+          await setDoc(doc(db, 'adminUsernames', username), { uid: editUid, username, email, role, active, updatedAt: now }, { merge: true }).catch(() => {});
+        }
+      }
 
-    Object.assign(existing, patch);
-    resetStaffForm();
-    renderAccessList();
-    resultsController?.renderAll();
-    showToast(`Updated staff account: ${displayName}`);
+      Object.assign(existing, patch);
+      resetStaffForm();
+      renderAccessList();
+      renderResetCounts();
+      resultsController?.renderAll();
+      showToast(`Updated staff account: ${displayName}`);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update staff account', 'error');
+    }
     return;
   }
 
@@ -1394,6 +1597,7 @@ async function saveStaffAccount() {
 
   try {
     const authUid = await createAccessAuthUser(email, password);
+    const now = Date.now();
     const profile = {
       username,
       email,
@@ -1406,23 +1610,27 @@ async function saveStaffAccount() {
       genderScope,
       title: title || (role === 'teamLeader' ? 'Team Leader' : role),
       active,
-      updatedAt: Date.now()
+      updatedAt: now
     };
     await setDoc(doc(db, 'accessUsers', authUid), profile, { merge: true });
     await setDoc(doc(db, 'accessUsernames', username), { ...profile, accessDocId: authUid }, { merge: true });
     await setDoc(doc(db, 'accessUsernames', emailKey), { ...profile, accessDocId: authUid }, { merge: true });
 
     if (role === 'teamLeader') {
-      await setDoc(doc(db, 'teamLeaders', authUid), { uid: authUid, authUid, username, displayName, phone, team, genderScope: genderScope || 'Both', title: profile.title, active, updatedAt: Date.now() }, { merge: true });
+      await setDoc(doc(db, 'teamLeaders', authUid), { uid: authUid, authUid, username, displayName, phone, team, genderScope: genderScope || 'Both', title: profile.title, active, updatedAt: now }, { merge: true });
     } else if (role === 'judge') {
-      await setDoc(doc(db, 'judges', authUid), { uid: authUid, authUid, username, name: displayName, phone, active, updatedAt: Date.now() }, { merge: true });
+      await setDoc(doc(db, 'judges', authUid), { uid: authUid, authUid, username, name: displayName, phone, active, updatedAt: now }, { merge: true });
     } else if (['admin', 'superAdmin'].includes(role)) {
-      await setDoc(doc(db, 'adminUsers', authUid), { username, email, displayName, role, active, updatedAt: Date.now() }, { merge: true });
+      await setDoc(doc(db, 'adminUsers', authUid), { username, email, displayName, role, active, updatedAt: now }, { merge: true });
+      if (username) {
+        await setDoc(doc(db, 'adminUsernames', username), { uid: authUid, username, email, role, active, updatedAt: now }, { merge: true }).catch(() => {});
+      }
     }
 
     state.accessUsers.push({ id: authUid, docId: authUid, ...profile });
     resetStaffForm();
     renderAccessList();
+    renderResetCounts();
     resultsController?.renderAll();
     showToast(`Created ${role} account: ${displayName}`);
   } catch (err) {
@@ -1516,35 +1724,158 @@ async function openAdminRegModal(eventId, regId = '') {
   openModal('admin-reg-modal');
 }
 
+async function commitBatchOps(ops = []) {
+  const CHUNK_SIZE = 300;
+  for (let i = 0; i < ops.length; i += CHUNK_SIZE) {
+    const batch = writeBatch(db);
+    for (const op of ops.slice(i, i + CHUNK_SIZE)) {
+      if (op.type === 'delete') batch.delete(op.ref);
+      else if (op.type === 'update') batch.update(op.ref, op.data);
+      else if (op.type === 'set') batch.set(op.ref, op.data, { merge: Boolean(op.merge) });
+    }
+    await batch.commit();
+  }
+}
+
 async function safeResetScope(scopeName) {
   const scopes = {
     registrations: ['registrations', 'registrationRequests', 'registrationApplications'],
     results: ['results', 'resultRevisions', 'teamScoreLedgers', 'judgeScores', 'publicJudgingStatuses'],
     students: ['students'],
-    events: ['events', 'judgeAssignments']
+    events: ['events', 'judgeAssignments'],
+    schedule: ['scheduleBreaks'],
+    notices: ['notifications'],
+    nonAdminStaff: ['teamLeaders', 'judges', 'accessUsers', 'accessUsernames'],
+    logsAndBackups: ['auditLogs', 'deletedBackups']
   };
   const cols = scopes[scopeName];
   if (!cols) return;
-  if (!await confirmAction(`Archive and permanently clear ${cols.join(', ')}?`, { title: 'Confirm System Reset', okLabel: 'Archive & Clear' })) return;
 
-  for (const colName of cols) {
-    const snap = await getDocs(collection(db, colName));
-    if (snap.empty) continue;
-    await addDoc(collection(db, 'deletedBackups'), {
-      collection: colName,
-      scope: scopeName,
-      count: snap.size,
-      createdAt: Date.now(),
-      uid: auth.currentUser?.uid || '',
-      items: snap.docs.slice(0, 100).map((d) => ({ id: d.id, ...d.data() }))
-    });
-    const batch = writeBatch(db);
-    snap.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
+  const isLogsScope = scopeName === 'logsAndBackups';
+  const promptMsg = scopeName === 'schedule'
+    ? 'Remove all schedule breaks and clear schedule dates, stages, and times from all events? A backup will be archived first.'
+    : scopeName === 'nonAdminStaff'
+      ? 'Remove all Team Leader and Judge profiles while keeping active Admin accounts? A backup will be archived first.'
+      : isLogsScope
+        ? 'Permanently clear auditLogs and deletedBackups?'
+        : `Archive and permanently clear ${cols.join(', ')}?`;
+
+  if (!await confirmAction(promptMsg, { title: 'Confirm Data Reset', okLabel: isLogsScope ? 'Clear Logs & Backups' : 'Archive & Clear' })) return;
+
+  let totalDeleted = 0;
+  try {
+    for (const colName of cols) {
+      const snap = await getDocs(collection(db, colName));
+      if (snap.empty) continue;
+      let targetDocs = snap.docs;
+      if (scopeName === 'nonAdminStaff' && (colName === 'accessUsers' || colName === 'accessUsernames')) {
+        targetDocs = snap.docs.filter((d) => !['admin', 'superAdmin'].includes(d.data()?.role));
+      }
+      if (!targetDocs.length) continue;
+
+      if (!isLogsScope) {
+        await addDoc(collection(db, 'deletedBackups'), {
+          collection: colName,
+          scope: scopeName,
+          count: targetDocs.length,
+          createdAt: Date.now(),
+          uid: auth.currentUser?.uid || '',
+          items: targetDocs.slice(0, 100).map((d) => ({ id: d.id, ...d.data() }))
+        });
+      }
+      await commitBatchOps(targetDocs.map((d) => ({ type: 'delete', ref: d.ref })));
+      totalDeleted += targetDocs.length;
+    }
+
+    if (scopeName === 'schedule') {
+      const evSnap = await getDocs(collection(db, 'events'));
+      const evOps = evSnap.docs.map((d) => ({
+        type: 'update',
+        ref: d.ref,
+        data: {
+          scheduleDate: deleteField(),
+          scheduleDay: deleteField(),
+          scheduleDayId: deleteField(),
+          scheduleStage: deleteField(),
+          scheduleStageId: deleteField(),
+          time: deleteField(),
+          scheduleDuration: deleteField(),
+          scheduleEndTime: deleteField(),
+          scheduleNotes: deleteField(),
+          scheduleOrder: deleteField(),
+          scheduleStatus: 'unscheduled',
+          duration: 0,
+          updatedAt: Date.now()
+        }
+      }));
+      if (evOps.length) {
+        await commitBatchOps(evOps);
+        totalDeleted += evOps.length;
+      }
+    }
+
+    if (!isLogsScope) {
+      await addDoc(collection(db, 'auditLogs'), {
+        action: 'data-reset-scope',
+        scope: scopeName,
+        collections: cols,
+        count: totalDeleted,
+        uid: auth.currentUser?.uid || '',
+        timestamp: Date.now()
+      }).catch(() => {});
+    }
+
+    await loadAllAdminData(true);
+    await resultsController?.syncPublicSummary(state.results);
+    showToast(`Reset complete (${scopeName}: ${totalDeleted} record(s) processed)`);
+  } catch (err) {
+    console.error(err);
+    showToast(`Failed to reset ${scopeName}`, 'error');
   }
-  await loadAllAdminData(true);
-  await resultsController?.syncPublicSummary(state.results);
-  showToast(`Cleared ${scopeName} cleanly (backup archived)`);
+}
+
+async function resetTeamData() {
+  const team = byId('reset-team-select')?.value || '';
+  if (!team) return showToast('Select a team to clear', 'error');
+  const label = teamName(team);
+  const ok = await confirmAction(
+    `Archive and delete all students, registrations, requests, and notices for "${label}" (Key: ${team})? Other teams will not be affected.`,
+    { title: 'Clear Team Data', okLabel: `Clear ${label}` }
+  );
+  if (!ok) return;
+
+  try {
+    const ops = [];
+    const targetCols = ['students', 'registrations', 'registrationRequests', 'notifications'];
+    for (const colName of targetCols) {
+      const snap = await getDocs(collection(db, colName));
+      const matched = snap.docs.filter((d) => d.data()?.team === team);
+      if (!matched.length) continue;
+      await addDoc(collection(db, 'deletedBackups'), {
+        collection: colName,
+        scope: `team:${team}`,
+        count: matched.length,
+        createdAt: Date.now(),
+        uid: auth.currentUser?.uid || '',
+        items: matched.slice(0, 100).map((d) => ({ id: d.id, ...d.data() }))
+      });
+      matched.forEach((d) => ops.push({ type: 'delete', ref: d.ref }));
+    }
+    await commitBatchOps(ops);
+    await addDoc(collection(db, 'auditLogs'), {
+      action: 'team-data-reset',
+      team,
+      count: ops.length,
+      uid: auth.currentUser?.uid || '',
+      timestamp: Date.now()
+    }).catch(() => {});
+    await loadAllAdminData(true);
+    await resultsController?.syncPublicSummary(state.results);
+    showToast(`Cleared ${ops.length} record(s) for ${label}`);
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to clear team data', 'error');
+  }
 }
 
 function bindEvents() {
@@ -2137,40 +2468,63 @@ function bindEvents() {
   // Events
   byId('form-event')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const names = byId('inp-ev-names').value.split('\n').map((s) => s.trim()).filter(Boolean);
+    const name = byId('inp-ev-name').value.trim();
+    if (!name) return showToast('Event Name is required', 'error');
     const category = byId('inp-ev-cat').value;
     const gender = byId('inp-ev-gender').value;
     const type = byId('inp-ev-type').value;
     const limit = Number(byId('inp-ev-limit').value || 1);
     const groupSize = Number(byId('inp-ev-grpsize').value || 1);
     const stage = byId('inp-ev-stage').value;
-    const resultMethod = byId('inp-ev-method').value;
+    const resultMethod = normalizeResultMethod(byId('inp-ev-method').value, name);
     const maximumMark = Number(byId('inp-ev-maxmark').value || 100);
     const parsedCriteria = parseCriteria(byId('inp-ev-criteria').value);
 
-    for (const name of names) {
-      const candidate = {
-        name, category, gender, type, entriesPerTeam: limit, membersPerEntry: groupSize,
-        stage, resultMethod, maximumMark, criteria: parsedCriteria.criteria
-      };
-      const validation = validateEvent(candidate, { ...state.festSetup, categories: state.categories }, state.events);
-      if (validation.errors.length) return showToast(`${name}: ${validation.errors[0]}`, 'error');
-      const payload = eventToFirestore(candidate, { setup: state.festSetup, validation });
-      const docRef = await addDoc(collection(db, 'events'), payload);
-      state.events.push({ id: docRef.id, ...payload });
+    if (parsedCriteria.unparsed.length) {
+      byId('inp-ev-criteria')?.focus();
+      return showToast(`Invalid criteria line "${parsedCriteria.unparsed[0]}". Enter one per line as "Name - Marks" (e.g. Content - 40).`, 'error');
     }
+
+    const candidate = {
+      name,
+      category,
+      gender,
+      type,
+      entriesPerTeam: limit,
+      membersPerEntry: groupSize,
+      stage,
+      resultMethod,
+      maximumMark,
+      criteria: parsedCriteria.criteria,
+      criteriaUnparsed: parsedCriteria.unparsed
+    };
+    const validation = validateEvent(candidate, { ...state.festSetup, categories: state.categories }, state.events);
+    if (validation.errors.length) return showToast(validation.errors[0], 'error');
+    const payload = eventToFirestore(candidate, { setup: state.festSetup, validation });
+    const docRef = await addDoc(collection(db, 'events'), payload);
+    state.events.push({ id: docRef.id, ...payload });
+
     invalidateCache('events_all');
     e.target.reset();
+    if (byId('inp-ev-limit')) byId('inp-ev-limit').value = '1';
+    if (byId('inp-ev-grpsize')) byId('inp-ev-grpsize').value = '1';
+    if (byId('inp-ev-maxmark')) byId('inp-ev-maxmark').value = '100';
     populateSelectOptions();
     renderEvents();
     renderSchedule();
     renderRegistrations();
     renderOverview();
+    renderResetCounts();
     resultsController?.renderAll();
-    showToast(`Created ${names.length} event(s)`);
+    showToast(`Created event: ${name}`);
   });
 
-  ['filter-ev-search', 'filter-ev-cat', 'filter-ev-gender'].forEach((id) => byId(id)?.addEventListener('input', renderEvents));
+  ['filter-ev-search', 'filter-ev-cat', 'filter-ev-gender', 'filter-ev-stage', 'filter-ev-method'].forEach((id) => {
+    const el = byId(id);
+    if (!el) return;
+    el.addEventListener('input', renderEvents);
+    el.addEventListener('change', renderEvents);
+  });
 
   byId('edit-event-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -2183,10 +2537,15 @@ function bindEvents() {
     const stage = byId('edit-ev-stage').value;
     const limit = Number(byId('edit-ev-limit').value || 1);
     const groupSize = Number(byId('edit-ev-grpsize').value || 1);
-    const resultMethod = byId('edit-ev-method').value || 'criteria';
+    const resultMethod = normalizeResultMethod(byId('edit-ev-method').value || 'criteria', name);
     const maximumMark = Number(byId('edit-ev-maxmark').value || 100);
     const status = byId('edit-ev-status').value || 'active';
     const parsedCriteria = parseCriteria(byId('edit-ev-criteria').value || '');
+
+    if (parsedCriteria.unparsed.length) {
+      byId('edit-ev-criteria')?.focus();
+      return showToast(`Invalid criteria line "${parsedCriteria.unparsed[0]}". Enter one per line as "Name - Marks" (e.g. Content - 40).`, 'error');
+    }
 
     const candidate = {
       ...existing,
@@ -2201,6 +2560,7 @@ function bindEvents() {
       resultMethod,
       maximumMark,
       criteria: parsedCriteria.criteria,
+      criteriaUnparsed: parsedCriteria.unparsed,
       status
     };
     const validation = validateEvent(candidate, { ...state.festSetup, categories: state.categories }, state.events);
@@ -2284,19 +2644,126 @@ function bindEvents() {
     byId('access-team-wrap')?.classList.toggle('hidden', !isLeader);
     byId('access-gender-wrap')?.classList.toggle('hidden', !isLeader);
   });
+  byId('btn-toggle-access-pass')?.addEventListener('click', () => {
+    const inp = byId('access-password');
+    const btn = byId('btn-toggle-access-pass');
+    if (!inp || !btn) return;
+    const isPass = inp.type === 'password';
+    inp.type = isPass ? 'text' : 'password';
+    btn.textContent = isPass ? 'Hide' : 'Show';
+  });
   byId('btn-save-access')?.addEventListener('click', saveStaffAccount);
   byId('btn-clear-access')?.addEventListener('click', resetStaffForm);
   byId('btn-cancel-access-edit')?.addEventListener('click', resetStaffForm);
+  ['filter-staff-search', 'filter-staff-role'].forEach((id) => {
+    const el = byId(id);
+    if (!el) return;
+    el.addEventListener('input', renderAccessList);
+    el.addEventListener('change', renderAccessList);
+  });
+
+  // Live TV Config & Broadcast
+  const tvLines = (id) => (byId(id)?.value || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const collectTvShow = () => Object.fromEntries(
+    TV_SECTION_DEFS.map(([k]) => [k, document.querySelector(`[data-admin-tv-sec="${k}"]`)?.checked !== false])
+  );
+  byId('admin-tv-mode')?.addEventListener('change', () => {
+    if (byId('admin-tv-stat-mode')) byId('admin-tv-stat-mode').textContent = (byId('admin-tv-mode').value || 'dashboard').toUpperCase();
+  });
+  byId('admin-tv-results-list')?.addEventListener('change', (e) => {
+    if (!e.target.matches('[data-admin-tv-result]')) return;
+    const rid = e.target.dataset.adminTvResult;
+    if (e.target.checked) state.tvSelectedResultIds.add(rid);
+    else state.tvSelectedResultIds.delete(rid);
+    if (byId('admin-tv-stat-queue')) byId('admin-tv-stat-queue').textContent = String(state.tvSelectedResultIds.size);
+  });
+  byId('btn-admin-tv-select-all')?.addEventListener('click', () => {
+    state.results.filter((r) => !r.status || r.status === 'published').forEach((r) => state.tvSelectedResultIds.add(r.eventId || r.id));
+    renderTvPanel();
+  });
+  byId('btn-admin-tv-clear-all')?.addEventListener('click', () => {
+    state.tvSelectedResultIds.clear();
+    renderTvPanel();
+  });
+  byId('btn-admin-save-tv-config')?.addEventListener('click', async () => {
+    try {
+      const payload = {
+        title: byId('admin-tv-title')?.value.trim() || 'FEST LIVE',
+        ticker: byId('admin-tv-ticker')?.value.trim() || '',
+        announcements: tvLines('admin-tv-announcements'),
+        interruptPolicy: byId('admin-tv-interrupt')?.value || 'after-current',
+        show: collectTvShow(),
+        background: {
+          color: byId('admin-tv-bg-color')?.value || '#0B1120',
+          imageUrl: byId('admin-tv-bg-image')?.value.trim() || '',
+          videoUrl: byId('admin-tv-bg-video')?.value.trim() || '',
+          slides: tvLines('admin-tv-slides'),
+          videos: tvLines('admin-tv-videos')
+        },
+        updatedAt: Date.now(),
+        updatedByUid: auth.currentUser?.uid || ''
+      };
+      await setDoc(doc(db, 'settings', 'tv_config'), payload, { merge: true });
+      state.tvConfig = payload;
+      invalidateCache('tv_config');
+      renderTvPanel();
+      showToast('TV display settings saved');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to save TV settings', 'error');
+    }
+  });
+  byId('btn-admin-send-tv-live')?.addEventListener('click', async () => {
+    try {
+      const payload = {
+        mode: byId('admin-tv-mode')?.value || 'dashboard',
+        animationStyle: byId('admin-tv-animation')?.value || 'cinematic',
+        resultOrder: byId('admin-tv-order')?.value || 'latest',
+        interruptPolicy: byId('admin-tv-interrupt')?.value || 'after-current',
+        selectedResultIds: [...state.tvSelectedResultIds],
+        content: collectTvShow(),
+        afterQueue: 'dashboard',
+        updatedAt: Date.now(),
+        updatedByUid: auth.currentUser?.uid || ''
+      };
+      await setDoc(doc(db, 'settings', 'tv_control'), payload, { merge: true });
+      state.tvControl = payload;
+      invalidateCache('tv_control');
+      renderTvPanel();
+      showToast('Broadcast settings sent live to TV');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update live TV control', 'error');
+    }
+  });
 
   // Notifications
   byId('btn-send-notif')?.addEventListener('click', async () => {
     const team = byId('notif-team').value || 'All';
+    const title = byId('notif-title')?.value.trim() || 'Festival Notice';
     const message = byId('notif-message').value.trim();
     if (!message) return showToast('Enter a notice message', 'error');
-    await addDoc(collection(db, 'notifications'), { team, title: 'Festival Notice', message, createdAt: Date.now(), createdByUid: auth.currentUser?.uid || '' });
-    byId('notif-message').value = '';
-    showToast(`Notice sent to ${team === 'All' ? 'All Teams' : teamName(team)}`);
+    const payload = {
+      team,
+      title,
+      message,
+      createdAt: Date.now(),
+      createdByUid: auth.currentUser?.uid || ''
+    };
+    try {
+      const docRef = await addDoc(collection(db, 'notifications'), payload);
+      state.notifications.unshift({ id: docRef.id, ...payload });
+      if (byId('notif-title')) byId('notif-title').value = '';
+      byId('notif-message').value = '';
+      renderNotices();
+      renderResetCounts();
+      showToast(`Notice sent to ${team === 'All' ? 'All Teams' : teamName(team)}`);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to send notice', 'error');
+    }
   });
+  byId('btn-reset-team')?.addEventListener('click', resetTeamData);
 
   // Reset scopes & Delegated Actions
   document.addEventListener('click', async (e) => {
@@ -2440,15 +2907,15 @@ function bindEvents() {
       byId('edit-ev-cat').value = ev.category || '';
       byId('edit-ev-gender').value = ev.gender || 'Both';
       byId('edit-ev-type').value = ev.type || 'Single';
-      byId('edit-ev-stage').value = ev.stage || 'On-Stage';
+      byId('edit-ev-stage').value = normalizeStage(ev.stage || 'On-Stage');
       byId('edit-ev-limit').value = ev.limit || 1;
       byId('edit-ev-grpsize').value = ev.groupSize || 1;
-      if (byId('edit-ev-method')) byId('edit-ev-method').value = ev.resultMethod || 'criteria';
+      if (byId('edit-ev-method')) byId('edit-ev-method').value = normalizeResultMethod(ev.resultMethod || 'criteria', ev.name);
       if (byId('edit-ev-maxmark')) byId('edit-ev-maxmark').value = ev.maximumMark || 100;
-      if (byId('edit-ev-status')) byId('edit-ev-status').value = ev.status || 'active';
+      if (byId('edit-ev-status')) byId('edit-ev-status').value = ev.status === 'validated' ? 'active' : (ev.status || 'active');
       if (byId('edit-ev-criteria')) {
         byId('edit-ev-criteria').value = Array.isArray(ev.criteria) && ev.criteria.length
-          ? ev.criteria.map((c) => `${c.name} - ${c.maximumMark}`).join('; ')
+          ? ev.criteria.map((c) => `${c.name} - ${c.maximumMark}`).join('\n')
           : '';
       }
       openModal('edit-event-modal');
@@ -2578,8 +3045,30 @@ function bindEvents() {
     if (action === 'edit-access') {
       loadStaffIntoForm(actBtn.dataset.id);
     }
-    if (action === 'toggle-access') {
+    if (action === 'reset-access-password') {
       const u = state.accessUsers.find((x) => (x.authUid || x.docId || x.id) === actBtn.dataset.id);
+      if (!u?.email || String(u.email).endsWith('@fest.local')) {
+        return showToast('Password reset email is only available for accounts using a real email address.', 'error');
+      }
+      const ok = await confirmAction(
+        `Send a Firebase password reset email to ${u.email}?`,
+        { title: 'Send Password Reset Email', okLabel: 'Send Email', tone: 'primary' }
+      );
+      if (!ok) return;
+      try {
+        await sendPasswordResetEmail(auth, u.email);
+        showToast(`Password reset email sent to ${u.email}`);
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to send password reset email', 'error');
+      }
+    }
+    if (action === 'toggle-access') {
+      const id = actBtn.dataset.id;
+      if (auth.currentUser?.uid && id === auth.currentUser.uid) {
+        return showToast('Cannot deactivate your own active admin account.', 'error');
+      }
+      const u = state.accessUsers.find((x) => (x.authUid || x.docId || x.id) === id);
       if (!u) return;
       const next = u.active === false;
       const label = next ? 'Activate' : 'Deactivate';
@@ -2589,34 +3078,80 @@ function bindEvents() {
       );
       if (!ok) return;
       const patch = { active: next, updatedAt: Date.now() };
-      await updateDoc(doc(db, 'accessUsers', actBtn.dataset.id), patch);
-      if (u.role === 'teamLeader') await setDoc(doc(db, 'teamLeaders', actBtn.dataset.id), patch, { merge: true });
-      if (u.role === 'judge') await setDoc(doc(db, 'judges', actBtn.dataset.id), patch, { merge: true });
-      if (['admin', 'superAdmin'].includes(u.role)) await setDoc(doc(db, 'adminUsers', actBtn.dataset.id), patch, { merge: true });
-      u.active = next;
-      renderAccessList();
-      resultsController?.renderAll();
-      showToast(next ? 'Account activated' : 'Account deactivated');
+      try {
+        await updateDoc(doc(db, 'accessUsers', id), patch);
+        const username = normalizeUsername(u.username || '');
+        const emailKey = u.email ? `email_${normalizeUsername(u.email).replace(/[^a-z0-9_@.-]/g, '_')}` : '';
+        if (username) await setDoc(doc(db, 'accessUsernames', username), patch, { merge: true }).catch(() => {});
+        if (emailKey) await setDoc(doc(db, 'accessUsernames', emailKey), patch, { merge: true }).catch(() => {});
+        if (u.role === 'teamLeader') await setDoc(doc(db, 'teamLeaders', id), patch, { merge: true }).catch(() => {});
+        if (u.role === 'judge') await setDoc(doc(db, 'judges', id), patch, { merge: true }).catch(() => {});
+        if (['admin', 'superAdmin'].includes(u.role)) {
+          await setDoc(doc(db, 'adminUsers', id), patch, { merge: true }).catch(() => {});
+          if (username) await setDoc(doc(db, 'adminUsernames', username), patch, { merge: true }).catch(() => {});
+        }
+        u.active = next;
+        renderAccessList();
+        resultsController?.renderAll();
+        showToast(next ? 'Account activated' : 'Account deactivated');
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to update staff account status', 'error');
+      }
     }
     if (action === 'delete-access') {
-      const u = state.accessUsers.find((x) => (x.authUid || x.docId || x.id) === actBtn.dataset.id);
+      const id = actBtn.dataset.id;
+      if (auth.currentUser?.uid && id === auth.currentUser.uid) {
+        return showToast('Cannot delete your own active admin account.', 'error');
+      }
+      const u = state.accessUsers.find((x) => (x.authUid || x.docId || x.id) === id);
       if (!u) return;
       const ok = await confirmAction(
         `Delete staff access for "${u.displayName || u.username}" (${u.role})?`,
         { title: 'Delete Staff Account', okLabel: 'Delete Account' }
       );
       if (!ok) return;
+      try {
+        const username = normalizeUsername(u.username || '');
+        const emailKey = u.email ? `email_${normalizeUsername(u.email).replace(/[^a-z0-9_@.-]/g, '_')}` : '';
+        await deleteDoc(doc(db, 'accessUsers', id));
+        if (username) await deleteDoc(doc(db, 'accessUsernames', username)).catch(() => {});
+        if (emailKey) await deleteDoc(doc(db, 'accessUsernames', emailKey)).catch(() => {});
+        if (u.role === 'teamLeader') await deleteDoc(doc(db, 'teamLeaders', id)).catch(() => {});
+        if (u.role === 'judge') await deleteDoc(doc(db, 'judges', id)).catch(() => {});
+        if (['admin', 'superAdmin'].includes(u.role)) {
+          await deleteDoc(doc(db, 'adminUsers', id)).catch(() => {});
+          if (username) await deleteDoc(doc(db, 'adminUsernames', username)).catch(() => {});
+        }
+        state.accessUsers = state.accessUsers.filter((x) => (x.authUid || x.docId || x.id) !== id);
+        if (byId('access-edit-uid')?.value === id) resetStaffForm();
+        renderAccessList();
+        renderResetCounts();
+        resultsController?.renderAll();
+        showToast('Staff account deleted');
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to delete staff account', 'error');
+      }
+    }
+    if (action === 'delete-notice') {
       const id = actBtn.dataset.id;
-      await deleteDoc(doc(db, 'accessUsers', id));
-      if (u.username) await deleteDoc(doc(db, 'accessUsernames', u.username)).catch(() => {});
-      if (u.role === 'teamLeader') await deleteDoc(doc(db, 'teamLeaders', id)).catch(() => {});
-      if (u.role === 'judge') await deleteDoc(doc(db, 'judges', id)).catch(() => {});
-      if (['admin', 'superAdmin'].includes(u.role)) await deleteDoc(doc(db, 'adminUsers', id)).catch(() => {});
-      state.accessUsers = state.accessUsers.filter((x) => (x.authUid || x.docId || x.id) !== id);
-      if (byId('access-edit-uid')?.value === id) resetStaffForm();
-      renderAccessList();
-      resultsController?.renderAll();
-      showToast('Staff account deleted');
+      const n = state.notifications.find((x) => x.id === id);
+      const ok = await confirmAction(
+        `Delete notice "${n?.title || 'Festival Notice'}"?`,
+        { title: 'Delete Team Notice', okLabel: 'Delete' }
+      );
+      if (!ok) return;
+      try {
+        await deleteDoc(doc(db, 'notifications', id));
+        state.notifications = state.notifications.filter((x) => x.id !== id);
+        renderNotices();
+        renderResetCounts();
+        showToast('Notice deleted');
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to delete notice', 'error');
+      }
     }
   });
 }

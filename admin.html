@@ -112,8 +112,17 @@
           <span class="flex min-w-0 items-center gap-2.5"><i data-lucide="award" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Judging & Results</span></span>
           <span id="badge-submitted-sheets" data-sidebar-badge class="hidden rounded bg-blue-700 px-1.5 py-0.5 font-mono-num text-[11px] font-bold text-white dark:bg-blue-600">0</span>
         </button>
-        <button type="button" data-tab="system" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
-          <i data-lucide="shield-check" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Staff, TV & Reset</span>
+        <button type="button" data-tab="staff" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
+          <i data-lucide="key-round" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Staff &amp; Login</span>
+        </button>
+        <button type="button" data-tab="tv" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
+          <i data-lucide="tv" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Live TV</span>
+        </button>
+        <button type="button" data-tab="notices" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
+          <i data-lucide="megaphone" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Team Notices</span>
+        </button>
+        <button type="button" data-tab="reset" data-sidebar-item aria-selected="false" class="nav-btn flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-slate-100">
+          <i data-lucide="rotate-ccw" class="h-4 w-4 shrink-0"></i><span data-sidebar-label class="truncate">Data Reset</span>
         </button>
       </nav>
 
@@ -649,18 +658,18 @@
                   <span>Excel Import / Export</span>
                 </button>
               </div>
-              <span class="text-xs text-slate-500 dark:text-slate-400">Bulk upload events with live criteria &amp; duplicate checking</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Create individual events or bulk import events via Excel</span>
             </div>
 
             <div id="events-subview-single" class="space-y-6">
               <form id="form-event" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
-                <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Create Event (Single or Multi-line Quick Add)</h2>
+                <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Create Event</h2>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
-                  <label class="sm:col-span-2 font-semibold text-slate-700 dark:text-slate-300">Event Name(s) * (one per line for quick multi-add)<textarea id="inp-ev-names" rows="2" required placeholder="Malayalam Speech" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></textarea></label>
+                  <label class="sm:col-span-2 font-semibold text-slate-700 dark:text-slate-300">Event Name *<input id="inp-ev-name" type="text" required placeholder="e.g. Malayalam Speech" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
                   <label class="font-semibold text-slate-700 dark:text-slate-300">Category *<select id="inp-ev-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
                   <label class="font-semibold text-slate-700 dark:text-slate-300">Gender
                     <select id="inp-ev-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-                      <option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option>
+                      <option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option><option value="Mixed">Mixed</option>
                     </select>
                   </label>
                   <label class="font-semibold text-slate-700 dark:text-slate-300">Type
@@ -678,30 +687,49 @@
                   <label class="font-semibold text-slate-700 dark:text-slate-300">Judging Method
                     <select id="inp-ev-method" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                       <option value="criteria">Criteria / Mark Scoring</option>
-                      <option value="direct">Direct Rank / Manual</option>
+                      <option value="direct_rank">Direct Rank</option>
+                      <option value="manual">Manual Entry</option>
+                      <option value="objective">Objective / Quiz</option>
+                      <option value="time">Time Based</option>
+                      <option value="count">Count Based</option>
+                      <option value="elimination">Elimination</option>
                     </select>
                   </label>
                   <label class="font-semibold text-slate-700 dark:text-slate-300">Maximum Mark<input id="inp-ev-maxmark" type="number" min="1" value="100" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
-                  <label class="sm:col-span-2 font-semibold text-slate-700 dark:text-slate-300">Criteria (optional, e.g. Content - 40, Delivery - 60)<input id="inp-ev-criteria" placeholder="Content - 50; Presentation - 50" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="sm:col-span-2 lg:col-span-4 font-semibold text-slate-700 dark:text-slate-300">Criteria (optional — one per line)
+                    <textarea id="inp-ev-criteria" rows="3" placeholder="Content - 40&#10;Delivery - 60" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></textarea>
+                    <span class="mt-1 block text-[11px] font-normal text-slate-500 dark:text-slate-400">Type one criterion per line and press Enter (format: Name - Marks, e.g. Content - 40 on line 1, Delivery - 60 on line 2).</span>
+                  </label>
                 </div>
                 <div class="flex justify-end">
-                  <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Create Event(s)</button>
+                  <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Create Event</button>
                 </div>
               </form>
 
               <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <div class="flex flex-wrap gap-2">
-                    <input id="filter-ev-search" type="search" placeholder="Search event…" class="w-52 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <input id="filter-ev-search" type="search" placeholder="Search event…" class="w-48 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                     <select id="filter-ev-cat" class="select-cat-filter rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="">All Categories</option></select>
-                    <select id="filter-ev-gender" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="">All Genders</option><option value="Boys">Boys</option><option value="Girls">Girls</option><option value="Both">Both</option></select>
+                    <select id="filter-ev-gender" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="">All Genders</option><option value="Boys">Boys</option><option value="Girls">Girls</option><option value="Both">Both</option><option value="Mixed">Mixed</option></select>
+                    <select id="filter-ev-stage" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="">All Stages</option><option value="On-Stage">On-Stage</option><option value="Off-Stage">Off-Stage</option></select>
+                    <select id="filter-ev-method" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                      <option value="">All Judging Methods</option>
+                      <option value="criteria">Criteria / Mark Scoring</option>
+                      <option value="direct_rank">Direct Rank</option>
+                      <option value="manual">Manual Entry</option>
+                      <option value="objective">Objective / Quiz</option>
+                      <option value="time">Time Based</option>
+                      <option value="count">Count Based</option>
+                      <option value="elimination">Elimination</option>
+                    </select>
                   </div>
                   <span id="ev-count-label" class="font-mono-num text-xs font-bold text-slate-600 dark:text-slate-300">0 events</span>
                 </div>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs">
                     <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-400">
-                      <tr><th class="px-3 py-2.5">Event</th><th class="px-3 py-2.5">Category</th><th class="px-3 py-2.5">Gender</th><th class="px-3 py-2.5">Type &amp; Slots</th><th class="px-3 py-2.5">Stage</th><th class="px-3 py-2.5 text-right">Actions</th></tr>
+                      <tr><th class="px-3 py-2.5">Event</th><th class="px-3 py-2.5">Category</th><th class="px-3 py-2.5">Gender</th><th class="px-3 py-2.5">Type &amp; Slots</th><th class="px-3 py-2.5">Stage</th><th class="px-3 py-2.5">Judging Method</th><th class="px-3 py-2.5 text-right">Actions</th></tr>
                     </thead>
                     <tbody id="events-tbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                   </table>
@@ -943,94 +971,348 @@
             </div>
           </section>
 
-          <!-- TAB 8: STAFF ACCESS, NOTICES & SYSTEM RESET -->
-          <section id="view-system" class="admin-view hidden space-y-6">
-            <div class="no-print flex flex-wrap items-center justify-between gap-3">
-              <div role="tablist" aria-label="Staff and system sections" class="inline-flex max-w-full flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
-                <button type="button" role="tab" aria-selected="true" data-subtab-group="system" data-subtab="staff"
-                  class="subtab-btn inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
-                  <i data-lucide="key-round" class="h-3.5 w-3.5 shrink-0"></i>
-                  <span>Staff Access</span>
-                </button>
-                <button type="button" role="tab" aria-selected="false" data-subtab-group="system" data-subtab="notices"
-                  class="subtab-btn inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
-                  <i data-lucide="megaphone" class="h-3.5 w-3.5 shrink-0"></i>
-                  <span>Team Notices</span>
-                </button>
-                <button type="button" role="tab" aria-selected="false" data-subtab-group="system" data-subtab="reset"
-                  class="subtab-btn inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
-                  <i data-lucide="rotate-ccw" class="h-3.5 w-3.5 shrink-0"></i>
-                  <span>Data Reset</span>
-                </button>
+          <!-- TAB 8: STAFF & LOGIN -->
+          <section id="view-staff" class="admin-view hidden space-y-6">
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Staff Login Portals</h2>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Share role login links with Team Leaders, Judges, and Administrators. Usernames resolve automatically on sign-in.</p>
+                </div>
               </div>
-              <span class="text-xs text-slate-500 dark:text-slate-400">Manage staff credentials, send team announcements, or archive/reset collections</span>
-            </div>
-
-            <div id="system-subview-staff" data-subtab-panel-group="system" data-subtab-panel="staff" class="space-y-6">
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Staff Access Management (Leaders, Judges, Admins)</h2>
-                  <button id="btn-cancel-access-edit" type="button" class="hidden rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel Edit</button>
-                </div>
-                <div id="access-edit-banner" class="hidden rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 dark:border-blue-800/70 dark:bg-blue-950/50 dark:text-blue-300"></div>
-                <input id="access-edit-uid" type="hidden">
-                <input id="access-uid" type="hidden">
-                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
-                  <label class="font-semibold text-slate-700 dark:text-slate-300">Role *
-                    <select id="access-role" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-                      <option value="teamLeader">Team Leader</option>
-                      <option value="judge">Judge</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </label>
-                  <label class="font-semibold text-slate-700 dark:text-slate-300">Display Name *<input id="access-name" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
-                  <label class="font-semibold text-slate-700 dark:text-slate-300">Username or Email *<input id="access-identifier" placeholder="leader_red" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
-                  <label class="font-semibold text-slate-700 dark:text-slate-300">Password (min 6 chars, new only)<input id="access-password" type="password" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
-                  <label id="access-team-wrap" class="font-semibold text-slate-700 dark:text-slate-300">Team<select id="access-team" class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
-                  <label id="access-gender-wrap" class="font-semibold text-slate-700 dark:text-slate-300">Gender Scope
-                    <select id="access-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-                      <option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option>
-                    </select>
-                  </label>
-                  <label class="font-semibold text-slate-700 dark:text-slate-300">Title / Designation<input id="access-title" placeholder="Team Captain" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
-                  <label class="font-semibold text-slate-700 dark:text-slate-300">Phone<input id="access-phone" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
-                </div>
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300"><input id="access-active" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-800">Active Account</label>
-                  <div class="flex gap-2">
-                    <button id="btn-clear-access" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">Clear Form</button>
-                    <button id="btn-save-access" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Save Staff Account</button>
+              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
+                <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-800/60">
+                  <div class="min-w-0">
+                    <p class="font-bold text-slate-900 dark:text-slate-100">Unified Staff Login</p>
+                    <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">login.html</p>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <a href="login.html" target="_blank" rel="noopener noreferrer" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400">Open</a>
+                    <button type="button" data-admin-action="copy-link" data-url="login.html" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Copy</button>
                   </div>
                 </div>
-                <div id="access-list" class="grid gap-3 pt-2 md:grid-cols-2 lg:grid-cols-3"></div>
-              </div>
-            </div>
-
-            <!-- Team Notifications -->
-            <div id="system-subview-notices" data-subtab-panel-group="system" data-subtab-panel="notices" class="hidden space-y-6">
-              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-800 dark:bg-slate-900">
-                <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Send Team Notice</h2>
-                <div class="grid gap-3 sm:grid-cols-[200px_1fr_auto] text-xs">
-                  <select id="notif-team" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="All">All Teams</option></select>
-                  <input id="notif-message" placeholder="Enter notice message for team leaders…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-                  <button id="btn-send-notif" type="button" class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500">Send Notice</button>
+                <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-800/60">
+                  <div class="min-w-0">
+                    <p class="font-bold text-slate-900 dark:text-slate-100">Team Leader Portal</p>
+                    <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">team.html</p>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <a href="team.html" target="_blank" rel="noopener noreferrer" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400">Open</a>
+                    <button type="button" data-admin-action="copy-link" data-url="team.html" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Copy</button>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-800/60">
+                  <div class="min-w-0">
+                    <p class="font-bold text-slate-900 dark:text-slate-100">Judge Scoring Desk</p>
+                    <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">judge.html</p>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <a href="judge.html" target="_blank" rel="noopener noreferrer" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400">Open</a>
+                    <button type="button" data-admin-action="copy-link" data-url="judge.html" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Copy</button>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-800/60">
+                  <div class="min-w-0">
+                    <p class="font-bold text-slate-900 dark:text-slate-100">Admin Console</p>
+                    <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">admin.html</p>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" data-admin-action="copy-link" data-url="admin.html" class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Copy</button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Safe Data Reset -->
-            <div id="system-subview-reset" data-subtab-panel-group="system" data-subtab-panel="reset" class="hidden space-y-6">
-              <div class="rounded-xl border border-red-200 bg-red-50/40 p-5 space-y-4 dark:border-red-900/70 dark:bg-red-950/25">
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
+              <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 class="font-display text-base font-bold text-red-900 dark:text-red-300">System Maintenance &amp; Safe Data Reset</h2>
-                  <p class="text-xs text-red-700 dark:text-red-400">Archives records into <code>deletedBackups</code> before clearing selected collections.</p>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Create &amp; Manage Staff Accounts</h2>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Create Firebase Auth credentials and role permissions for Team Leaders, Judges, and Administrators.</p>
                 </div>
+                <button id="btn-cancel-access-edit" type="button" class="hidden rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel Edit</button>
+              </div>
+              <div id="access-edit-banner" class="hidden rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 dark:border-blue-800/70 dark:bg-blue-950/50 dark:text-blue-300"></div>
+              <input id="access-edit-uid" type="hidden">
+              <input id="access-uid" type="hidden">
+              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Role *
+                  <select id="access-role" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <option value="teamLeader">Team Leader</option>
+                    <option value="judge">Judge</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Display Name *<input id="access-name" placeholder="e.g. Arif Rahman" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Username or Email *<input id="access-identifier" placeholder="leader_red or user@domain.com" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <div class="font-semibold text-slate-700 dark:text-slate-300">
+                  <label for="access-password" class="block">Password (min 6 chars, new only)</label>
+                  <div class="relative mt-1">
+                    <input id="access-password" type="password" placeholder="••••••" class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-14 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <button id="btn-toggle-access-pass" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-[10px] font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">Show</button>
+                  </div>
+                </div>
+                <label id="access-team-wrap" class="font-semibold text-slate-700 dark:text-slate-300">Team<select id="access-team" class="select-team mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
+                <label id="access-gender-wrap" class="font-semibold text-slate-700 dark:text-slate-300">Gender Scope
+                  <select id="access-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option>
+                  </select>
+                </label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Title / Designation<input id="access-title" placeholder="Team Captain / Senior Judge" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                <label class="font-semibold text-slate-700 dark:text-slate-300">Phone<input id="access-phone" placeholder="Optional phone" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+              </div>
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300"><input id="access-active" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-800">Active Account</label>
+                <div class="flex gap-2">
+                  <button id="btn-clear-access" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">Clear Form</button>
+                  <button id="btn-save-access" type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500">Save Staff Account</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
+              <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex flex-wrap gap-2">
-                  <button type="button" data-reset-scope="registrations" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Clear Registrations &amp; Requests</button>
-                  <button type="button" data-reset-scope="results" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Clear Results &amp; Judge Sheets</button>
-                  <button type="button" data-reset-scope="students" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Clear All Students</button>
-                  <button type="button" data-reset-scope="events" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900/70 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/60">Clear All Events</button>
+                  <input id="filter-staff-search" type="search" placeholder="Search staff name, username, email…" class="w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <select id="filter-staff-role" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <option value="">All Roles</option>
+                    <option value="teamLeader">Team Leaders</option>
+                    <option value="judge">Judges</option>
+                    <option value="admin">Admins</option>
+                  </select>
                 </div>
+                <span id="staff-count-label" class="font-mono-num text-xs font-bold text-slate-600 dark:text-slate-300">0 accounts</span>
+              </div>
+              <div id="access-list" class="grid gap-3 md:grid-cols-2 lg:grid-cols-3"></div>
+            </div>
+          </section>
+
+          <!-- TAB 9: LIVE TV & BROADCAST -->
+          <section id="view-tv" class="admin-view hidden space-y-6">
+            <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Live TV Display &amp; Broadcast</h2>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Configure the LED/TV wall layout, scrolling ticker, announcements, and live broadcast queue.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <a href="tv.html" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                    <i data-lucide="monitor" class="h-3.5 w-3.5"></i>Open Live TV
+                  </a>
+                  <a href="tv-control.html" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500">
+                    <i data-lucide="sliders" class="h-3.5 w-3.5"></i>Full Control Room
+                  </a>
+                </div>
+              </div>
+              <div class="mt-4 grid gap-3 sm:grid-cols-3 text-xs">
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/50">
+                  <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Current Mode</p>
+                  <p id="admin-tv-stat-mode" class="mt-1 font-display text-sm font-bold text-slate-900 dark:text-slate-100">DASHBOARD</p>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/50">
+                  <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Queued Results</p>
+                  <p id="admin-tv-stat-queue" class="mt-1 font-mono-num text-sm font-bold text-blue-700 dark:text-blue-400">0</p>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/50">
+                  <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Last Broadcast Update</p>
+                  <p id="admin-tv-stat-updated" class="mt-1 font-mono-num text-sm font-bold text-slate-900 dark:text-slate-100">Not set</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-6 lg:grid-cols-2">
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
+                <div class="flex items-center justify-between gap-2">
+                  <h3 class="font-display text-sm font-bold text-slate-900 dark:text-slate-100">Display Layout &amp; Ticker (<code>tv_config</code>)</h3>
+                  <button id="btn-admin-save-tv-config" type="button" class="rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500">Save TV Settings</button>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2 text-xs">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">TV Header Title<input id="admin-tv-title" placeholder="FEST LIVE" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Background Color<input id="admin-tv-bg-color" type="color" value="#0B1120" class="mt-1 h-10 w-24 rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-800"></label>
+                  <label class="sm:col-span-2 font-semibold text-slate-700 dark:text-slate-300">Scrolling Ticker Text<input id="admin-tv-ticker" placeholder="Welcome to Fest Live" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="sm:col-span-2 font-semibold text-slate-700 dark:text-slate-300">TV Announcements (one per line)<textarea id="admin-tv-announcements" rows="3" placeholder="Reporting call for next stage event&#10;Lunch break starts at 1:00 PM" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></textarea></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Background Image URL<input id="admin-tv-bg-image" placeholder="https://…" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Ambient Video URL<input id="admin-tv-bg-video" placeholder="https://…" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Media Slide URLs (one per line)<textarea id="admin-tv-slides" rows="2" placeholder="https://…" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></textarea></label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Loop Video URLs (one per line)<textarea id="admin-tv-videos" rows="2" placeholder="https://…" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></textarea></label>
+                </div>
+                <div class="space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                  <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Visible TV Sections</p>
+                  <div id="admin-tv-sections-grid" class="grid grid-cols-2 gap-2 text-xs"></div>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
+                <div class="flex items-center justify-between gap-2">
+                  <h3 class="font-display text-sm font-bold text-slate-900 dark:text-slate-100">Live Broadcast Control (<code>tv_control</code>)</h3>
+                  <button id="btn-admin-send-tv-live" type="button" class="rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500">Send Live to TV</button>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2 text-xs">
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Broadcast Mode
+                    <select id="admin-tv-mode" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                      <option value="dashboard">Dashboard Standings</option>
+                      <option value="results">Results Broadcast</option>
+                      <option value="media">Media Wall</option>
+                      <option value="video-only">Video Takeover</option>
+                    </select>
+                  </label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Animation Style
+                    <select id="admin-tv-animation" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                      <option value="cinematic">Cinematic Card</option>
+                      <option value="spotlight">Spotlight Reveal</option>
+                      <option value="ticker-rise">Ticker Rise</option>
+                      <option value="confetti">Celebration Banner</option>
+                    </select>
+                  </label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Result Queue Order
+                    <select id="admin-tv-order" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                      <option value="latest">Latest First</option>
+                      <option value="selected">Selected Order</option>
+                    </select>
+                  </label>
+                  <label class="font-semibold text-slate-700 dark:text-slate-300">Interrupt Policy
+                    <select id="admin-tv-interrupt" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                      <option value="after-current">Wait After Current Slide</option>
+                      <option value="immediate">Immediate Switch</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Published Results Queue</p>
+                    <div class="flex gap-1.5">
+                      <button id="btn-admin-tv-select-all" type="button" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Select All</button>
+                      <button id="btn-admin-tv-clear-all" type="button" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Clear</button>
+                    </div>
+                  </div>
+                  <div id="admin-tv-results-list" class="max-h-60 space-y-1.5 overflow-y-auto pr-1 text-xs"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- TAB 10: TEAM NOTICES -->
+          <section id="view-notices" class="admin-view hidden space-y-6">
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900">
+              <div>
+                <h2 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Send Team Notice</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Broadcast urgent updates or instructions to all teams or a specific Team Leader portal.</p>
+              </div>
+              <div class="grid gap-3 sm:grid-cols-[180px_220px_1fr_auto] text-xs">
+                <select id="notif-team" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="All">All Teams</option></select>
+                <input id="notif-title" placeholder="Title (optional, e.g. Urgent Update)" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                <input id="notif-message" placeholder="Enter notice message for team leaders…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                <button id="btn-send-notif" type="button" class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500">Send Notice</button>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Sent Notices History</h3>
+                <span id="notices-count-label" class="font-mono-num text-xs font-bold text-slate-600 dark:text-slate-300">0 notices</span>
+              </div>
+              <div id="notices-list" class="space-y-2 text-xs"></div>
+            </div>
+          </section>
+
+          <!-- TAB 11: DATA RESET & MAINTENANCE -->
+          <section id="view-reset" class="admin-view hidden space-y-6">
+            <div class="rounded-xl border border-red-200 bg-red-50/40 p-5 space-y-4 dark:border-red-900/70 dark:bg-red-950/25">
+              <div>
+                <h2 class="font-display text-base font-bold text-red-900 dark:text-red-300">System Maintenance &amp; Safe Data Reset</h2>
+                <p class="text-xs text-red-700 dark:text-red-400">Archives operational records into <code>deletedBackups</code> and records an <code>auditLogs</code> entry before clearing selected collections. Active Admin accounts are always preserved.</p>
+              </div>
+              <div id="reset-scopes-grid" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
+                <div class="flex flex-col justify-between gap-3 rounded-lg border border-red-200 bg-white p-3.5 dark:border-red-900/70 dark:bg-slate-900">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-bold text-slate-900 dark:text-slate-100">Registrations</span>
+                      <span data-reset-count="registrations" class="font-mono-num text-[11px] font-bold text-slate-500 dark:text-slate-400">0</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Clears team entries, student applications, and requests.</p>
+                  </div>
+                  <button type="button" data-reset-scope="registrations" class="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Clear Registrations</button>
+                </div>
+                <div class="flex flex-col justify-between gap-3 rounded-lg border border-red-200 bg-white p-3.5 dark:border-red-900/70 dark:bg-slate-900">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-bold text-slate-900 dark:text-slate-100">Results &amp; Scores</span>
+                      <span data-reset-count="results" class="font-mono-num text-[11px] font-bold text-slate-500 dark:text-slate-400">0</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Clears published results, revisions, ledgers, and judge sheets.</p>
+                  </div>
+                  <button type="button" data-reset-scope="results" class="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Clear Results &amp; Scores</button>
+                </div>
+                <div class="flex flex-col justify-between gap-3 rounded-lg border border-red-200 bg-white p-3.5 dark:border-red-900/70 dark:bg-slate-900">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-bold text-slate-900 dark:text-slate-100">Students Roster</span>
+                      <span data-reset-count="students" class="font-mono-num text-[11px] font-bold text-slate-500 dark:text-slate-400">0</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Archives and removes all registered student profiles.</p>
+                  </div>
+                  <button type="button" data-reset-scope="students" class="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Clear All Students</button>
+                </div>
+                <div class="flex flex-col justify-between gap-3 rounded-lg border border-red-200 bg-white p-3.5 dark:border-red-900/70 dark:bg-slate-900">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-bold text-slate-900 dark:text-slate-100">Events &amp; Judges Map</span>
+                      <span data-reset-count="events" class="font-mono-num text-[11px] font-bold text-slate-500 dark:text-slate-400">0</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Clears all events and event-judge assignments.</p>
+                  </div>
+                  <button type="button" data-reset-scope="events" class="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Clear All Events</button>
+                </div>
+                <div class="flex flex-col justify-between gap-3 rounded-lg border border-red-200 bg-white p-3.5 dark:border-red-900/70 dark:bg-slate-900">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-bold text-slate-900 dark:text-slate-100">Schedule &amp; Breaks</span>
+                      <span data-reset-count="schedule" class="font-mono-num text-[11px] font-bold text-slate-500 dark:text-slate-400">0</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Removes breaks and clears schedule times/stages from events.</p>
+                  </div>
+                  <button type="button" data-reset-scope="schedule" class="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Clear Schedule</button>
+                </div>
+                <div class="flex flex-col justify-between gap-3 rounded-lg border border-red-200 bg-white p-3.5 dark:border-red-900/70 dark:bg-slate-900">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-bold text-slate-900 dark:text-slate-100">Team Notices</span>
+                      <span data-reset-count="notices" class="font-mono-num text-[11px] font-bold text-slate-500 dark:text-slate-400">0</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Clears all sent announcements in team notifications.</p>
+                  </div>
+                  <button type="button" data-reset-scope="notices" class="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Clear Notices</button>
+                </div>
+                <div class="flex flex-col justify-between gap-3 rounded-lg border border-red-200 bg-white p-3.5 dark:border-red-900/70 dark:bg-slate-900">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-bold text-slate-900 dark:text-slate-100">Non-Admin Staff</span>
+                      <span data-reset-count="nonAdminStaff" class="font-mono-num text-[11px] font-bold text-slate-500 dark:text-slate-400">0</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Clears Team Leaders &amp; Judges while keeping Admin accounts.</p>
+                  </div>
+                  <button type="button" data-reset-scope="nonAdminStaff" class="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Clear Leaders &amp; Judges</button>
+                </div>
+                <div class="flex flex-col justify-between gap-3 rounded-lg border border-red-200 bg-white p-3.5 dark:border-red-900/70 dark:bg-slate-900">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-bold text-slate-900 dark:text-slate-100">Logs &amp; Backups</span>
+                      <span data-reset-count="logsAndBackups" class="font-mono-num text-[11px] font-bold text-slate-500 dark:text-slate-400">—</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Clears <code>auditLogs</code> and <code>deletedBackups</code>.</p>
+                  </div>
+                  <button type="button" data-reset-scope="logsAndBackups" class="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Clear Logs &amp; Backups</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+              <div>
+                <h3 class="font-display text-base font-bold text-slate-900 dark:text-slate-100">Team-Level Data Reset</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Remove all students, registrations, requests, and notices belonging to a single team without affecting other teams.</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2 text-xs">
+                <select id="reset-team-select" class="select-team min-w-[200px] rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select>
+                <button id="btn-reset-team" type="button" class="rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Clear Selected Team Data</button>
               </div>
             </div>
           </section>
@@ -1108,7 +1390,7 @@
       <label class="block font-semibold">Event Name *<input id="edit-ev-name" required class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
       <div class="grid gap-3 sm:grid-cols-2">
         <label class="block font-semibold">Category *<select id="edit-ev-cat" required class="select-cat mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></select></label>
-        <label class="block font-semibold">Gender<select id="edit-ev-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option></select></label>
+        <label class="block font-semibold">Gender<select id="edit-ev-gender" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="Both">Both</option><option value="Boys">Boys</option><option value="Girls">Girls</option><option value="Mixed">Mixed</option></select></label>
         <label class="block font-semibold">Type<select id="edit-ev-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="Single">Single</option><option value="Group">Group</option></select></label>
         <label class="block font-semibold">Stage Type<select id="edit-ev-stage" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><option value="On-Stage">On-Stage</option><option value="Off-Stage">Off-Stage</option></select></label>
         <label class="block font-semibold">Entries / Team<input id="edit-ev-limit" type="number" min="1" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
@@ -1116,7 +1398,12 @@
         <label class="block font-semibold">Judging Method
           <select id="edit-ev-method" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
             <option value="criteria">Criteria / Mark Scoring</option>
-            <option value="direct">Direct Rank / Manual</option>
+            <option value="direct_rank">Direct Rank</option>
+            <option value="manual">Manual Entry</option>
+            <option value="objective">Objective / Quiz</option>
+            <option value="time">Time Based</option>
+            <option value="count">Count Based</option>
+            <option value="elimination">Elimination</option>
           </select>
         </label>
         <label class="block font-semibold">Maximum Mark<input id="edit-ev-maxmark" type="number" min="1" value="100" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></label>
@@ -1128,8 +1415,9 @@
           </select>
         </label>
       </div>
-      <label class="block font-semibold">Criteria (optional, e.g. Content - 50; Presentation - 50)
-        <input id="edit-ev-criteria" placeholder="Content - 50; Presentation - 50" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+      <label class="block font-semibold">Criteria (optional — one per line)
+        <textarea id="edit-ev-criteria" rows="3" placeholder="Content - 40&#10;Delivery - 60" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></textarea>
+        <span class="mt-1 block text-[11px] font-normal text-slate-500 dark:text-slate-400">Type one criterion per line and press Enter (format: Name - Marks).</span>
       </label>
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
         <button id="btn-cancel-edit-event" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</button>

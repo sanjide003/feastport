@@ -499,13 +499,13 @@
         cachedGetDoc(db, 'settings', 'registration_config', { ttlMs: 120000 }),
         cachedGetDoc(db, 'settings', 'schedule_config', { ttlMs: 60000 }),
         getDoc(doc(db, 'teamRegistrationPolicies', currentTeam)).catch(() => null),
-        cachedGetDocs(collection(db, 'events'), { cacheKey: 'events_all', ttlMs: 120000 }),
-        cachedGetDocs(collection(db, 'scheduleBreaks'), { cacheKey: 'schedule_breaks', ttlMs: 120000 }).catch(() => []),
+        cachedGetDocs('events_all', collection(db, 'events'), { ttlMs: 120000 }),
+        cachedGetDocs('schedule_breaks', collection(db, 'scheduleBreaks'), { ttlMs: 120000 }).catch(() => []),
         getDocs(query(collection(db, 'students'), where('team', '==', currentTeam))),
         getDocs(query(collection(db, 'registrations'), where('team', '==', currentTeam))),
         getDocs(query(collection(db, 'registrationRequests'), where('team', '==', currentTeam))),
         getDocs(query(collection(db, 'notifications'), where('team', 'in', ['All', currentTeam]))).catch(() => ({ docs: [] })),
-        cachedGetDocs(query(collection(db, 'results'), where('status', '==', 'published')), { cacheKey: 'published_results', ttlMs: 60000 })
+        cachedGetDocs('published_results', query(collection(db, 'results'), where('status', '==', 'published')), { ttlMs: 60000 })
       ]);
 
       homeConfig = homeSnap || {};

@@ -308,7 +308,7 @@
         cachedGetDoc(db, 'settings', 'tv_config', { ttlMs: 60000 }),
         cachedGetDoc(db, 'settings', 'tv_control', { ttlMs: 30000 }),
         cachedGetDoc(db, 'settings', 'general', { ttlMs: 300000 }),
-        cachedGetDocs(collection(db, 'events'), { cacheKey: 'tv_ctrl_events', ttlMs: 120000 }),
+        cachedGetDocs('tv_ctrl_events', collection(db, 'events'), { ttlMs: 120000 }),
         getDocs(query(collection(db, 'results'), where('status', '==', 'published')))
       ]);
       tvConfig = cfgDoc || {};

@@ -531,10 +531,10 @@
 
     async function ensureEventsLoaded(incomingResults = []) {
       if (!events.length) {
-        events = await cachedGetDocs(collection(db, 'events'), { cacheKey: 'tv_events', ttlMs: 300000 }).catch(() => []);
+        events = await cachedGetDocs('tv_events', collection(db, 'events'), { ttlMs: 300000 }).catch(() => []);
       } else if (incomingResults.some((r) => r.eventId && !events.some((e) => e.id === r.eventId))) {
         invalidateCache('tv_events');
-        events = await cachedGetDocs(collection(db, 'events'), { cacheKey: 'tv_events', ttlMs: 300000 }).catch(() => events);
+        events = await cachedGetDocs('tv_events', collection(db, 'events'), { ttlMs: 300000 }).catch(() => events);
       }
     }
 
