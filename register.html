@@ -16,6 +16,17 @@
     body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: #F8FAFC; color: #0F172A; }
     h1, h2, h3, .font-display { font-family: 'Outfit', 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; }
     .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+    .id-card-stage { perspective: 1400px; width: 100%; max-width: 376px; }
+    .id-card-inner { position: relative; width: 100%; display: grid; transform-style: preserve-3d; transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+    .id-card-inner.is-flipped { transform: rotateY(180deg); }
+    .id-card-face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .id-card-face-back { transform: rotateY(180deg); }
+    @media (prefers-reduced-motion: reduce) {
+      .id-card-inner { transition: none; transform: none !important; }
+      .id-card-face-back { transform: none; }
+      .id-card-inner:not(.is-flipped) .id-card-face-back { display: none; }
+      .id-card-inner.is-flipped .id-card-face-front { display: none; }
+    }
   </style>
 </head>
 <body class="min-h-screen bg-[#F8FAFC] text-[#0F172A] antialiased">
@@ -226,7 +237,7 @@
 
       <!-- ID Card / Profile Tab -->
       <section data-view="profile" class="hidden">
-        <div id="profile-details" class="mx-auto max-w-md rounded-xl border border-slate-200 bg-white p-6"></div>
+        <div id="profile-details" class="mx-auto flex w-full max-w-md flex-col items-center py-1"></div>
       </section>
     </section>
   </main>
@@ -321,10 +332,11 @@
     import { doc, getDoc, getDocs, addDoc, updateDoc, collection, query as firestoreQuery, where } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-functions.js';
     import { cachedGetDoc, cachedGetDocs } from './data-cache.js';
-    import { normalizeFestSetup, teamColor } from './fest-config.js';
+    import { normalizeFestSetup, teamColor, readableTextColor } from './fest-config.js';
     import { normalizeBranding, brandingName, readCachedBranding, cacheBranding, clearBrandingCache, applyLogo, currentYear } from './branding-config.js';
     import { capacityState, participantEligibleForEvent, normalizeRegistrationConfig, normalizeTeamRegistrationPolicy, applicationDecision, selfRegistrationAllowed, participationUsage, participationLimitDecision } from './registration-utils.js';
     import { initCollapsibleSidebar } from './sidebar-shell.js';
+    import { renderQrSvg } from './qr-svg.js';
 
     initCollapsibleSidebar();
 
@@ -336,6 +348,7 @@
 
     let setup = normalizeFestSetup();
     let general = {};
+    let currentBranding = normalizeBranding();
     let teamColors = {};
     let teamDisplayNames = {};
     let categoryDisplayNames = {};
@@ -352,6 +365,7 @@
     let applicationImages = [];
     let currentView = 'dashboard';
     let eventListMode = 'all';
+    let idCardFlipped = false;
     let searchTimer = null;
 
     document.querySelectorAll('[data-current-year]').forEach((el) => (el.textContent = currentYear()));
@@ -377,11 +391,13 @@
 
     function applyBranding(raw) {
       const branding = normalizeBranding(raw);
+      currentBranding = branding;
       const name = brandingName(branding);
       $('registration-fest-name').textContent = name;
       $('footer-fest-name').textContent = name;
       document.title = `${name} — Student Registration`;
       applyLogo($('registration-fest-logo'), $('registration-logo-fallback'), branding);
+      if (student) renderProfileCard();
     }
 
     function renderRegistrationWindow() {
@@ -763,21 +779,221 @@
         : '<div class="col-span-full rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">No applications found.</div>';
     }
 
+    function safeAccentOnLight(color = '#1D4ED8') {
+      const hex = /^#[0-9a-f]{6}$/i.test(color) ? color.slice(1) : '1D4ED8';
+      const [r, g, b] = [0, 2, 4].map((offset) => parseInt(hex.slice(offset, offset + 2), 16));
+      return (r * 299 + g * 587 + b * 114) / 1000 < 145 ? `#${hex}` : '#0F172A';
+    }
+
+    function syncIdCardFlipState(focusVisibleToggle = false) {
+      const inner = $('id-card-inner');
+      const front = $('id-card-front');
+      const back = $('id-card-back');
+      if (!inner || !front || !back) return;
+      inner.classList.toggle('is-flipped', idCardFlipped);
+      front.setAttribute('aria-hidden', String(idCardFlipped));
+      back.setAttribute('aria-hidden', String(!idCardFlipped));
+      if ('inert' in front) {
+        front.inert = idCardFlipped;
+        back.inert = !idCardFlipped;
+      }
+      if (focusVisibleToggle) {
+        const target = (idCardFlipped ? back : front).querySelector('[data-flip-id-card]');
+        target?.focus?.();
+      }
+    }
+
     function renderProfileCard() {
+      const container = $('profile-details');
+      if (!container || !student) return;
       const color = teamColor(student.team, teamColors);
-      $('profile-details').innerHTML = `<div class="text-center">
-        <div class="mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 bg-slate-50 font-display text-2xl font-bold text-slate-700" style="border-color:${esc(color)}">
-          ${student.photoData ? `<img src="${esc(student.photoData)}" class="h-full w-full object-cover" alt="${esc(student.name)}" referrerpolicy="no-referrer">` : esc(String(student.name || 'S')[0].toUpperCase())}
+      const headerFg = readableTextColor(color);
+      const headerMuted = headerFg === '#FFFFFF' ? 'rgba(255,255,255,0.78)' : 'rgba(15,23,42,0.72)';
+      const headerSurface = headerFg === '#FFFFFF' ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.08)';
+      const headerBorder = headerFg === '#FFFFFF' ? 'rgba(255,255,255,0.28)' : 'rgba(15,23,42,0.18)';
+      const accentOnWhite = safeAccentOnLight(color);
+
+      const teamLabel = teamDisplayNames[student.team] || student.team || 'Team';
+      const categoryLabel = catName(student.category);
+      const genderLabel = student.gender || 'Boys';
+      const classLabel = student.details?.class || student.class || '—';
+      const chestLabel = student.chestNo ? `#${student.chestNo}` : '—';
+      const studentInitial = String(student.name || 'S').trim()[0]?.toUpperCase() || 'S';
+
+      const festTitle = currentBranding.festName1 || 'Fest Management';
+      const festSub = currentBranding.festName2 && currentBranding.festName2 !== 'Setup Required' ? currentBranding.festName2 : '';
+      const festYear = currentYear();
+      const festInitials = festTitle.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'FM';
+      const hasLogo = /^data:image\/(jpeg|png|webp|gif);base64,/i.test(String(currentBranding.logoUrl || '')) || /^https?:\/\//i.test(String(currentBranding.logoUrl || ''));
+
+      const confirmedStatuses = new Set(['approved', 'selected', 'finalized']);
+      const confirmedEvents = applications
+        .filter((a) => confirmedStatuses.has(a.status))
+        .map((a) => {
+          const ev = events.find((e) => e.id === a.eventId) || {};
+          return {
+            id: a.eventId || a.id,
+            name: ev.name || a.eventName || 'Event',
+            stage: ev.stage || 'On-Stage',
+            type: ev.type || 'Single',
+            date: ev.scheduleDate || '',
+            time: ev.time || '',
+            venue: ev.scheduleStage || ''
+          };
+        })
+        .sort((a, b) => `${a.date} ${a.time} ${a.name}`.localeCompare(`${b.date} ${b.time} ${b.name}`));
+
+      const qrPayload = [
+        'FESTPORT',
+        `ID:${student.id || ''}`,
+        `CHEST:${student.chestNo || ''}`,
+        `NAME:${String(student.name || '').slice(0, 42)}`,
+        `TEAM:${String(teamLabel).slice(0, 28)}`,
+        `CAT:${String(categoryLabel).slice(0, 24)}`,
+        `YEAR:${festYear}`
+      ].join('|');
+
+      const qrSvg = renderQrSvg(qrPayload, {
+        sizePx: 88,
+        quietZone: 2,
+        fg: '#0F172A',
+        bg: '#FFFFFF',
+        label: `Verification QR code for ${student.name || 'Participant'} Chest ${chestLabel}`
+      });
+
+      const eventsHtml = confirmedEvents.length
+        ? confirmedEvents.map((ev, idx) => `
+            <div class="flex items-start gap-2.5 py-2.5 text-left">
+              <span class="pt-0.5 font-mono-num text-[11px] font-bold text-slate-400">${String(idx + 1).padStart(2, '0')}.</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-xs font-semibold text-slate-900">${esc(ev.name)}</p>
+                <p class="mt-0.5 truncate text-[11px] text-slate-500">${esc(ev.stage)} · ${esc(ev.type)}${ev.date || ev.time ? ` · ${esc(ev.date)} ${esc(ev.time)}`.trim() : ''}${ev.venue ? ` · ${esc(ev.venue)}` : ''}</p>
+              </div>
+            </div>
+          `).join('')
+        : '<div class="py-8 text-center text-xs text-slate-400">No confirmed events yet. Approved applications from your Team Leader will appear here.</div>';
+
+      container.innerHTML = `
+        <div class="id-card-stage">
+          <div id="id-card-inner" class="id-card-inner">
+            <!-- FRONT FACE -->
+            <article id="id-card-front" class="id-card-face id-card-face-front flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div class="px-5 pt-3 pb-14" style="background:${esc(color)};color:${esc(headerFg)};border-bottom:1px solid ${esc(headerBorder)}">
+                <div class="mx-auto mb-3.5 h-2.5 w-14 rounded-full border border-black/15 bg-[#F8FAFC] shadow-inner" aria-hidden="true"></div>
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex min-w-0 items-center gap-2.5">
+                    <div class="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg font-display text-xs font-bold" style="background:${esc(headerSurface)};border:1px solid ${esc(headerBorder)}">
+                      <span>${esc(festInitials)}</span>
+                      ${hasLogo ? `<img src="${esc(currentBranding.logoUrl)}" class="id-card-logo-img absolute inset-0 h-full w-full object-cover" alt="${esc(festTitle)}" referrerpolicy="no-referrer">` : ''}
+                    </div>
+                    <div class="min-w-0 text-left">
+                      <p class="truncate font-display text-sm font-bold leading-tight">${esc(festTitle)}</p>
+                      <p class="truncate text-[11px] font-medium" style="color:${esc(headerMuted)}">${festSub ? `${esc(festSub)} · ` : ''}<span class="font-mono-num">${esc(festYear)}</span></p>
+                    </div>
+                  </div>
+                  <span class="shrink-0 text-[10px] font-bold uppercase tracking-widest" style="color:${esc(headerMuted)}">Participant</span>
+                </div>
+              </div>
+
+              <div class="-mt-11 px-5 pb-5 text-center">
+                <div class="relative mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-slate-100 font-display text-2xl font-bold shadow-sm" style="color:${esc(accentOnWhite)}">
+                  <span>${esc(studentInitial)}</span>
+                  ${student.photoData ? `<img src="${esc(student.photoData)}" class="id-card-photo-img absolute inset-0 h-full w-full object-cover" alt="${esc(student.name)}" referrerpolicy="no-referrer">` : ''}
+                </div>
+
+                <h3 class="mt-3 font-display text-xl font-bold tracking-tight text-slate-900 text-balance">${esc(student.name)}</h3>
+                <p class="mt-1 text-xs font-medium text-slate-500">
+                  <span>${esc(teamLabel)}</span>
+                  <span aria-hidden="true"> · </span>
+                  <span>${esc(categoryLabel)}</span>
+                </p>
+
+                <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                  <span class="block text-[10px] font-semibold uppercase tracking-widest text-slate-500">Chest Number</span>
+                  <span class="mt-0.5 block font-mono-num text-3xl font-extrabold tracking-tight" style="color:${esc(accentOnWhite)}">${esc(chestLabel)}</span>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 border-y border-slate-200 text-left text-xs">
+                  <div class="border-b border-r border-slate-100 px-3 py-2.5">
+                    <span class="block text-[11px] text-slate-400">Team</span>
+                    <strong class="mt-0.5 block truncate font-semibold text-slate-900">${esc(teamLabel)}</strong>
+                  </div>
+                  <div class="border-b border-slate-100 px-3 py-2.5">
+                    <span class="block text-[11px] text-slate-400">Category</span>
+                    <strong class="mt-0.5 block truncate font-semibold text-slate-900">${esc(categoryLabel)}</strong>
+                  </div>
+                  <div class="border-r border-slate-100 px-3 py-2.5">
+                    <span class="block text-[11px] text-slate-400">Gender</span>
+                    <strong class="mt-0.5 block font-semibold text-slate-900">${esc(genderLabel)}</strong>
+                  </div>
+                  <div class="px-3 py-2.5">
+                    <span class="block text-[11px] text-slate-400">Class</span>
+                    <strong class="mt-0.5 block font-semibold text-slate-900">${esc(classLabel)}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/70 px-5 py-3">
+                <span class="font-mono-num text-xs font-semibold text-slate-600">${confirmedEvents.length} Confirmed Event${confirmedEvents.length === 1 ? '' : 's'}</span>
+                <button type="button" data-flip-id-card aria-pressed="false" class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                  <i data-lucide="rotate-cw" class="h-3.5 w-3.5"></i>
+                  <span>Events &amp; QR</span>
+                </button>
+              </div>
+            </article>
+
+            <!-- BACK FACE -->
+            <article id="id-card-back" class="id-card-face id-card-face-back flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div class="px-5 pt-3 pb-3.5" style="background:${esc(color)};color:${esc(headerFg)};border-bottom:1px solid ${esc(headerBorder)}">
+                <div class="mx-auto mb-3 h-2.5 w-14 rounded-full border border-black/15 bg-[#F8FAFC] shadow-inner" aria-hidden="true"></div>
+                <div class="flex items-center justify-between gap-3">
+                  <div class="min-w-0 text-left">
+                    <p class="truncate font-display text-sm font-bold leading-tight">${esc(student.name)}</p>
+                    <p class="truncate text-[11px] font-medium" style="color:${esc(headerMuted)}">${esc(teamLabel)} · ${esc(categoryLabel)}</p>
+                  </div>
+                  <span class="shrink-0 font-mono-num text-sm font-extrabold">${esc(chestLabel)}</span>
+                </div>
+              </div>
+
+              <div class="flex min-h-0 flex-1 flex-col px-5 pt-3.5 pb-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Confirmed Events</span>
+                  <span class="font-mono-num text-xs font-bold text-slate-500">${confirmedEvents.length}</span>
+                </div>
+                <div class="mt-1 max-h-[205px] flex-1 divide-y divide-slate-100 overflow-y-auto pr-1">
+                  ${eventsHtml}
+                </div>
+
+                <div class="mt-3 flex items-center gap-3.5 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                  <div class="shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-1">
+                    ${qrSvg}
+                  </div>
+                  <div class="min-w-0 flex-1 text-left">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-700">Verification Badge</p>
+                    <p class="mt-0.5 font-mono-num text-xs font-bold text-slate-900">Chest ${esc(chestLabel)}</p>
+                    <p class="mt-0.5 truncate font-mono-num text-[11px] text-slate-500">ID: ${esc(String(student.id || '—').slice(0, 14))}</p>
+                    <p class="mt-1 text-[11px] text-slate-500">Scan at stage check-in desk</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/70 px-5 py-3">
+                <span class="truncate text-[11px] font-medium text-slate-500">${esc(festTitle)} · <span class="font-mono-num">${esc(festYear)}</span></span>
+                <button type="button" data-flip-id-card aria-pressed="true" class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100">
+                  <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i>
+                  <span>Front ID</span>
+                </button>
+              </div>
+            </article>
+          </div>
         </div>
-        <h3 class="mt-4 font-display text-xl font-bold text-slate-900">${esc(student.name)}</h3>
-        <p class="mt-1 text-sm font-semibold" style="color:${esc(color)}">${esc(teamDisplayNames[student.team] || student.team)}</p>
-        <div class="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-left text-xs">
-          <div class="rounded-lg bg-slate-50 p-3"><span class="text-slate-400 block">Chest No</span><strong class="font-mono-num text-sm text-slate-900">#${esc(student.chestNo || '—')}</strong></div>
-          <div class="rounded-lg bg-slate-50 p-3"><span class="text-slate-400 block">Category</span><strong class="text-sm text-slate-900">${esc(catName(student.category))}</strong></div>
-          <div class="rounded-lg bg-slate-50 p-3"><span class="text-slate-400 block">Gender</span><strong class="text-sm text-slate-900">${esc(student.gender || 'Boys')}</strong></div>
-          <div class="rounded-lg bg-slate-50 p-3"><span class="text-slate-400 block">Class</span><strong class="text-sm text-slate-900">${esc(student.details?.class || student.class || '—')}</strong></div>
-        </div>
-      </div>`;
+        <p class="mt-3 text-center text-xs text-slate-400">Flip the badge to view confirmed competition entries and verification QR.</p>
+      `;
+
+      container.querySelectorAll('.id-card-logo-img, .id-card-photo-img').forEach((img) => {
+        img.addEventListener('error', () => img.classList.add('hidden'), { once: true });
+      });
+      syncIdCardFlipState(false);
     }
 
     function switchTab(tab) {
@@ -792,6 +1008,13 @@
     }
 
     document.addEventListener('click', (e) => {
+      const flipBtn = e.target.closest('[data-flip-id-card]');
+      if (flipBtn) {
+        idCardFlipped = !idCardFlipped;
+        syncIdCardFlipState(true);
+        return;
+      }
+
       const tabBtn = e.target.closest('[data-tab]');
       if (tabBtn) switchTab(tabBtn.dataset.tab);
 
