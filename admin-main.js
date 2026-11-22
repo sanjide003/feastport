@@ -8,6 +8,14 @@ import { parseCriteria, validateEvent, eventToFirestore } from './event-utils.js
 import { normalizeRegistrationConfig } from './registration-utils.js';
 import { defaultScoringRules, normalizeScoringRules, buildTeamScoreLedger } from './score-utils.js';
 import { escapeHtml, printPage, resolveDisplayName } from './admin-utils.js';
+import {
+  defaultChestConfig,
+  normalizeChestConfig,
+  chestSeriesKey,
+  parseChestSeed,
+  resolveNextAutoChestNo,
+  validateManualChestNo
+} from './admin-students.js';
 import { createAdminResultsController } from './admin-results.js';
 import { createAdminExcelController } from './admin-excel.js';
 import { initCollapsibleSidebar } from './sidebar-shell.js';
@@ -36,6 +44,8 @@ let state = {
   registrationConfig: normalizeRegistrationConfig(),
   scheduleConfig: {},
   scoringRules: defaultScoringRules(),
+  chestNumberConfig: defaultChestConfig(),
+  chestDraftConfig: defaultChestConfig(),
   teams: [],
   teamColors: {},
   teamDisplayNames: {},
@@ -55,6 +65,12 @@ let state = {
 };
 
 let activeTab = 'overview';
+const activeSubTabs = {
+  setup: 'identity',
+  registrations: 'entries',
+  results: 'assign',
+  system: 'staff'
+};
 let resultsController = null;
 let excelController = null;
 
@@ -239,6 +255,8 @@ async function loadAllAdminData(force = false) {
   state.registrationConfig = normalizeRegistrationConfig(regCfgDoc || {});
   state.scheduleConfig = schedCfgDoc || {};
   state.scoringRules = normalizeScoringRules(scoringDoc || {});
+  state.chestNumberConfig = normalizeChestConfig(state.generalConfig.chestNumberConfig || {});
+  state.chestDraftConfig = normalizeChestConfig(state.chestNumberConfig);
   state.teams = state.generalConfig.teams || [];
   state.teamColors = state.generalConfig.teamColors || {};
   state.teamDisplayNames = state.generalConfig.teamDisplayNames || {};
@@ -430,6 +448,174 @@ function renderSetupLists() {
       </span>
     `).join('')}
   ` : '<p class="text-xs text-slate-400 dark:text-slate-500">No stages or festival days added yet.</p>';
+
+  renderChestNumberSetup();
+}
+
+function captureChestDraftFromDom() {
+  const draft = state.chestDraftConfig || normalizeChestConfig(state.chestNumberConfig);
+  const enabledEl = byId('chest-cfg-enabled');
+  const splitCatEl = byId('chest-cfg-split-category');
+  const splitGenEl = byId('chest-cfg-split-gender');
+  if (enabledEl) draft.enabled = enabledEl.checked;
+  if (splitCatEl) draft.splitByCategory = splitCatEl.checked;
+  if (splitGenEl) draft.splitByGender = splitGenEl.checked;
+  draft.series = draft.series && typeof draft.series === 'object' ? draft.series : {};
+  document.querySelectorAll('#chest-series-matrix input[data-chest-series-key]').forEach((inp) => {
+    const key = inp.dataset.chestSeriesKey;
+    if (!key) return;
+    const val = inp.value.trim();
+    if (val) draft.series[key] = val;
+    else delete draft.series[key];
+  });
+  state.chestDraftConfig = draft;
+  return draft;
+}
+
+function renderChestNumberSetup() {
+  const enabledEl = byId('chest-cfg-enabled');
+  const splitCatEl = byId('chest-cfg-split-category');
+  const splitGenEl = byId('chest-cfg-split-gender');
+  const optionsWrap = byId('chest-cfg-options-wrap');
+  const disabledNote = byId('chest-cfg-disabled-note');
+  const matrixEl = byId('chest-series-matrix');
+  if (!enabledEl || !matrixEl) return;
+
+  const draft = state.chestDraftConfig || normalizeChestConfig(state.chestNumberConfig);
+  enabledEl.checked = Boolean(draft.enabled);
+  if (splitCatEl) splitCatEl.checked = Boolean(draft.splitByCategory);
+  if (splitGenEl) splitGenEl.checked = Boolean(draft.splitByGender);
+
+  optionsWrap?.classList.toggle('hidden', !draft.enabled);
+  optionsWrap?.classList.toggle('flex', Boolean(draft.enabled));
+  disabledNote?.classList.toggle('hidden', Boolean(draft.enabled));
+  matrixEl.classList.toggle('hidden', !draft.enabled);
+
+  if (!draft.enabled) {
+    matrixEl.innerHTML = '';
+    return;
+  }
+
+  if (!state.teams.length) {
+    matrixEl.innerHTML = '<div class="rounded-lg border border-dashed border-amber-300 bg-amber-50/70 p-4 text-xs text-amber-800 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-300">Add at least one Team above to configure starting chest numbers.</div>';
+    return;
+  }
+
+  if (draft.splitByCategory && !state.categories.length) {
+    matrixEl.innerHTML = '<div class="rounded-lg border border-dashed border-amber-300 bg-amber-50/70 p-4 text-xs text-amber-800 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-300">Add at least one Category in <strong>Categories &amp; Venues</strong> before configuring per-category chest numbers.</div>';
+    return;
+  }
+
+  const inputCls = 'w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono-num text-xs font-semibold text-slate-900 placeholder:font-sans placeholder:font-normal placeholder:text-slate-400 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500';
+  const makeInput = (team, category, gender, label) => {
+    const key = chestSeriesKey({
+      team,
+      category,
+      gender,
+      splitByCategory: draft.splitByCategory,
+      splitByGender: draft.splitByGender
+    });
+    const val = draft.series?.[key] || '';
+    const sample = draft.splitByGender ? (gender === 'Girls' ? 'e.g. G101' : 'e.g. B101') : 'e.g. 101 or R101';
+    return `
+      <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+        ${label ? `<span class="mb-1 block">${h(label)}</span>` : ''}
+        <input type="text" maxlength="32" data-chest-series-key="${h(key)}" value="${h(val)}" placeholder="${sample}" class="${inputCls}">
+      </label>
+    `;
+  };
+
+  if (!draft.splitByCategory && !draft.splitByGender) {
+    matrixEl.innerHTML = `
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        ${state.teams.map((t) => `
+          <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-3 space-y-2 dark:border-slate-800 dark:bg-slate-800/40">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="h-3 w-3 shrink-0 rounded-full border border-slate-300 dark:border-slate-600" style="background:${h(state.teamColors?.[t] || '#1D4ED8')}"></span>
+              <span class="font-bold text-slate-900 dark:text-slate-100 truncate">${h(teamName(t))}</span>
+              <span class="font-mono-num text-[11px] text-slate-400">(${h(t)})</span>
+            </div>
+            ${makeInput(t, '', 'Boys', 'Starting Chest No.')}
+          </div>
+        `).join('')}
+      </div>
+    `;
+    return;
+  }
+
+  if (!draft.splitByCategory && draft.splitByGender) {
+    matrixEl.innerHTML = `
+      <div class="grid gap-3 sm:grid-cols-2">
+        ${state.teams.map((t) => `
+          <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-3 space-y-2.5 dark:border-slate-800 dark:bg-slate-800/40">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="h-3 w-3 shrink-0 rounded-full border border-slate-300 dark:border-slate-600" style="background:${h(state.teamColors?.[t] || '#1D4ED8')}"></span>
+              <span class="font-bold text-slate-900 dark:text-slate-100 truncate">${h(teamName(t))}</span>
+              <span class="font-mono-num text-[11px] text-slate-400">(${h(t)})</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              ${makeInput(t, '', 'Boys', 'Boys Starting No.')}
+              ${makeInput(t, '', 'Girls', 'Girls Starting No.')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    return;
+  }
+
+  if (draft.splitByCategory && !draft.splitByGender) {
+    matrixEl.innerHTML = `
+      <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+        <table class="w-full text-left text-xs">
+          <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-400">
+            <tr>
+              <th class="px-3 py-2.5 min-w-[150px]">Team / House</th>
+              ${state.categories.map((c) => `<th class="px-3 py-2.5 min-w-[140px]">${h(categoryName(c))}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            ${state.teams.map((t) => `
+              <tr>
+                <td class="px-3 py-2.5 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background:${h(state.teamColors?.[t] || '#1D4ED8')}"></span>
+                    ${h(teamName(t))}
+                  </span>
+                </td>
+                ${state.categories.map((c) => `<td class="px-3 py-2">${makeInput(t, c, 'Boys', '')}</td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    return;
+  }
+
+  // splitByCategory && splitByGender
+  matrixEl.innerHTML = `
+    <div class="grid gap-3 lg:grid-cols-2">
+      ${state.teams.map((t) => `
+        <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/40">
+          <div class="flex items-center gap-2 text-xs border-b border-slate-200 pb-2 dark:border-slate-700">
+            <span class="h-3 w-3 shrink-0 rounded-full border border-slate-300 dark:border-slate-600" style="background:${h(state.teamColors?.[t] || '#1D4ED8')}"></span>
+            <span class="font-bold text-slate-900 dark:text-slate-100 truncate">${h(teamName(t))}</span>
+            <span class="font-mono-num text-[11px] text-slate-400">(${h(t)})</span>
+          </div>
+          <div class="space-y-2.5">
+            ${state.categories.map((c) => `
+              <div class="grid items-end gap-2 sm:grid-cols-[120px_1fr_1fr]">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate pb-1.5">${h(categoryName(c))}</span>
+                ${makeInput(t, c, 'Boys', 'Boys')}
+                ${makeInput(t, c, 'Girls', 'Girls')}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 function renderStudents() {
@@ -526,6 +712,15 @@ function renderRegistrations() {
   }).join('') : '<p class="col-span-full text-center text-xs text-slate-400 dark:text-slate-500">No events found.</p>';
 
   const pending = state.registrationRequests.filter((r) => r.status === 'pending');
+  const pendingBadge = byId('badge-pending-requests');
+  if (pendingBadge) {
+    if (pending.length > 0) {
+      pendingBadge.textContent = String(pending.length);
+      pendingBadge.classList.remove('hidden');
+    } else {
+      pendingBadge.classList.add('hidden');
+    }
+  }
   byId('admin-requests-list').innerHTML = pending.length ? pending.map((r) => {
     const evNames = (r.eventIds || []).map((id) => state.events.find((e) => e.id === id)?.name || id);
     return `
@@ -602,12 +797,25 @@ function renderAll() {
   renderOverview();
   renderSetupLists();
   renderStudents();
+  syncStudentChestInput();
   renderEvents();
   renderRegistrations();
   renderSchedule();
   renderAccessList();
   resultsController?.renderAll();
   excelController?.renderAllWorkspaces();
+  window.lucide?.createIcons?.();
+}
+
+function setSubTab(group, subtab) {
+  if (!activeSubTabs[group] || !subtab) return;
+  activeSubTabs[group] = subtab;
+  document.querySelectorAll(`[data-subtab-group="${group}"]`).forEach((btn) => {
+    btn.setAttribute('aria-selected', String(btn.dataset.subtab === subtab));
+  });
+  document.querySelectorAll(`[data-subtab-panel-group="${group}"]`).forEach((panel) => {
+    panel.classList.toggle('hidden', panel.dataset.subtabPanel !== subtab);
+  });
   window.lucide?.createIcons?.();
 }
 
@@ -652,6 +860,68 @@ function setFieldLockedStyle(el, locked) {
   } else {
     el.classList.remove('bg-slate-100', 'text-slate-500', 'dark:bg-slate-950/70', 'dark:text-slate-400', 'cursor-not-allowed');
     el.classList.add('bg-white', 'text-slate-900', 'dark:bg-slate-800', 'dark:text-slate-100');
+  }
+}
+
+function setReadOnlyLockedStyle(el, locked) {
+  if (!el) return;
+  el.readOnly = locked;
+  el.tabIndex = locked ? -1 : 0;
+  if (locked) {
+    el.classList.remove('bg-white', 'text-slate-900', 'dark:bg-slate-800', 'dark:text-slate-100');
+    el.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-950/70', 'dark:text-slate-300', 'cursor-not-allowed');
+  } else {
+    el.classList.remove('bg-slate-100', 'text-slate-600', 'dark:bg-slate-950/70', 'dark:text-slate-300', 'cursor-not-allowed');
+    el.classList.add('bg-white', 'text-slate-900', 'dark:bg-slate-800', 'dark:text-slate-100');
+  }
+}
+
+function syncStudentChestInput() {
+  const chestEl = byId('inp-std-chest');
+  const genBtn = byId('btn-gen-chest');
+  const lockBadge = byId('std-chest-lock-badge');
+  const hintEl = byId('std-chest-auto-hint');
+  if (!chestEl) return;
+
+  const cfg = state.chestNumberConfig || defaultChestConfig();
+  if (!cfg.enabled) {
+    setReadOnlyLockedStyle(chestEl, false);
+    if (genBtn) {
+      genBtn.disabled = false;
+      genBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+    lockBadge?.classList.add('hidden');
+    hintEl?.classList.add('hidden');
+    return;
+  }
+
+  setReadOnlyLockedStyle(chestEl, true);
+  if (genBtn) {
+    genBtn.disabled = true;
+    genBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  }
+  lockBadge?.classList.remove('hidden');
+
+  const res = resolveNextAutoChestNo({
+    config: cfg,
+    students: state.students,
+    team: byId('inp-std-team')?.value || '',
+    category: byId('inp-std-cat')?.value || '',
+    gender: byId('inp-std-gender')?.value || 'Boys'
+  });
+
+  if (res.ok) {
+    chestEl.value = res.chestNo;
+    if (hintEl) {
+      hintEl.textContent = `Auto-assigned from rule "${res.seed}" (next highest + 1).`;
+      hintEl.className = 'text-[11px] font-medium text-emerald-700 dark:text-emerald-400';
+    }
+  } else {
+    chestEl.value = '';
+    if (hintEl) {
+      hintEl.textContent = res.reason;
+      hintEl.className = 'text-[11px] font-medium text-amber-700 dark:text-amber-400';
+    }
   }
 }
 
@@ -959,11 +1229,57 @@ function bindEvents() {
   // Teams / Categories / Stages / Days
   const saveGeneral = async (patch, msg) => {
     await setDoc(doc(db, 'settings', 'general'), { ...patch, updatedAt: Date.now() }, { merge: true });
+    state.generalConfig = { ...state.generalConfig, ...patch };
     invalidateCache('general');
     populateSelectOptions();
     renderAll();
     showToast(msg);
   };
+
+  ['chest-cfg-enabled', 'chest-cfg-split-category', 'chest-cfg-split-gender'].forEach((id) => {
+    byId(id)?.addEventListener('change', () => {
+      captureChestDraftFromDom();
+      renderChestNumberSetup();
+    });
+  });
+
+  byId('chest-series-matrix')?.addEventListener('input', (e) => {
+    const inp = e.target.closest('input[data-chest-series-key]');
+    if (!inp) return;
+    const key = inp.dataset.chestSeriesKey;
+    if (!state.chestDraftConfig.series) state.chestDraftConfig.series = {};
+    const val = inp.value.trim();
+    if (val) state.chestDraftConfig.series[key] = val;
+    else delete state.chestDraftConfig.series[key];
+  });
+
+  byId('btn-save-chest-config')?.addEventListener('click', async () => {
+    const draft = captureChestDraftFromDom();
+    const visibleInputs = [...document.querySelectorAll('#chest-series-matrix input[data-chest-series-key]')];
+    let validSeedsCount = 0;
+
+    for (const inp of visibleInputs) {
+      const val = inp.value.trim();
+      if (!val) continue;
+      if (!parseChestSeed(val)) {
+        inp.focus();
+        return showToast(`Invalid starting chest format "${val}". Must end with digits (e.g. 101 or R101).`, 'error');
+      }
+      validSeedsCount += 1;
+    }
+
+    if (draft.enabled && state.teams.length > 0 && visibleInputs.length > 0 && validSeedsCount === 0) {
+      return showToast('Enter at least one valid starting chest number before saving.', 'error');
+    }
+
+    const nextCfg = normalizeChestConfig(draft);
+    state.chestNumberConfig = nextCfg;
+    state.chestDraftConfig = normalizeChestConfig(nextCfg);
+    await saveGeneral(
+      { chestNumberConfig: nextCfg },
+      nextCfg.enabled ? 'Automated chest numbering rules saved' : 'Automated chest numbering disabled'
+    );
+  });
 
   byId('btn-add-team')?.addEventListener('click', async () => {
     const key = byId('inp-new-team').value.trim();
@@ -1127,33 +1443,60 @@ function bindEvents() {
   });
 
   // Students
+  ['inp-std-team', 'inp-std-cat', 'inp-std-gender'].forEach((id) => {
+    byId(id)?.addEventListener('change', syncStudentChestInput);
+  });
+
   byId('btn-gen-chest')?.addEventListener('click', () => {
+    if (state.chestNumberConfig?.enabled) return syncStudentChestInput();
+    const taken = new Set(state.students.map((s) => String(s.chestNo || '').trim().toLowerCase()).filter(Boolean));
     const nums = state.students.map((s) => Number(String(s.chestNo || '').replace(/\D/g, ''))).filter(Number.isFinite);
-    byId('inp-std-chest').value = String((nums.length ? Math.max(...nums) : 100) + 1);
+    let next = (nums.length ? Math.max(...nums) : 100) + 1;
+    while (taken.has(String(next))) next += 1;
+    byId('inp-std-chest').value = String(next);
   });
 
   byId('form-student')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = byId('inp-std-name').value.trim();
-    const chestNo = byId('inp-std-chest').value.trim();
     const team = byId('inp-std-team').value;
     const category = byId('inp-std-cat').value;
     const gender = byId('inp-std-gender').value;
     const photoData = byId('inp-std-photo-data').value.trim();
 
-    if (state.students.some((s) => String(s.chestNo || '').toLowerCase() === chestNo.toLowerCase())) {
-      return showToast('Duplicate chest number', 'error');
+    let chestNo = byId('inp-std-chest').value.trim();
+    if (state.chestNumberConfig?.enabled) {
+      const autoRes = resolveNextAutoChestNo({
+        config: state.chestNumberConfig,
+        students: state.students,
+        team,
+        category,
+        gender
+      });
+      if (!autoRes.ok) return showToast(autoRes.reason, 'error');
+      chestNo = autoRes.chestNo;
     }
+
+    const chestCheck = validateManualChestNo(chestNo, state.students);
+    if (!chestCheck.ok) return showToast(chestCheck.error, 'error');
+    chestNo = chestCheck.chestNo;
+
     const payload = { name, chestNo, team, category, gender, photoData, updatedAt: Date.now() };
     const docRef = await addDoc(collection(db, 'students'), payload);
     state.students.push({ id: docRef.id, ...payload });
-    e.target.reset();
+    if (state.chestNumberConfig?.enabled) {
+      byId('inp-std-name').value = '';
+      if (byId('inp-std-photo-file')) byId('inp-std-photo-file').value = '';
+    } else {
+      e.target.reset();
+    }
     byId('inp-std-photo-data').value = '';
     window.refreshImageUploadPreviews?.();
     renderStudents();
+    syncStudentChestInput();
     renderOverview();
     await resultsController?.syncPublicSummary(state.results);
-    showToast(`Added student: ${name}`);
+    showToast(`Added student: ${name} (${chestNo})`);
   });
 
   ['filter-std-search', 'filter-std-team', 'filter-std-cat'].forEach((id) => byId(id)?.addEventListener('input', renderStudents));
@@ -1162,10 +1505,9 @@ function bindEvents() {
     e.preventDefault();
     const id = byId('edit-std-id').value;
     const name = byId('edit-std-name').value.trim();
-    const chestNo = byId('edit-std-chest').value.trim();
-    if (state.students.some((s) => s.id !== id && String(s.chestNo || '').toLowerCase() === chestNo.toLowerCase())) {
-      return showToast('Duplicate chest number', 'error');
-    }
+    const chestCheck = validateManualChestNo(byId('edit-std-chest').value, state.students, id);
+    if (!chestCheck.ok) return showToast(chestCheck.error, 'error');
+    const chestNo = chestCheck.chestNo;
     const patch = {
       name,
       chestNo,
@@ -1181,6 +1523,7 @@ function bindEvents() {
     if (idx >= 0) state.students[idx] = { ...state.students[idx], ...patch };
     closeModal('edit-student-modal');
     renderStudents();
+    syncStudentChestInput();
     renderRegistrations();
     resultsController?.renderAll();
     showToast('Student updated');
@@ -1362,6 +1705,11 @@ function bindEvents() {
     const tabBtn = e.target.closest('[data-tab]');
     if (tabBtn) return switchTab(tabBtn.dataset.tab);
 
+    const subBtn = e.target.closest('[data-subtab-group]');
+    if (subBtn && activeSubTabs[subBtn.dataset.subtabGroup]) {
+      return setSubTab(subBtn.dataset.subtabGroup, subBtn.dataset.subtab);
+    }
+
     const resetBtn = e.target.closest('[data-reset-scope]');
     if (resetBtn) return safeResetScope(resetBtn.dataset.resetScope);
 
@@ -1465,6 +1813,7 @@ function bindEvents() {
       await deleteDoc(doc(db, 'students', s.id));
       state.students = state.students.filter((x) => x.id !== s.id);
       renderStudents();
+      syncStudentChestInput();
       renderRegistrations();
       renderOverview();
       await resultsController?.syncPublicSummary(state.results);
@@ -1665,6 +2014,7 @@ initAdminAuth({
       toast: showToast,
       confirm: confirmAction,
       prompt: promptAction,
+      setSubTab,
       updateState: (patch) => Object.assign(state, patch)
     });
     excelController = createAdminExcelController(() => state, {

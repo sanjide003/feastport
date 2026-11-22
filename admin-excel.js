@@ -12,14 +12,21 @@ import {
   parseCriteria,
   validateEvent
 } from './event-utils.js';
+import {
+  normalizeChestConfig,
+  resolveNextAutoChestNo,
+  validateManualChestNo
+} from './admin-students.js';
 
 const h = escapeHtml;
 const clean = (value) => String(value ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim();
 const normKey = (value) => clean(value).toLowerCase().replace(/[^a-z0-9]+/g, '');
-const CHEST_REGEX = /^[A-Za-z0-9_-]+$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_24_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const BATCH_LIMIT = 350;
+
+const isAutoChestActive = (state) =>
+  normalizeChestConfig(state?.chestNumberConfig || state?.generalConfig?.chestNumberConfig || {}).enabled;
 
 const METHOD_OPTIONS = [
   { value: 'criteria', label: 'Criteria Scoring' },
@@ -245,18 +252,36 @@ function autoMapHeaders(headers, schema) {
   return mapping;
 }
 
-function validateScopeRows(scope, rows, state) {
+export function validateScopeRows(scope, rows, state) {
   if (!rows.length) {
     return { total: 0, ready: 0, errors: 0, warnings: 0, skipped: 0 };
   }
 
   if (scope === 'students') {
+    const chestCfg = normalizeChestConfig(state.chestNumberConfig || state.generalConfig?.chestNumberConfig || {});
     const existingByChest = new Map();
     (state.students || []).forEach((s) => {
       const k = clean(s.chestNo).toLowerCase();
       if (k) existingByChest.set(k, s);
     });
     const sheetChestFirstRow = new Map();
+
+    // Reserve all explicit (non-blank) Chest Nos in the sheet first so blank auto-assigned rows never collide with them.
+    const autoPool = [...(state.students || [])];
+    rows.forEach((row) => {
+      if (row.skip) return;
+      const explicitChest = clean(row.data.chestNo);
+      if (!explicitChest) return;
+      const tRes = resolveConfiguredOption(row.data.team, state.teams, state.teamDisplayNames);
+      const cRes = resolveConfiguredOption(row.data.category, state.categories, state.categoryDisplayNames);
+      const gRes = normalizeStudentGenderStrict(row.data.gender);
+      autoPool.push({
+        chestNo: explicitChest,
+        team: tRes.matched ? tRes.value : clean(row.data.team),
+        category: cRes.matched ? cRes.value : clean(row.data.category),
+        gender: gRes.valid ? gRes.value : 'Boys'
+      });
+    });
 
     rows.forEach((row, index) => {
       row.errors = {};
@@ -284,24 +309,6 @@ function validateScopeRows(scope, rows, state) {
       if (catRes.matched) row.data.category = catRes.value;
       if (genderRes.valid) row.data.gender = genderRes.value;
 
-      if (!chestNo) {
-        row.errors.chestNo = 'Chest No is required';
-      } else if (chestNo.length > 32) {
-        row.errors.chestNo = 'Chest No must be 32 characters or fewer';
-      } else if (!CHEST_REGEX.test(chestNo)) {
-        row.errors.chestNo = 'Chest No allows only letters, numbers, "-" or "_"';
-      } else {
-        const lower = chestNo.toLowerCase();
-        const dbMatch = existingByChest.get(lower);
-        if (dbMatch) {
-          row.errors.chestNo = `Duplicate Chest No (exists for ${dbMatch.name || 'another student'})`;
-        } else if (sheetChestFirstRow.has(lower)) {
-          row.errors.chestNo = `Duplicate Chest No in sheet (Row ${sheetChestFirstRow.get(lower) + 1})`;
-        } else {
-          sheetChestFirstRow.set(lower, index);
-        }
-      }
-
       if (!name) {
         row.errors.name = 'Full Name is required';
       } else if (name.length > 140) {
@@ -324,6 +331,56 @@ function validateScopeRows(scope, rows, state) {
         row.errors.gender = 'Gender is required';
       } else if (!genderRes.valid) {
         row.errors.gender = 'Gender must be Boys or Girls';
+      }
+
+      if (chestNo) {
+        const formatCheck = validateManualChestNo(chestNo, state.students);
+        if (!formatCheck.ok) {
+          row.errors.chestNo = formatCheck.error;
+        } else {
+          const lower = chestNo.toLowerCase();
+          if (existingByChest.has(lower)) {
+            const dbMatch = existingByChest.get(lower);
+            row.errors.chestNo = `Duplicate Chest No (exists for ${dbMatch.name || 'another student'})`;
+          } else if (sheetChestFirstRow.has(lower)) {
+            row.errors.chestNo = `Duplicate Chest No in sheet (Row ${sheetChestFirstRow.get(lower) + 1})`;
+          } else {
+            sheetChestFirstRow.set(lower, index);
+            row.normalized.chestNo = formatCheck.chestNo;
+          }
+        }
+      } else if (chestCfg.enabled) {
+        const hasValidMeta =
+          !row.errors.team &&
+          !row.errors.category &&
+          !row.errors.gender &&
+          teamRes.value &&
+          catRes.value &&
+          genderRes.valid;
+        if (!hasValidMeta) {
+          row.errors.chestNo = 'Select valid Team, Category & Gender to auto-assign Chest No';
+        } else {
+          const autoRes = resolveNextAutoChestNo({
+            config: chestCfg,
+            students: autoPool,
+            team: teamRes.value,
+            category: catRes.value,
+            gender: genderRes.value
+          });
+          if (autoRes.ok) {
+            row.normalized.chestNo = autoRes.chestNo;
+            autoPool.push({
+              chestNo: autoRes.chestNo,
+              team: teamRes.value,
+              category: catRes.value,
+              gender: genderRes.value
+            });
+          } else {
+            row.errors.chestNo = autoRes.reason;
+          }
+        }
+      } else {
+        row.errors.chestNo = 'Chest No is required';
       }
 
       row.status = Object.keys(row.errors).length ? 'error' : Object.keys(row.warnings).length ? 'warning' : 'ready';
@@ -645,6 +702,9 @@ function buildReferenceRows(state) {
     rows.push(['Category', c, resolveDisplayName(state.categoryDisplayNames, c, c)]);
   });
   rows.push(['Student Gender', 'Boys / Girls', 'Exact allowed values for Students']);
+  if (isAutoChestActive(state)) {
+    rows.push(['Chest No (Auto)', 'Optional / Leave Blank', 'Automated chest numbering is ON — blank Chest No cells auto-assign sequentially']);
+  }
   rows.push(['Event Gender', 'Both / Boys / Girls / Mixed', 'Allowed values for Events']);
   rows.push(['Event Type', 'Single / Group', 'Group requires Members >= 2']);
   rows.push(['Stage Type', 'On-Stage / Off-Stage', 'Allowed values for Events']);
@@ -862,7 +922,11 @@ export function createAdminExcelController(getState, handlers = {}) {
     sc.rawRecords = records;
     const schema = SCHEMAS[scope];
     sc.columnMap = autoMapHeaders(rawHeaderRow, schema);
-    const missingRequired = schema.fields.some((f) => f.required && !sc.columnMap[f.key]);
+    const autoChest = scope === 'students' && isAutoChestActive(getState());
+    const missingRequired = schema.fields.some((f) => {
+      const req = scope === 'students' && f.key === 'chestNo' ? !autoChest : f.required;
+      return req && !sc.columnMap[f.key];
+    });
     sc.showMapper = missingRequired;
     applyMappingAndValidate(scope);
     renderWorkspace(scope);
@@ -1006,6 +1070,11 @@ export function createAdminExcelController(getState, handlers = {}) {
         else if (warn) input.classList.add(...CELL_WARN_CLASSES);
         else input.classList.add(...CELL_DEFAULT_CLASSES);
         input.title = err || warn || '';
+        if (scope === 'students' && field === 'chestNo') {
+          input.placeholder = row.normalized?.chestNo && !clean(row.data?.chestNo)
+            ? `Auto: ${row.normalized.chestNo}`
+            : isAutoChestActive(getState()) ? 'Auto if blank' : 'Chest No';
+        }
       });
     });
   }
@@ -1013,9 +1082,13 @@ export function createAdminExcelController(getState, handlers = {}) {
   function renderFieldCell(scope, row, fieldDef, state) {
     const field = fieldDef.key;
     const raw = row.data?.[field] ?? '';
+    const autoChest = scope === 'students' && isAutoChestActive(state);
     if (!scopeState[scope].editMode) {
       const err = !row.skip && row.errors?.[field];
       const warn = !row.skip && row.warnings?.[field];
+      if (scope === 'students' && field === 'chestNo' && !raw && row.normalized?.chestNo && !err) {
+        return `<span class="inline-flex items-center gap-1 font-mono-num font-semibold text-blue-700 dark:text-blue-300"><span class="rounded bg-blue-50 dark:bg-blue-950/70 px-1 py-0.5 text-[10px] font-bold uppercase">Auto</span>${h(row.normalized.chestNo)}</span>`;
+      }
       const cls = err
         ? 'rounded border border-red-300 dark:border-red-800/70 bg-red-50 dark:bg-red-950/50 px-1.5 py-0.5 text-red-800 dark:text-red-300 font-semibold'
         : warn
@@ -1037,6 +1110,10 @@ export function createAdminExcelController(getState, handlers = {}) {
       if (field === 'team') return renderSelectControl(scope, row, field, teamOpts, raw);
       if (field === 'category') return renderSelectControl(scope, row, field, catOpts, raw);
       if (field === 'gender') return renderSelectControl(scope, row, field, [{ value: 'Boys', label: 'Boys' }, { value: 'Girls', label: 'Girls' }], raw);
+      if (field === 'chestNo' && autoChest) {
+        const autoPlaceholder = row.normalized?.chestNo && !raw ? `Auto: ${row.normalized.chestNo}` : 'Auto if blank';
+        return renderInputControl(scope, row, field, { placeholder: autoPlaceholder });
+      }
       return renderInputControl(scope, row, field, { placeholder: fieldDef.label });
     }
 
@@ -1181,7 +1258,7 @@ export function createAdminExcelController(getState, handlers = {}) {
                 </button>
               ` : ''}
             </div>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Every row is validated immediately against active Teams, Categories, Stages, and duplicates.</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Every row is validated immediately against active Teams, Categories, Stages, and duplicates.${scope === 'students' && isAutoChestActive(state) ? ' <strong class="text-blue-700 dark:text-blue-300">Automated Chest Numbering is ON:</strong> leave Chest No blank to auto-assign sequentially, or enter a unique Chest No manually.' : ''}</p>
           </div>
         </div>
 
@@ -1196,14 +1273,17 @@ export function createAdminExcelController(getState, handlers = {}) {
                 class="rounded-lg bg-blue-700 dark:bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 dark:hover:bg-blue-500">Apply Mapping</button>
             </div>
             <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-xs">
-              ${schema.fields.map((f) => `
-                <label class="font-semibold text-slate-700 dark:text-slate-300">${h(f.label)}${f.required ? ' *' : ''}
+              ${schema.fields.map((f) => {
+                const isReq = scope === 'students' && f.key === 'chestNo' ? !isAutoChestActive(state) : f.required;
+                return `
+                <label class="font-semibold text-slate-700 dark:text-slate-300">${h(f.label)}${isReq ? ' *' : ''}
                   <select data-excel-map="${scope}" data-map-field="${h(f.key)}" class="mt-1 w-full rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 px-2 py-1.5 text-xs">
                     <option value="">— Not Mapped —</option>
                     ${sc.rawHeaders.map((hdr) => `<option value="${h(hdr)}" ${sc.columnMap[f.key] === hdr ? 'selected' : ''}>${h(hdr)}</option>`).join('')}
                   </select>
                 </label>
-              `).join('')}
+              `;
+              }).join('')}
             </div>
           </div>
         ` : ''}

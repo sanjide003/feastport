@@ -131,6 +131,16 @@ export function createAdminResultsController(getState, actions) {
   function renderSubmittedSheets() {
     const { judgeScores = [], events = [], scoringRules = {}, students = [], registrations = [], results = [] } = state();
     const submitted = judgeScores.filter((s) => s.status === 'submitted');
+    const awaitingCount = judgeScores.filter((s) => s.status === 'submitted' && s.publishStatus !== 'published').length;
+    const subBadge = byId('badge-subtab-sheets');
+    if (subBadge) {
+      if (awaitingCount > 0) {
+        subBadge.textContent = String(awaitingCount);
+        subBadge.classList.remove('hidden');
+      } else {
+        subBadge.classList.add('hidden');
+      }
+    }
     const container = byId('submitted-sheets-list');
     if (!container) return;
 
@@ -593,6 +603,7 @@ export function createAdminResultsController(getState, actions) {
       if (action === 'reopen-sheet') reopenSheet(btn.dataset.id);
       if (action === 'publish-from-sheets') publishFromSheets(btn.dataset.eventId);
       if (action === 'edit-result') {
+        actions.setSubTab?.('results', 'direct');
         byId('direct-result-event').value = btn.dataset.eventId;
         populateDirectWinnerSelects(btn.dataset.eventId);
         byId('direct-result-event')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
