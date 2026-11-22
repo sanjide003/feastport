@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { applicationDecision, capacityState, eventCapacity, normalizeRegistrationConfig, participantEligibleForEvent, participationLimitDecision, participationUsage, registrationPhase, registrationWindowOpen, selfRegistrationAllowed, studentEligibleForEvent } from '../registration-utils.js';
+import { buildVerificationUrl, computeVerificationToken, formatChestNumber, renderParticipantIdCardHtml } from '../id-card-renderer.js';
+import { encodeQrMatrix } from '../qr-svg.js';
 const student={id:'s1',name:'Student',team:'Blue',category:'Junior',gender:'Girls',details:{class:'7'}};
 const event={id:'e1',name:'Event',limit:3,type:'Single',category:'Junior',gender:'Girls',allowedParticipantTypes:['student'],allowedRegistrationChannels:['self'],eligibleClasses:['7']};
 assert.equal(studentEligibleForEvent(student,event,{registrationChannels:['self']}),true);
@@ -29,4 +32,33 @@ const limitConfig={participationLimits:{group:{mode:'custom',limit:1},total:{mod
 assert.deepEqual(participationUsage(['e1'],[{...event,type:'Group'}],limitConfig),{offStage:1,onStage:0,single:0,group:1,general:0,total:1});
 assert.equal(participationLimitDecision(limitConfig,{...event,type:'Group'}, {group:1,total:1}).allowed,false);
 assert.equal(participationLimitDecision({participationLimits:{group:{enabled:false,mode:'custom',limit:0}}},{...event,type:'Group'},{group:5}).allowed,true);
+
+// ID card layout & public QR verification checks
+assert.equal(formatChestNumber('#104'), '104');
+assert.equal(formatChestNumber('R101'), 'R101');
+const cardStudent = { id: 'secret_doc_99123', name: 'Amina Rahman', team: 'red_house', category: 'Senior', gender: 'Girls', chestNo: '#R104', details: { class: '10' } };
+const tokenA = computeVerificationToken(cardStudent);
+const tokenB = computeVerificationToken({ ...cardStudent, chestNo: 'R104' });
+assert.equal(tokenA.length, 8);
+assert.equal(tokenA, tokenB);
+assert.notEqual(tokenA, computeVerificationToken({ ...cardStudent, chestNo: 'R105' }));
+const qrUrl = buildVerificationUrl(cardStudent, 'https://ais-dev-xh3uqfwhmc6aghg2dh63iu-700250552557.asia-northeast1.run.app');
+assert.equal(qrUrl.startsWith('https://ais-dev-xh3uqfwhmc6aghg2dh63iu-700250552557.asia-northeast1.run.app/verify.html?c=R104&k='), true);
+const qrMatrix = encodeQrMatrix(qrUrl);
+assert.equal(qrMatrix.size >= 21 && qrMatrix.version <= 9, true);
+const cardHtml = renderParticipantIdCardHtml({
+  student: cardStudent,
+  confirmedEvents: [{ id: 'e1', name: 'Mappila Pattu', stage: 'On-Stage', type: 'Single' }],
+  branding: { festName1: 'Kalotsavam', festName2: 'Arts Fest' },
+  teamDisplayNames: { red_house: 'Red House' },
+  festYear: '2026',
+  verificationUrl: qrUrl
+});
+assert.equal(cardHtml.includes('#R104'), false, 'Chest number must not include # prefix');
+assert.equal(cardHtml.includes('ID:'), false, 'Student document ID must be omitted from verification badge');
+assert.equal(cardHtml.includes('secret_doc_99123'), false, 'Raw Firestore ID must never appear in rendered card HTML');
+assert.ok(cardHtml.indexOf('R104') < cardHtml.indexOf('PARTICIPANT'), 'PARTICIPANT badge must appear after Chest Number');
+assert.ok(cardHtml.indexOf('PARTICIPANT') < cardHtml.indexOf('Kalotsavam Arts Fest'), 'Fest name must appear in the bottom footer below body content');
+const verifyHtml = readFileSync('verify.html', 'utf8');
+assert.equal(verifyHtml.includes('studentRegistrationSession'), false, 'verify.html must never access or create studentRegistrationSession');
 console.log('Advanced registration engine checks passed');

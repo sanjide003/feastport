@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#F8FAFC">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Verify Participant ID — Festival Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@1.25.0" defer></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: #F8FAFC; color: #0F172A; }
+    h1, h2, h3, .font-display { font-family: 'Outfit', 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; }
+    .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+    .id-card-stage { perspective: 1400px; width: 100%; max-width: 376px; }
+    .id-card-inner { position: relative; width: 100%; display: grid; transform-style: preserve-3d; transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+    .id-card-inner.is-flipped { transform: rotateY(180deg); }
+    .id-card-face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .id-card-face-back { transform: rotateY(180deg); }
+    @media (prefers-reduced-motion: reduce) {
+      .id-card-inner { transition: none; transform: none !important; }
+      .id-card-face-back { transform: none; }
+      .id-card-inner:not(.is-flipped) .id-card-face-back { display: none; }
+      .id-card-inner.is-flipped .id-card-face-front { display: none; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#F8FAFC] text-[#0F172A] antialiased">
+  <div class="flex min-h-screen flex-col lg:flex-row">
+    <div id="sidebar-backdrop" data-app-sidebar-backdrop class="hidden"></div>
+
+    <!-- Collapsible Side Menu -->
+    <aside id="sidebar" data-app-sidebar class="flex flex-col border-r border-slate-200 bg-white">
+      <div data-sidebar-header class="flex h-16 items-center justify-between gap-2 border-b border-slate-200 px-4">
+        <a href="index.html" class="flex min-w-0 items-center gap-3">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+            <img id="verify-logo" class="hidden h-full w-full object-cover" alt="Festival logo" referrerpolicy="no-referrer">
+            <span id="verify-logo-fallback" class="font-display text-xs font-bold text-blue-700">FM</span>
+          </div>
+          <div data-sidebar-hide-collapsed class="min-w-0">
+            <span id="verify-fest-name" class="block truncate font-display text-sm font-bold tracking-tight text-slate-900">Fest Management</span>
+            <span class="block truncate text-[11px] font-medium text-slate-500">Badge Verification</span>
+          </div>
+        </a>
+        <button type="button" data-sidebar-close class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden" aria-label="Close menu">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <nav data-sidebar-nav class="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Primary navigation">
+        <a href="index.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="home" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Home</span>
+        </a>
+        <a href="results.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="trophy" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Results</span>
+        </a>
+        <a href="index.html#schedule" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="calendar-days" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Schedule</span>
+        </a>
+        <a href="register.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="user-plus" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Register</span>
+        </a>
+        <a href="verify.html" data-sidebar-item aria-current="page" class="flex items-center gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700">
+          <i data-lucide="shield-check" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Verify ID</span>
+        </a>
+        <a href="tv.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i data-lucide="tv" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Live TV</span>
+        </a>
+      </nav>
+
+      <div data-sidebar-footer class="border-t border-slate-200 p-3">
+        <a href="login.html" data-sidebar-item class="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white hover:bg-slate-800">
+          <i data-lucide="log-in" class="h-4 w-4 shrink-0"></i>
+          <span data-sidebar-label class="truncate">Staff Login</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Column -->
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+        <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center gap-3 min-w-0">
+            <button type="button" data-sidebar-toggle class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" aria-label="Toggle sidebar">
+              <i data-lucide="menu" class="h-4 w-4 lg:hidden"></i>
+              <i data-lucide="panel-left-close" data-toggle-icon-desktop class="hidden h-4 w-4 lg:block"></i>
+            </button>
+            <h2 class="truncate font-display text-base font-bold text-slate-900">Participant ID Verification</h2>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <a href="results.html" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 whitespace-nowrap">
+              <i data-lucide="trophy" class="h-3.5 w-3.5"></i>
+              <span>Public Results</span>
+            </a>
+            <a href="login.html" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap">
+              <i data-lucide="log-in" class="h-3.5 w-3.5"></i>
+              <span>Staff Login</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <!-- Page Intro + Manual Chest Lookup -->
+        <section class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+          <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-2xl">
+              <p class="text-xs font-semibold uppercase tracking-wider text-blue-700">Public Read-Only Badge Verification</p>
+              <h1 class="mt-1 font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Verify Participant Authenticity</h1>
+              <p class="mt-1 text-sm text-slate-500">Confirm genuine participant badges, approved events, and published awards without accessing any student registration account.</p>
+            </div>
+
+            <form id="manual-lookup-form" class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+              <div class="relative min-w-[180px]">
+                <label for="lookup-chest" class="sr-only">Chest Number</label>
+                <i data-lucide="hash" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+                <input id="lookup-chest" type="text" autocomplete="off" placeholder="Chest No (e.g. 104)" class="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 font-mono-num text-sm font-semibold text-slate-900 placeholder:font-sans placeholder:font-normal placeholder:text-slate-400 focus:border-blue-600 focus:outline-none">
+              </div>
+              <select id="lookup-team" aria-label="Filter by team (optional)" class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700">
+                <option value="">All Teams</option>
+              </select>
+              <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 whitespace-nowrap">
+                <i data-lucide="search-check" class="h-4 w-4"></i>
+                <span>Verify Badge</span>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Verification Status Banner -->
+        <section id="verify-status-banner" class="mt-6 hidden rounded-xl border p-4 sm:p-5" aria-live="polite"></section>
+
+        <!-- Empty / Initial / Loading State -->
+        <section id="verify-empty-state" class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+            <i data-lucide="qr-code" class="h-6 w-6"></i>
+          </div>
+          <h2 id="empty-state-title" class="mt-4 font-display text-lg font-bold text-slate-900">Ready to Verify Participant Badge</h2>
+          <p id="empty-state-text" class="mx-auto mt-1 max-w-md text-sm text-slate-500">Scan a participant QR badge with any camera or Google Lens scanner, or enter a Chest Number above to check live records.</p>
+        </section>
+
+        <!-- Verified Participant Workspace -->
+        <section id="verify-result-grid" class="mt-6 hidden grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+          <!-- Left: Authentic Lanyard ID Card -->
+          <div class="lg:col-span-5">
+            <div id="verified-id-card-slot"></div>
+          </div>
+
+          <!-- Right: Live Schedule & Published Awards -->
+          <div class="space-y-6 lg:col-span-7">
+            <!-- Confirmed Events -->
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+              <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 class="font-display text-lg font-bold text-slate-900">Confirmed Competition Events</h2>
+                  <p class="text-xs text-slate-500">Officially approved competition entries for this participant</p>
+                </div>
+                <span id="verified-events-count" class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono-num text-xs font-bold text-slate-700">0</span>
+              </div>
+              <div id="verified-events-list" class="mt-3 divide-y divide-slate-100"></div>
+            </div>
+
+            <!-- Published Results & Awards -->
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+              <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 class="font-display text-lg font-bold text-slate-900">Published Results &amp; Awards</h2>
+                  <p class="text-xs text-slate-500">Officially published positions, grades, and points earned</p>
+                </div>
+                <span id="verified-awards-count" class="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 font-mono-num text-xs font-bold text-amber-800">0</span>
+              </div>
+              <div id="verified-awards-list" class="mt-3 divide-y divide-slate-100"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="border-t border-slate-200 bg-white">
+        <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:px-6 lg:px-8">
+          <div>
+            &copy; <span data-current-year></span> <span id="footer-fest-name" class="font-semibold text-slate-700">Fest Management</span>.
+            <a href="https://www.instagram.com/muhammed_sanjide_p" target="_blank" rel="noopener noreferrer" class="ml-1 text-slate-500 hover:text-slate-800 hover:underline">Powered by hadi mahiri faizy</a>
+          </div>
+          <a href="index.html" class="font-semibold text-slate-700 hover:text-blue-700">Back to Home</a>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, isFirebaseConfigured } from './firebase-config.js';
+    import { collection, doc, getDoc, getDocs, limit, query as firestoreQuery, where } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+    import { cachedGetDoc, cachedGetDocs } from './data-cache.js';
+    import { normalizeBranding, brandingName, readCachedBranding, cacheBranding, clearBrandingCache, applyLogo, currentYear } from './branding-config.js';
+    import { normalizeResultData } from './admin-utils.js';
+    import { normalizeScoringRules } from './score-utils.js';
+    import { initCollapsibleSidebar } from './sidebar-shell.js';
+    import { attachIdCardInteractions, buildVerificationUrl, computeVerificationToken, formatChestNumber, renderParticipantIdCardHtml } from './id-card-renderer.js';
+
+    initCollapsibleSidebar();
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    let currentBranding = normalizeBranding();
+    let generalConfig = {};
+    let scoringRules = normalizeScoringRules();
+    let teamColors = {};
+    let teamDisplayNames = {};
+    let categoryDisplayNames = {};
+
+    document.querySelectorAll('[data-current-year]').forEach((el) => (el.textContent = currentYear()));
+
+    function applyBranding(raw) {
+      const branding = normalizeBranding(raw);
+      currentBranding = branding;
+      const name = brandingName(branding);
+      $('verify-fest-name').textContent = name;
+      $('footer-fest-name').textContent = name;
+      document.title = `${name} — Verify Participant ID`;
+      applyLogo($('verify-logo'), $('verify-logo-fallback'), branding);
+    }
+
+    function setBanner(mode, title, detail) {
+      const banner = $('verify-status-banner');
+      if (!mode) {
+        banner.classList.add('hidden');
+        banner.innerHTML = '';
+        return;
+      }
+      const styles = {
+        verified: {
+          wrap: 'border-emerald-200 bg-emerald-50/90 text-emerald-950',
+          iconWrap: 'bg-emerald-100 text-emerald-700',
+          icon: 'badge-check',
+          badge: 'bg-emerald-700 text-white',
+          badgeText: 'QR Signature Confirmed'
+        },
+        directory: {
+          wrap: 'border-blue-200 bg-blue-50/90 text-blue-950',
+          iconWrap: 'bg-blue-100 text-blue-700',
+          icon: 'shield-alert',
+          badge: 'bg-blue-700 text-white',
+          badgeText: 'Manual Chest Lookup'
+        },
+        invalid: {
+          wrap: 'border-red-200 bg-red-50/95 text-red-950',
+          iconWrap: 'bg-red-100 text-red-700',
+          icon: 'shield-x',
+          badge: 'bg-red-700 text-white',
+          badgeText: 'Signature Mismatch'
+        },
+        not_found: {
+          wrap: 'border-amber-200 bg-amber-50/90 text-amber-950',
+          iconWrap: 'bg-amber-100 text-amber-700',
+          icon: 'search-x',
+          badge: 'bg-amber-700 text-white',
+          badgeText: 'No Record Found'
+        }
+      }[mode];
+
+      banner.className = `mt-6 rounded-xl border p-4 sm:p-5 ${styles.wrap}`;
+      banner.innerHTML = `
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${styles.iconWrap}">
+              <i data-lucide="${styles.icon}" class="h-5 w-5"></i>
+            </div>
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="font-display text-base font-bold">${esc(title)}</h2>
+                <span class="rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${styles.badge}">${esc(styles.badgeText)}</span>
+              </div>
+              <p class="mt-0.5 text-xs opacity-85">${esc(detail)}</p>
+            </div>
+          </div>
+          <span class="font-mono-num text-[11px] font-semibold opacity-75 shrink-0">Checked ${esc(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
+        </div>
+      `;
+      banner.classList.remove('hidden');
+      window.lucide?.createIcons?.();
+    }
+
+    function showEmptyState(title, text) {
+      $('verify-result-grid').classList.add('hidden');
+      $('verify-result-grid').classList.remove('grid');
+      $('empty-state-title').textContent = title;
+      $('empty-state-text').textContent = text;
+      $('verify-empty-state').classList.remove('hidden');
+      window.lucide?.createIcons?.();
+    }
+
+    function sanitizePublicStudent(rawId, data = {}) {
+      return {
+        id: String(rawId || ''),
+        name: String(data.name || 'Participant').trim(),
+        team: String(data.team || '').trim(),
+        category: String(data.category || 'General').trim(),
+        gender: String(data.gender || 'Boys').trim(),
+        chestNo: data.chestNo ?? '',
+        photoData: String(data.photoData || ''),
+        details: {
+          class: String(data.details?.class || data.class || '—').trim() || '—'
+        }
+      };
+    }
+
+    async function findStudentRecord({ chest, ref, teamFilter, qrToken }) {
+      if (ref) {
+        const snap = await getDoc(doc(db, 'students', ref));
+        if (!snap.exists()) return null;
+        return sanitizePublicStudent(snap.id, snap.data());
+      }
+
+      const cleanChest = formatChestNumber(chest);
+      if (cleanChest === '—') return null;
+
+      const variants = [...new Set([
+        cleanChest,
+        cleanChest.toUpperCase(),
+        cleanChest.toLowerCase(),
+        ...(Number.isFinite(Number(cleanChest)) ? [Number(cleanChest)] : [])
+      ])].slice(0, 10);
+
+      const snap = await getDocs(
+        firestoreQuery(collection(db, 'students'), where('chestNo', 'in', variants), limit(15))
+      );
+      let matches = snap.docs.map((d) => sanitizePublicStudent(d.id, d.data()));
+      if (teamFilter) {
+        const filtered = matches.filter((m) => m.team === teamFilter);
+        if (filtered.length) matches = filtered;
+      }
+      if (!matches.length) return null;
+
+      if (qrToken) {
+        const exactSigMatch = matches.find((m) => computeVerificationToken(m) === qrToken);
+        if (exactSigMatch) return exactSigMatch;
+      }
+      return matches[0];
+    }
+
+    function renderConfirmedEventsSection(confirmedEvents) {
+      $('verified-events-count').textContent = String(confirmedEvents.length);
+      $('verified-events-list').innerHTML = confirmedEvents.length
+        ? confirmedEvents.map((ev, idx) => `
+            <div class="flex items-start justify-between gap-3 py-3">
+              <div class="flex items-start gap-3 min-w-0">
+                <span class="mt-0.5 font-mono-num text-xs font-bold text-slate-400">${String(idx + 1).padStart(2, '0')}</span>
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-slate-900">${esc(ev.name)}</p>
+                  <p class="mt-0.5 text-xs text-slate-500">${esc(categoryDisplayNames[ev.category] || ev.category || 'General')} · ${esc(ev.stage || 'On-Stage')} · ${esc(ev.type || 'Single')}</p>
+                  ${ev.date || ev.time || ev.venue ? `<p class="mt-1 font-mono-num text-[11px] font-medium text-blue-700">${esc([ev.date, ev.time, ev.venue].filter(Boolean).join(' · '))}</p>` : ''}
+                </div>
+              </div>
+              <span class="shrink-0 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Confirmed</span>
+            </div>
+          `).join('')
+        : '<div class="py-8 text-center text-xs text-slate-400">No confirmed events recorded for this participant yet.</div>';
+    }
+
+    function collectStudentAwards(student, studentRegs, events, publishedResults) {
+      const regKeysByEvent = new Map();
+      for (const reg of studentRegs) {
+        if (!reg?.eventId) continue;
+        if (!regKeysByEvent.has(reg.eventId)) regKeysByEvent.set(reg.eventId, new Set());
+        const keys = regKeysByEvent.get(reg.eventId);
+        if (reg.id) keys.add(String(reg.id));
+        if (reg.team && reg.slotIndex) keys.add(`${reg.team}-${reg.slotIndex}`);
+      }
+
+      const studentChest = formatChestNumber(student.chestNo).toUpperCase();
+      const showPoints = scoringRules.display?.showPointsPublicly !== false;
+      const showGrades = scoringRules.display?.showGradesPublicly !== false && scoringRules.enabled?.grades;
+
+      const awards = [];
+      for (const rawRes of publishedResults) {
+        const res = normalizeResultData(rawRes, { events });
+        const groupKeys = regKeysByEvent.get(res.eventId) || new Set();
+        const matchesWinner = (w) => {
+          if (!w) return false;
+          if (w.id === student.id) return true;
+          if (groupKeys.has(String(w.id || ''))) return true;
+          const wChest = formatChestNumber(w.chestNo).toUpperCase();
+          return studentChest !== '—' && wChest === studentChest && (!w.team || w.team === student.team);
+        };
+
+        const gradeByWinner = new Map();
+        (res.gradeAwards || []).forEach((g) => {
+          (g.winners || []).forEach((w) => {
+            if (matchesWinner(w) && !gradeByWinner.has(w.id)) {
+              gradeByWinner.set(w.id, { label: g.label, value: Number(g.value || 0) });
+            }
+          });
+        });
+
+        let matchedOnPlace = false;
+        (res.places || []).forEach((place, idx) => {
+          const matched = (place.winners || []).find(matchesWinner);
+          if (!matched) return;
+          matchedOnPlace = true;
+          const gradeAward = showGrades ? gradeByWinner.get(matched.id) : null;
+          const posPts = Number(place.earnedValue ?? place.value ?? 0);
+          const gradePts = gradeAward ? Number(gradeAward.value || 0) : 0;
+          awards.push({
+            eventName: res.eventName,
+            category: categoryDisplayNames[res.category] || res.category || 'General',
+            stage: res.stage || 'On-Stage',
+            type: res.type || 'Single',
+            rankIndex: idx,
+            positionLabel: place.label,
+            gradeLabel: gradeAward?.label || '',
+            totalPoints: showPoints ? posPts + gradePts : 0,
+            posPts: showPoints ? posPts : 0,
+            gradePts: showPoints ? gradePts : 0,
+            publishedAt: Number(res.publishedAt || res.updatedAt || 0)
+          });
+        });
+
+        if (!matchedOnPlace && showGrades) {
+          (res.gradeAwards || []).forEach((g) => {
+            const matched = (g.winners || []).find(matchesWinner);
+            if (!matched) return;
+            const gradePts = Number(g.value || 0);
+            awards.push({
+              eventName: res.eventName,
+              category: categoryDisplayNames[res.category] || res.category || 'General',
+              stage: res.stage || 'On-Stage',
+              type: res.type || 'Single',
+              rankIndex: 99,
+              positionLabel: '',
+              gradeLabel: g.label,
+              totalPoints: showPoints ? gradePts : 0,
+              posPts: 0,
+              gradePts: showPoints ? gradePts : 0,
+              publishedAt: Number(res.publishedAt || res.updatedAt || 0)
+            });
+          });
+        }
+      }
+
+      return awards.sort((a, b) => a.rankIndex - b.rankIndex || b.publishedAt - a.publishedAt);
+    }
+
+    function renderPublishedAwardsSection(awards) {
+      $('verified-awards-count').textContent = String(awards.length);
+      $('verified-awards-list').innerHTML = awards.length
+        ? awards.map((aw) => {
+            const rankBadgeCls = aw.rankIndex === 0
+              ? 'border-amber-200 bg-amber-50 text-amber-800'
+              : aw.rankIndex === 1
+              ? 'border-slate-200 bg-slate-100 text-slate-700'
+              : 'border-orange-200 bg-orange-50 text-orange-800';
+            const ptsText = aw.totalPoints > 0
+              ? (aw.posPts > 0 && aw.gradePts > 0
+                  ? `${aw.totalPoints} pts (${aw.posPts}+${aw.gradePts})`
+                  : `+${aw.totalPoints} pts`)
+              : '';
+            return `<div class="flex items-center justify-between gap-3 py-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold text-slate-900">${esc(aw.eventName)}</p>
+                <p class="mt-0.5 text-xs text-slate-500">${esc(aw.category)} · ${esc(aw.stage)} · ${esc(aw.type)}</p>
+              </div>
+              <div class="shrink-0 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  ${aw.positionLabel ? `<span class="rounded-md border px-2 py-0.5 text-[11px] font-semibold ${rankBadgeCls}">${esc(aw.positionLabel)}</span>` : ''}
+                  ${aw.gradeLabel ? `<span class="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">${esc(aw.gradeLabel)}</span>` : ''}
+                </div>
+                ${ptsText ? `<p class="mt-0.5 font-mono-num text-[11px] font-semibold text-slate-600">${esc(ptsText)}</p>` : ''}
+              </div>
+            </div>`;
+          }).join('')
+        : '<div class="py-8 text-center text-xs text-slate-400">No published competition awards recorded for this participant yet.</div>';
+    }
+
+    async function runVerification({ chest = '', ref = '', teamFilter = '', qrToken = '' } = {}) {
+      const cleanChest = formatChestNumber(chest);
+      const hasLookup = Boolean(ref || cleanChest !== '—');
+      if (!hasLookup) {
+        setBanner(null);
+        showEmptyState('Ready to Verify Participant Badge', 'Scan a participant QR badge with any camera or Google Lens scanner, or enter a Chest Number above to check live records.');
+        return;
+      }
+
+      if (!isFirebaseConfigured) {
+        setBanner('not_found', 'Database Not Configured', 'Firebase configuration is unavailable right now.');
+        showEmptyState('Verification Unavailable', 'Unable to connect to the festival database.');
+        return;
+      }
+
+      showEmptyState('Verifying Participant…', 'Checking live festival registration records and competition entries.');
+
+      try {
+        const cleanToken = String(qrToken || '').trim().toUpperCase();
+        const student = await findStudentRecord({ chest: cleanChest, ref, teamFilter, qrToken: cleanToken });
+
+        if (!student) {
+          setBanner('not_found', 'Participant Not Found', 'No registered participant matched the scanned badge or entered chest number.');
+          showEmptyState('No Matching Participant', 'Double-check the chest number and team filter, or verify with the festival check-in desk.');
+          return;
+        }
+
+        if (cleanToken) {
+          const expectedToken = computeVerificationToken(student);
+          if (expectedToken !== cleanToken) {
+            setBanner('invalid', 'Invalid or Tampered QR Badge', 'The QR security signature does not match live participant records. This badge cannot be verified.');
+            showEmptyState('Verification Failed', 'Please scan the participant’s original digital or printed lanyard ID card, or look up their chest number directly.');
+            return;
+          }
+          setBanner('verified', 'Verified Original Participant', `Authentic badge confirmed for ${student.name} (Chest ${formatChestNumber(student.chestNo)}). Public read-only view.`);
+        } else {
+          setBanner('directory', 'Public Directory Record Found', `Matched Chest ${formatChestNumber(student.chestNo)} (${student.name}). Scan the participant’s QR code for signature verification.`);
+        }
+
+        const [evRows, regSnap, reqSnap, resRows] = await Promise.all([
+          cachedGetDocs('col:events', collection(db, 'events'), { ttlMs: 120_000 }),
+          getDocs(firestoreQuery(collection(db, 'registrations'), where('studentIds', 'array-contains', student.id))),
+          getDocs(firestoreQuery(collection(db, 'registrationRequests'), where('relatedStudentId', '==', student.id))),
+          cachedGetDocs('col:results:published', firestoreQuery(collection(db, 'results'), where('status', '==', 'published')), { ttlMs: 120_000 })
+        ]);
+
+        const activeEvents = (evRows || []).filter((e) => e.status !== 'draft');
+        const eventMap = Object.fromEntries(activeEvents.map((e) => [e.id, e]));
+        const studentRegs = regSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        const confirmedMap = new Map();
+        const addConfirmed = (eventId, fallbackName = 'Event') => {
+          if (!eventId || confirmedMap.has(eventId)) return;
+          const ev = eventMap[eventId] || {};
+          confirmedMap.set(eventId, {
+            id: eventId,
+            name: ev.name || fallbackName,
+            category: ev.category || student.category || 'General',
+            stage: ev.stage || 'On-Stage',
+            type: ev.type || 'Single',
+            date: ev.scheduleDate || '',
+            time: ev.time || '',
+            venue: ev.scheduleStage || ''
+          });
+        };
+
+        studentRegs.forEach((reg) => addConfirmed(reg.eventId, reg.eventName));
+        reqSnap.docs.forEach((d) => {
+          const row = d.data();
+          if (['approved', 'selected', 'finalized'].includes(row.status)) {
+            (row.eventIds || []).forEach((eid) => addConfirmed(eid, row.eventName));
+          }
+        });
+
+        const confirmedEvents = [...confirmedMap.values()].sort((a, b) =>
+          `${a.date} ${a.time} ${a.name}`.localeCompare(`${b.date} ${b.time} ${b.name}`)
+        );
+
+        const awards = collectStudentAwards(student, studentRegs, activeEvents, resRows || []);
+
+        const cardSlot = $('verified-id-card-slot');
+        cardSlot.innerHTML = renderParticipantIdCardHtml({
+          student,
+          confirmedEvents,
+          branding: currentBranding,
+          teamColors,
+          teamDisplayNames,
+          categoryDisplayNames,
+          festYear: currentYear(),
+          verificationUrl: buildVerificationUrl(student),
+          flipped: false,
+          hintText: 'Read-only verified badge preview. Flip to inspect confirmed events and QR.'
+        });
+        attachIdCardInteractions(cardSlot, { initialFlipped: false });
+
+        renderConfirmedEventsSection(confirmedEvents);
+        renderPublishedAwardsSection(awards);
+
+        $('verify-empty-state').classList.add('hidden');
+        $('verify-result-grid').classList.remove('hidden');
+        $('verify-result-grid').classList.add('grid');
+        window.lucide?.createIcons?.();
+      } catch (err) {
+        console.error('Verification failed:', err);
+        setBanner('not_found', 'Verification Error', 'Unable to verify this badge right now. Please try again.');
+        showEmptyState('Verification Error', err?.message || 'Unable to load participant verification details.');
+      }
+    }
+
+    $('manual-lookup-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const rawChest = formatChestNumber($('lookup-chest').value);
+      const teamFilter = $('lookup-team').value;
+      if (rawChest === '—') {
+        setBanner('not_found', 'Enter a Chest Number', 'Please enter a valid chest number to verify.');
+        return;
+      }
+      const nextUrl = new URL(window.location.href);
+      nextUrl.search = '';
+      nextUrl.searchParams.set('c', rawChest);
+      if (teamFilter) nextUrl.searchParams.set('team', teamFilter);
+      window.history.replaceState({}, '', nextUrl.toString());
+      await runVerification({ chest: rawChest, teamFilter, qrToken: '' });
+    });
+
+    async function init() {
+      applyBranding(readCachedBranding());
+      const params = new URLSearchParams(window.location.search);
+      const chestParam = params.get('c') || params.get('chest') || '';
+      const refParam = params.get('ref') || '';
+      const teamParam = params.get('team') || '';
+      const tokenParam = params.get('k') || '';
+
+      if (chestParam) $('lookup-chest').value = formatChestNumber(chestParam) === '—' ? '' : formatChestNumber(chestParam);
+
+      if (isFirebaseConfigured) {
+        try {
+          const [homeDoc, genDoc, rulesDoc] = await Promise.all([
+            cachedGetDoc(db, 'settings', 'home_config', { ttlMs: 300_000 }),
+            cachedGetDoc(db, 'settings', 'general', { ttlMs: 300_000 }),
+            cachedGetDoc(db, 'settings', 'scoring_rules', { ttlMs: 300_000 })
+          ]);
+          if (homeDoc) cacheBranding(homeDoc);
+          else clearBrandingCache();
+          applyBranding(homeDoc || {});
+          generalConfig = genDoc || {};
+          teamColors = generalConfig.teamColors || {};
+          teamDisplayNames = generalConfig.teamDisplayNames || {};
+          categoryDisplayNames = generalConfig.categoryDisplayNames || {};
+          scoringRules = normalizeScoringRules(rulesDoc || {});
+
+          const teams = generalConfig.teams || [];
+          $('lookup-team').innerHTML = '<option value="">All Teams</option>' + teams.map((t) => `<option value="${esc(t)}">${esc(teamDisplayNames[t] || t)}</option>`).join('');
+          if (teamParam && teams.includes(teamParam)) $('lookup-team').value = teamParam;
+        } catch (err) {
+          console.warn('Settings load warning:', err);
+        }
+      }
+
+      if (chestParam || refParam) {
+        await runVerification({ chest: chestParam, ref: refParam, teamFilter: teamParam, qrToken: tokenParam });
+      }
+      window.lucide?.createIcons?.();
+    }
+
+    init();
+  </script>
+</body>
+</html>
