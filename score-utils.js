@@ -360,7 +360,7 @@ export function buildTeamScoreLedger(results = [], lookupTeam = () => '', events
         const team = result.winnerDetails?.[winner]?.team || lookupTeam(winner, event.type, result);
         if (team && team !== '-') {
           ledger.push({
-            key: `${result.eventId}:position:${place.rank || place.key}:${team}`,
+            key: `${result.eventId}:position:${place.rank || place.key}:${team}:${winner}`,
             eventId: result.eventId,
             team,
             kind: 'position',
@@ -375,7 +375,7 @@ export function buildTeamScoreLedger(results = [], lookupTeam = () => '', events
         const team = result.winnerDetails?.[winner]?.team || lookupTeam(winner, event.type, result);
         if (team && team !== '-') {
           ledger.push({
-            key: `${result.eventId}:grade:${grade.label}:${team}`,
+            key: `${result.eventId}:grade:${grade.label}:${team}:${winner}`,
             eventId: result.eventId,
             team,
             kind: 'grade',

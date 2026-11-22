@@ -2,7 +2,7 @@ import { db, auth } from './firebase-config.js';
 import { escapeHtml } from './admin-utils.js';
 import { studentGender } from './admin-students.js';
 import { eventGender } from './admin-events.js';
-import { createScoringSnapshot, normalizeScoringRules, scoringConfigForEvent, scoringEnabled as scoringFlags } from './score-utils.js';
+import { createScoringSnapshot, normalizeScoringRules, resolveEventScoring, scoringConfigForEvent } from './score-utils.js';
 import { judgingEnabled, normalizeFestSetup, incompleteCompetitionPolicies } from './fest-config.js';
 import { normalizeBranding, brandingName, cacheBranding, clearBrandingCache, applyBase64Image } from './branding-config.js';
 import { cachedGetDoc } from './data-cache.js';
@@ -364,7 +364,7 @@ function scoreRows(assignment) {
   const marks = existing?.marks || [];
   const data = participantData(event);
   const rule = scoringConfigForEvent(scoringRules, event);
-  const enabled = scoringFlags(scoringRules);
+  const enabled = resolveEventScoring(scoringRules, event).enabled;
   const locked = existing?.status === 'submitted';
 
   if (data.duplicates.length) {

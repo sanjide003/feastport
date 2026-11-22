@@ -269,7 +269,10 @@
         if (stage && res.stage !== stage) return false;
         if (gender && res.gender !== gender) return false;
         if (search) {
-          const winnerText = (res.places || []).flatMap((p) => (p.winners || []).map((w) => `${w.name} ${w.team} ${teamNames[w.team] || ''} ${w.chestNo}`)).join(' ');
+          const winnerText = [
+            ...(res.places || []).flatMap((p) => (p.winners || []).map((w) => `${w.name} ${w.team} ${teamNames[w.team] || ''} ${w.chestNo}`)),
+            ...(res.gradeAwards || []).flatMap((g) => (g.winners || []).map((w) => `${g.label} ${w.name} ${w.team} ${teamNames[w.team] || ''} ${w.chestNo}`))
+          ].join(' ');
           const haystack = `${res.eventName} ${res.category} ${catName(res.category)} ${res.stage} ${res.gender} ${winnerText}`.toLowerCase();
           if (!haystack.includes(search)) return false;
         }
@@ -280,16 +283,34 @@
 
       $('results-grid').innerHTML = filtered.length
         ? filtered.map((res) => {
+            const gradeByWinner = new Map();
+            (res.gradeAwards || []).forEach((g) => {
+              (g.winners || []).forEach((w) => {
+                if (w?.id && !gradeByWinner.has(w.id)) {
+                  gradeByWinner.set(w.id, { label: g.label, value: Number(g.value || 0) });
+                }
+              });
+            });
+
             const placesHtml = (res.places || []).map((place, idx) => {
               const rankBadge = idx === 0
                 ? 'bg-amber-50 text-amber-800 border-amber-200'
                 : idx === 1
                 ? 'bg-slate-100 text-slate-700 border-slate-200'
                 : 'bg-orange-50 text-orange-800 border-orange-200';
+              const posPts = Number(place.earnedValue ?? place.value ?? 0);
               const rows = (place.winners || []).map((w) => {
                 const color = teamColor(w.team, colors);
                 const teamDisplay = teamNames[w.team] || w.team || '-';
                 const initial = String(w.name || '?')[0].toUpperCase();
+                const gradeAward = showGrades ? gradeByWinner.get(w.id) : null;
+                const gradePts = gradeAward ? Number(gradeAward.value || 0) : 0;
+                const totalPts = posPts + gradePts;
+                const pointsHtml = showPoints && totalPts > 0
+                  ? (gradeAward && gradePts > 0 && posPts > 0
+                      ? `<span class="mt-0.5 block font-mono-num text-[11px] font-semibold text-slate-700">${totalPts} pts <span class="font-normal text-slate-400">(${posPts}+${gradePts})</span></span>`
+                      : `<span class="mt-0.5 block font-mono-num text-[11px] font-semibold text-slate-500">+${totalPts} pts</span>`)
+                  : '';
                 return `<div class="flex items-center justify-between gap-2.5 py-2">
                   <div class="flex items-center gap-2.5 min-w-0">
                     <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600">
@@ -305,8 +326,11 @@
                     </div>
                   </div>
                   <div class="shrink-0 text-right">
-                    <span class="inline-block rounded-md border px-2 py-0.5 text-[11px] font-semibold ${rankBadge}">${esc(place.label)}</span>
-                    ${showPoints && (place.earnedValue || place.value) ? `<span class="mt-0.5 block font-mono-num text-[11px] font-semibold text-slate-500">+${Number(place.earnedValue ?? place.value)} pts</span>` : ''}
+                    <div class="flex items-center justify-end gap-1">
+                      <span class="inline-block rounded-md border px-2 py-0.5 text-[11px] font-semibold ${rankBadge}">${esc(place.label)}</span>
+                      ${gradeAward ? `<span class="inline-block rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">${esc(gradeAward.label)}</span>` : ''}
+                    </div>
+                    ${pointsHtml}
                   </div>
                 </div>`;
               }).join('');
@@ -317,7 +341,7 @@
               ? `<div class="mt-3 border-t border-slate-100 pt-3">
                   <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Grades</p>
                   <div class="mt-1.5 space-y-1 text-xs text-slate-600">
-                    ${res.gradeAwards.map((g) => `<div><span class="font-semibold text-slate-800">${esc(g.label)}:</span> ${g.winners.map((w) => `${esc(w.name)} (${esc(w.team)})`).join(', ')}</div>`).join('')}
+                    ${res.gradeAwards.map((g) => `<div><span class="font-semibold text-slate-800">${esc(g.label)}${showPoints && Number(g.value || 0) > 0 ? ` (+${Number(g.value)} pts)` : ''}:</span> ${g.winners.map((w) => `${esc(w.name)} (${esc(teamNames[w.team] || w.team)})`).join(', ')}</div>`).join('')}
                   </div>
                 </div>`
               : '';

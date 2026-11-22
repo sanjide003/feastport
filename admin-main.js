@@ -76,6 +76,108 @@ let excelController = null;
 
 const teamName = (key) => resolveDisplayName(state.teamDisplayNames, key, key);
 const categoryName = (key) => resolveDisplayName(state.categoryDisplayNames, key, key);
+const toSlugKey = (raw) =>
+  String(raw ?? '')
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+function bindAutoSlugKey(labelId, keyId) {
+  const labelEl = byId(labelId);
+  const keyEl = byId(keyId);
+  if (!labelEl || !keyEl) return;
+  labelEl.addEventListener('input', () => {
+    if (keyEl.dataset.manualEdited === 'true') return;
+    keyEl.value = toSlugKey(labelEl.value);
+  });
+  keyEl.addEventListener('input', () => {
+    keyEl.dataset.manualEdited = keyEl.value.trim() ? 'true' : 'false';
+  });
+}
+
+function syncScoringGradesPanelVisibility() {
+  const enabled = Boolean(byId('score-enable-grades')?.checked);
+  byId('score-grades-panel')?.classList.toggle('hidden', !enabled);
+}
+
+function gradeRowHtml(type, g = {}) {
+  const minPct = Number.isFinite(Number(g.minimumPercentage)) ? Number(g.minimumPercentage) : 60;
+  const pts = Number.isFinite(Number(g.value)) ? Number(g.value) : 0;
+  return `
+    <div data-grade-row="${h(type)}" data-grade-key="${h(g.key || '')}" class="grid grid-cols-[1fr_78px_78px_28px] items-center gap-2">
+      <input type="text" data-grade-field="label" value="${h(g.label || '')}" placeholder="e.g. A Grade" class="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+      <input type="number" data-grade-field="minimumPercentage" min="0" max="100" step="0.1" value="${minPct}" class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-mono-num text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+      <input type="number" data-grade-field="value" min="0" step="0.5" value="${pts}" class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-mono-num text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+      <button type="button" data-remove-grade-row="${h(type)}" title="Remove grade" class="flex h-7 w-7 items-center justify-center rounded-md border border-red-200 bg-red-50 text-xs font-bold text-red-600 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/70">✕</button>
+    </div>
+  `;
+}
+
+function renderScoringGradesEditor(sr = state.scoringRules) {
+  const normalized = normalizeScoringRules(sr);
+  const singleList = byId('grades-list-single');
+  const groupList = byId('grades-list-group');
+  if (singleList) {
+    singleList.innerHTML = (normalized.configs?.Single?.grades || []).map((g) => gradeRowHtml('Single', g)).join('');
+  }
+  if (groupList) {
+    groupList.innerHTML = (normalized.configs?.Group?.grades || []).map((g) => gradeRowHtml('Group', g)).join('');
+  }
+  syncScoringGradesPanelVisibility();
+}
+
+function appendGradeRow(type) {
+  const list = byId(type === 'Group' ? 'grades-list-group' : 'grades-list-single');
+  if (!list) return;
+  const rows = [...list.querySelectorAll('[data-grade-row]')];
+  const idx = rows.length;
+  const nextLetter = idx < 26 ? `${String.fromCharCode(65 + idx)} Grade` : `Grade ${idx + 1}`;
+  const mins = rows.map((r) => Number(r.querySelector('[data-grade-field="minimumPercentage"]')?.value)).filter(Number.isFinite);
+  const minPct = mins.length ? Math.max(0, Math.min(...mins) - 10) : 80;
+  list.insertAdjacentHTML('beforeend', gradeRowHtml(type, {
+    key: `${type.toLowerCase()}_grade_${Date.now()}_${idx + 1}`,
+    label: nextLetter,
+    minimumPercentage: minPct,
+    value: 0
+  }));
+  list.lastElementChild?.querySelector('[data-grade-field="label"]')?.focus();
+}
+
+function collectGradeRows(type) {
+  const list = byId(type === 'Group' ? 'grades-list-group' : 'grades-list-single');
+  if (!list) return { ok: true, grades: [] };
+  const rows = [...list.querySelectorAll('[data-grade-row]')];
+  const grades = [];
+  const seenLabels = new Set();
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const label = String(row.querySelector('[data-grade-field="label"]')?.value || '').trim();
+    const minPct = Number(row.querySelector('[data-grade-field="minimumPercentage"]')?.value);
+    const value = Number(row.querySelector('[data-grade-field="value"]')?.value);
+    if (!label) return { ok: false, error: `${type} Grade row #${i + 1}: Grade Letter is required.` };
+    const normLabel = label.toLowerCase();
+    if (seenLabels.has(normLabel)) return { ok: false, error: `${type} Grades contain duplicate label "${label}".` };
+    seenLabels.add(normLabel);
+    if (!Number.isFinite(minPct) || minPct < 0 || minPct > 100) {
+      return { ok: false, error: `${type} Grade "${label}": Min % must be between 0 and 100.` };
+    }
+    if (!Number.isFinite(value) || value < 0) {
+      return { ok: false, error: `${type} Grade "${label}": Points must be 0 or greater.` };
+    }
+    const slug = toSlugKey(label) || String(i + 1);
+    const existingKey = String(row.dataset.gradeKey || '').trim();
+    grades.push({
+      key: existingKey || `${type.toLowerCase()}_grade_${slug}`,
+      order: i + 1,
+      label,
+      minimumPercentage: minPct,
+      value
+    });
+  }
+  return { ok: true, grades };
+}
 
 function closeModal(id) {
   const el = byId(id);
@@ -340,6 +442,7 @@ function hydrateSetupForms() {
   setVal('pts-group-3', sr.configs?.Group?.points?.[2]?.value ?? 5);
   if (byId('score-enable-grades')) byId('score-enable-grades').checked = sr.enabled?.grades === true;
   setVal('policy-multi-judge', sr.policies?.multipleJudgeMethod || 'average');
+  renderScoringGradesEditor(sr);
 }
 
 function renderOverview() {
@@ -1281,19 +1384,31 @@ function bindEvents() {
     );
   });
 
+  bindAutoSlugKey('inp-new-team-label', 'inp-new-team');
+  bindAutoSlugKey('inp-new-category-label', 'inp-new-category');
+
   byId('btn-add-team')?.addEventListener('click', async () => {
-    const key = byId('inp-new-team').value.trim();
-    const label = byId('inp-new-team-label').value.trim() || key;
+    const labelEl = byId('inp-new-team-label');
+    const keyEl = byId('inp-new-team');
+    const rawLabel = labelEl?.value.trim() || '';
+    const rawKey = keyEl?.value.trim() || '';
+    const key = (rawKey ? rawKey.replace(/\s+/g, '_') : toSlugKey(rawLabel));
+    const label = rawLabel || key;
     const color = byId('inp-new-team-color').value || '#1D4ED8';
-    if (!key) return showToast('Enter a Team Key', 'error');
+    if (!key || !/^[a-zA-Z0-9_-]+$/.test(key)) {
+      return showToast('Enter a valid Team Name or Key (letters, numbers, _ or -)', 'error');
+    }
     if (state.teams.some((t) => t.toLowerCase() === key.toLowerCase())) {
-      return showToast('Team Key already exists. Use Edit to change its Display Name.', 'error');
+      return showToast('Team Key already exists. Edit the Key or update the existing team.', 'error');
     }
     state.teams.push(key);
     state.teamColors[key] = color;
     state.teamDisplayNames[key] = label;
-    byId('inp-new-team').value = '';
-    byId('inp-new-team-label').value = '';
+    if (keyEl) {
+      keyEl.value = '';
+      keyEl.dataset.manualEdited = 'false';
+    }
+    if (labelEl) labelEl.value = '';
     await saveGeneral({ teams: state.teams, teamColors: state.teamColors, teamDisplayNames: state.teamDisplayNames }, 'Team added');
   });
 
@@ -1312,16 +1427,25 @@ function bindEvents() {
   byId('btn-cancel-edit-team')?.addEventListener('click', () => closeModal('edit-team-modal'));
 
   byId('btn-add-category')?.addEventListener('click', async () => {
-    const key = byId('inp-new-category').value.trim();
-    const label = byId('inp-new-category-label')?.value.trim() || key;
-    if (!key) return showToast('Enter a Category Key', 'error');
+    const labelEl = byId('inp-new-category-label');
+    const keyEl = byId('inp-new-category');
+    const rawLabel = labelEl?.value.trim() || '';
+    const rawKey = keyEl?.value.trim() || '';
+    const key = (rawKey ? rawKey.replace(/\s+/g, '_') : toSlugKey(rawLabel));
+    const label = rawLabel || key;
+    if (!key || !/^[a-zA-Z0-9_-]+$/.test(key)) {
+      return showToast('Enter a valid Category Name or Key (letters, numbers, _ or -)', 'error');
+    }
     if (state.categories.some((c) => c.toLowerCase() === key.toLowerCase())) {
-      return showToast('Category Key already exists. Use Edit to change its Display Name.', 'error');
+      return showToast('Category Key already exists. Edit the Key or update the existing category.', 'error');
     }
     state.categories.push(key);
     state.categoryDisplayNames[key] = label;
-    byId('inp-new-category').value = '';
-    if (byId('inp-new-category-label')) byId('inp-new-category-label').value = '';
+    if (keyEl) {
+      keyEl.value = '';
+      keyEl.dataset.manualEdited = 'false';
+    }
+    if (labelEl) labelEl.value = '';
     await saveGeneral({ categories: state.categories, categoryDisplayNames: state.categoryDisplayNames }, 'Category added');
   });
 
@@ -1426,19 +1550,57 @@ function bindEvents() {
     showToast('Registration policy & lock saved');
   });
 
+  byId('score-enable-grades')?.addEventListener('change', syncScoringGradesPanelVisibility);
+  byId('btn-add-grade-single')?.addEventListener('click', () => appendGradeRow('Single'));
+  byId('btn-add-grade-group')?.addEventListener('click', () => appendGradeRow('Group'));
+  byId('score-grades-panel')?.addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('[data-remove-grade-row]');
+    if (!removeBtn) return;
+    const row = removeBtn.closest('[data-grade-row]');
+    const list = row?.parentElement;
+    if (!row || !list) return;
+    if (list.querySelectorAll('[data-grade-row]').length <= 1) {
+      return showToast('Keep at least one grade level or turn off Enable Grades.', 'error');
+    }
+    row.remove();
+  });
+
   byId('btn-save-scoring')?.addEventListener('click', async () => {
-    const next = normalizeScoringRules(state.scoringRules);
-    next.configs.Single.points[0].value = Number(byId('pts-single-1').value || 0);
-    next.configs.Single.points[1].value = Number(byId('pts-single-2').value || 0);
-    next.configs.Single.points[2].value = Number(byId('pts-single-3').value || 0);
-    next.configs.Group.points[0].value = Number(byId('pts-group-1').value || 0);
-    next.configs.Group.points[1].value = Number(byId('pts-group-2').value || 0);
-    next.configs.Group.points[2].value = Number(byId('pts-group-3').value || 0);
-    next.enabled.grades = byId('score-enable-grades').checked;
-    next.policies.multipleJudgeMethod = byId('policy-multi-judge').value;
+    const pointValues = ['pts-single-1', 'pts-single-2', 'pts-single-3', 'pts-group-1', 'pts-group-2', 'pts-group-3']
+      .map((id) => Number(byId(id)?.value ?? 0));
+    if (pointValues.some((v) => !Number.isFinite(v) || v < 0)) {
+      return showToast('Position points must be 0 or greater.', 'error');
+    }
+
+    const gradesEnabled = Boolean(byId('score-enable-grades')?.checked);
+    const singleGradesRes = collectGradeRows('Single');
+    if (!singleGradesRes.ok) return showToast(singleGradesRes.error, 'error');
+    const groupGradesRes = collectGradeRows('Group');
+    if (!groupGradesRes.ok) return showToast(groupGradesRes.error, 'error');
+
+    if (gradesEnabled && (!singleGradesRes.grades.length || !groupGradesRes.grades.length)) {
+      return showToast('Configure at least one grade for both Single and Group events.', 'error');
+    }
+
+    const base = normalizeScoringRules(state.scoringRules);
+    base.configs.Single.points[0].value = pointValues[0];
+    base.configs.Single.points[1].value = pointValues[1];
+    base.configs.Single.points[2].value = pointValues[2];
+    base.configs.Group.points[0].value = pointValues[3];
+    base.configs.Group.points[1].value = pointValues[4];
+    base.configs.Group.points[2].value = pointValues[5];
+    base.configs.Single.grades = singleGradesRes.grades;
+    base.configs.Group.grades = groupGradesRes.grades;
+    base.enabled.grades = gradesEnabled;
+    base.policies.multipleJudgeMethod = byId('policy-multi-judge').value;
+    base.policies.directRankGradeMode = gradesEnabled ? 'manual' : 'disabled';
+
+    const next = normalizeScoringRules(base);
     await setDoc(doc(db, 'settings', 'scoring_rules'), { ...next, updatedAt: Date.now() }, { merge: false });
     state.scoringRules = next;
     invalidateCache('scoring_rules');
+    renderScoringGradesEditor(next);
+    resultsController?.renderAll();
     showToast('Scoring rules saved');
   });
 
