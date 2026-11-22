@@ -29,126 +29,63 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-[#F8FAFC] text-[#0F172A] antialiased">
-  <div class="flex min-h-screen flex-col lg:flex-row">
-    <div id="sidebar-backdrop" data-app-sidebar-backdrop class="hidden"></div>
+<body class="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] antialiased">
+  <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
+      <a href="index.html" class="flex min-w-0 items-center gap-2.5 whitespace-nowrap shrink-0">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <img id="verify-logo" class="hidden h-full w-full object-cover" alt="Festival logo" referrerpolicy="no-referrer">
+          <span id="verify-logo-fallback" class="font-display text-xs font-bold text-blue-700">FM</span>
+        </span>
+        <span id="verify-fest-name" class="truncate max-w-[190px] sm:max-w-[260px] font-display text-base sm:text-lg font-bold tracking-tight text-slate-900">Fest Management</span>
+      </a>
 
-    <!-- Collapsible Side Menu -->
-    <aside id="sidebar" data-app-sidebar class="flex flex-col border-r border-slate-200 bg-white">
-      <div data-sidebar-header class="flex h-16 items-center justify-between gap-2 border-b border-slate-200 px-4">
-        <a href="index.html" class="flex min-w-0 items-center gap-3">
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-            <img id="verify-logo" class="hidden h-full w-full object-cover" alt="Festival logo" referrerpolicy="no-referrer">
-            <span id="verify-logo-fallback" class="font-display text-xs font-bold text-blue-700">FM</span>
-          </div>
-          <div data-sidebar-hide-collapsed class="min-w-0">
-            <span id="verify-fest-name" class="block truncate font-display text-sm font-bold tracking-tight text-slate-900">Fest Management</span>
-            <span class="block truncate text-[11px] font-medium text-slate-500">Badge Verification</span>
-          </div>
-        </a>
-        <button type="button" data-sidebar-close class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden" aria-label="Close menu">
-          <i data-lucide="x" class="h-4 w-4"></i>
-        </button>
-      </div>
-
-      <nav data-sidebar-nav class="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Primary navigation">
-        <a href="index.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          <i data-lucide="home" class="h-4 w-4 shrink-0"></i>
-          <span data-sidebar-label class="truncate">Home</span>
-        </a>
-        <a href="results.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          <i data-lucide="trophy" class="h-4 w-4 shrink-0"></i>
-          <span data-sidebar-label class="truncate">Results</span>
-        </a>
-        <a href="index.html#schedule" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          <i data-lucide="calendar-days" class="h-4 w-4 shrink-0"></i>
-          <span data-sidebar-label class="truncate">Schedule</span>
-        </a>
-        <a href="register.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          <i data-lucide="user-plus" class="h-4 w-4 shrink-0"></i>
-          <span data-sidebar-label class="truncate">Register</span>
-        </a>
-        <a href="verify.html" data-sidebar-item aria-current="page" class="flex items-center gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700">
-          <i data-lucide="shield-check" class="h-4 w-4 shrink-0"></i>
-          <span data-sidebar-label class="truncate">Verify ID</span>
-        </a>
-        <a href="tv.html" data-sidebar-item class="flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          <i data-lucide="tv" class="h-4 w-4 shrink-0"></i>
-          <span data-sidebar-label class="truncate">Live TV</span>
-        </a>
+      <nav class="hidden md:flex items-center gap-7 text-sm" aria-label="Primary navigation">
+        <a href="index.html" class="py-5 font-medium text-slate-600 transition-colors hover:text-slate-900 whitespace-nowrap shrink-0">Home</a>
+        <a href="results.html" class="py-5 font-medium text-slate-600 transition-colors hover:text-slate-900 whitespace-nowrap shrink-0">Results</a>
+        <a href="index.html#schedule" class="py-5 font-medium text-slate-600 transition-colors hover:text-slate-900 whitespace-nowrap shrink-0">Schedule</a>
+        <a href="register.html" class="py-5 font-medium text-slate-600 transition-colors hover:text-slate-900 whitespace-nowrap shrink-0">Register</a>
       </nav>
 
-      <div data-sidebar-footer class="border-t border-slate-200 p-3">
-        <a href="login.html" data-sidebar-item class="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white hover:bg-slate-800">
-          <i data-lucide="log-in" class="h-4 w-4 shrink-0"></i>
-          <span data-sidebar-label class="truncate">Staff Login</span>
-        </a>
+      <div class="flex items-center gap-2 shrink-0">
+        <a href="register.html" class="hidden md:inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-800 whitespace-nowrap shrink-0">Register</a>
+        <button id="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav-drawer" aria-label="Toggle navigation menu" class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 md:hidden">
+          <i data-lucide="menu" class="h-5 w-5"></i>
+        </button>
       </div>
-    </aside>
+    </div>
 
-    <!-- Main Column -->
-    <div class="flex min-w-0 flex-1 flex-col">
-      <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
-        <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center gap-3 min-w-0">
-            <button type="button" data-sidebar-toggle class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" aria-label="Toggle sidebar">
-              <i data-lucide="menu" class="h-4 w-4 lg:hidden"></i>
-              <i data-lucide="panel-left-close" data-toggle-icon-desktop class="hidden h-4 w-4 lg:block"></i>
-            </button>
-            <h2 class="truncate font-display text-base font-bold text-slate-900">Participant ID Verification</h2>
-          </div>
+    <nav id="mobile-nav-drawer" class="hidden border-t border-slate-200 bg-white px-4 py-3 md:hidden" aria-label="Mobile navigation">
+      <div class="mx-auto flex max-w-7xl flex-col space-y-1 text-sm">
+        <a href="index.html" class="rounded-lg px-3 py-2.5 font-medium text-slate-700 hover:bg-slate-50">Home</a>
+        <a href="results.html" class="rounded-lg px-3 py-2.5 font-medium text-slate-700 hover:bg-slate-50">Results</a>
+        <a href="index.html#schedule" class="rounded-lg px-3 py-2.5 font-medium text-slate-700 hover:bg-slate-50">Schedule</a>
+        <a href="register.html" class="rounded-lg px-3 py-2.5 font-medium text-slate-700 hover:bg-slate-50">Register</a>
+      </div>
+    </nav>
+  </header>
 
-          <div class="flex items-center gap-2 shrink-0">
-            <a href="results.html" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 whitespace-nowrap">
-              <i data-lucide="trophy" class="h-3.5 w-3.5"></i>
-              <span>Public Results</span>
-            </a>
-            <a href="login.html" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap">
-              <i data-lucide="log-in" class="h-3.5 w-3.5"></i>
-              <span>Staff Login</span>
-            </a>
-          </div>
-        </div>
-      </header>
+  <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+    <!-- Page Intro -->
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <div class="max-w-2xl">
+        <p class="text-xs font-semibold uppercase tracking-wider text-blue-700">Official QR Badge Verification</p>
+        <h1 class="mt-1 font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Verify Participant Authenticity</h1>
+        <p class="mt-1 text-sm text-slate-500">Scan a participant's official QR badge to confirm their authentic ID card, confirmed events, and published awards.</p>
+      </div>
+    </section>
 
-      <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <!-- Page Intro + Manual Chest Lookup -->
-        <section class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
-          <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div class="max-w-2xl">
-              <p class="text-xs font-semibold uppercase tracking-wider text-blue-700">Public Read-Only Badge Verification</p>
-              <h1 class="mt-1 font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Verify Participant Authenticity</h1>
-              <p class="mt-1 text-sm text-slate-500">Confirm genuine participant badges, approved events, and published awards without accessing any student registration account.</p>
-            </div>
+    <!-- Verification Status Banner -->
+    <section id="verify-status-banner" class="mt-6 hidden rounded-xl border p-4 sm:p-5" aria-live="polite"></section>
 
-            <form id="manual-lookup-form" class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-              <div class="relative min-w-[180px]">
-                <label for="lookup-chest" class="sr-only">Chest Number</label>
-                <i data-lucide="hash" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
-                <input id="lookup-chest" type="text" autocomplete="off" placeholder="Chest No (e.g. 104)" class="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 font-mono-num text-sm font-semibold text-slate-900 placeholder:font-sans placeholder:font-normal placeholder:text-slate-400 focus:border-blue-600 focus:outline-none">
-              </div>
-              <select id="lookup-team" aria-label="Filter by team (optional)" class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700">
-                <option value="">All Teams</option>
-              </select>
-              <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 whitespace-nowrap">
-                <i data-lucide="search-check" class="h-4 w-4"></i>
-                <span>Verify Badge</span>
-              </button>
-            </form>
-          </div>
-        </section>
-
-        <!-- Verification Status Banner -->
-        <section id="verify-status-banner" class="mt-6 hidden rounded-xl border p-4 sm:p-5" aria-live="polite"></section>
-
-        <!-- Empty / Initial / Loading State -->
-        <section id="verify-empty-state" class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-            <i data-lucide="qr-code" class="h-6 w-6"></i>
-          </div>
-          <h2 id="empty-state-title" class="mt-4 font-display text-lg font-bold text-slate-900">Ready to Verify Participant Badge</h2>
-          <p id="empty-state-text" class="mx-auto mt-1 max-w-md text-sm text-slate-500">Scan a participant QR badge with any camera or Google Lens scanner, or enter a Chest Number above to check live records.</p>
-        </section>
+    <!-- Empty / Initial / Loading State -->
+    <section id="verify-empty-state" class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+        <i data-lucide="qr-code" class="h-6 w-6"></i>
+      </div>
+      <h2 id="empty-state-title" class="mt-4 font-display text-lg font-bold text-slate-900">Scan a Participant QR Badge</h2>
+      <p id="empty-state-text" class="mx-auto mt-1 max-w-md text-sm text-slate-500">Open this page by scanning the QR code on an official digital or printed participant ID card.</p>
+    </section>
 
         <!-- Verified Participant Workspace -->
         <section id="verify-result-grid" class="mt-6 hidden grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
@@ -186,17 +123,19 @@
         </section>
       </main>
 
-      <footer class="border-t border-slate-200 bg-white">
-        <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:px-6 lg:px-8">
-          <div>
-            &copy; <span data-current-year></span> <span id="footer-fest-name" class="font-semibold text-slate-700">Fest Management</span>.
-            <a href="https://www.instagram.com/muhammed_sanjide_p" target="_blank" rel="noopener noreferrer" class="ml-1 text-slate-500 hover:text-slate-800 hover:underline">Powered by hadi mahiri faizy</a>
-          </div>
-          <a href="index.html" class="font-semibold text-slate-700 hover:text-blue-700">Back to Home</a>
-        </div>
-      </footer>
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:px-6 lg:px-8">
+      <div>
+        &copy; <span data-current-year></span> <span id="footer-fest-name" class="font-semibold text-slate-700">Fest Management</span>.
+        <a href="https://www.instagram.com/muhammed_sanjide_p" target="_blank" rel="noopener noreferrer" class="ml-1 text-slate-500 hover:text-slate-800 hover:underline">Powered by hadi mahiri faizy</a>
+      </div>
+      <div class="flex flex-wrap items-center gap-5">
+        <a href="index.html" class="font-medium text-slate-600 hover:text-slate-900 hover:underline whitespace-nowrap">Home</a>
+        <a href="results.html" class="font-medium text-slate-600 hover:text-slate-900 hover:underline whitespace-nowrap">Results</a>
+        <a href="login.html" class="font-medium text-slate-500 hover:text-slate-900 hover:underline whitespace-nowrap">Staff Portal</a>
+      </div>
     </div>
-  </div>
+  </footer>
 
   <script type="module">
     import { db, isFirebaseConfigured } from './firebase-config.js';
@@ -205,12 +144,19 @@
     import { normalizeBranding, brandingName, readCachedBranding, cacheBranding, clearBrandingCache, applyLogo, currentYear } from './branding-config.js';
     import { normalizeResultData } from './admin-utils.js';
     import { normalizeScoringRules } from './score-utils.js';
-    import { initCollapsibleSidebar } from './sidebar-shell.js';
     import { attachIdCardInteractions, buildVerificationUrl, computeVerificationToken, formatChestNumber, renderParticipantIdCardHtml } from './id-card-renderer.js';
 
-    initCollapsibleSidebar();
-
     const $ = (id) => document.getElementById(id);
+    const mobileToggle = $('mobile-nav-toggle');
+    const mobileDrawer = $('mobile-nav-drawer');
+    const setMobileNav = (open) => {
+      if (!mobileDrawer || !mobileToggle) return;
+      mobileDrawer.classList.toggle('hidden', !open);
+      mobileToggle.setAttribute('aria-expanded', String(open));
+    };
+    mobileToggle?.addEventListener('click', () => setMobileNav(mobileDrawer?.classList.contains('hidden')));
+    mobileDrawer?.addEventListener('click', (e) => { if (e.target.closest('a')) setMobileNav(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMobileNav(false); });
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     let currentBranding = normalizeBranding();
@@ -247,19 +193,12 @@
           badge: 'bg-emerald-700 text-white',
           badgeText: 'QR Signature Confirmed'
         },
-        directory: {
-          wrap: 'border-blue-200 bg-blue-50/90 text-blue-950',
-          iconWrap: 'bg-blue-100 text-blue-700',
-          icon: 'shield-alert',
-          badge: 'bg-blue-700 text-white',
-          badgeText: 'Manual Chest Lookup'
-        },
         invalid: {
           wrap: 'border-red-200 bg-red-50/95 text-red-950',
           iconWrap: 'bg-red-100 text-red-700',
           icon: 'shield-x',
           badge: 'bg-red-700 text-white',
-          badgeText: 'Signature Mismatch'
+          badgeText: 'QR Token Required / Invalid'
         },
         not_found: {
           wrap: 'border-amber-200 bg-amber-50/90 text-amber-950',
@@ -317,6 +256,8 @@
     }
 
     async function findStudentRecord({ chest, ref, teamFilter, qrToken }) {
+      if (!qrToken) return null;
+
       if (ref) {
         const snap = await getDoc(doc(db, 'students', ref));
         if (!snap.exists()) return null;
@@ -343,11 +284,8 @@
       }
       if (!matches.length) return null;
 
-      if (qrToken) {
-        const exactSigMatch = matches.find((m) => computeVerificationToken(m) === qrToken);
-        if (exactSigMatch) return exactSigMatch;
-      }
-      return matches[0];
+      const exactSigMatch = matches.find((m) => computeVerificationToken(m) === qrToken);
+      return exactSigMatch || { _signatureMismatch: true };
     }
 
     function renderConfirmedEventsSection(confirmedEvents) {
@@ -488,7 +426,14 @@
       const hasLookup = Boolean(ref || cleanChest !== '—');
       if (!hasLookup) {
         setBanner(null);
-        showEmptyState('Ready to Verify Participant Badge', 'Scan a participant QR badge with any camera or Google Lens scanner, or enter a Chest Number above to check live records.');
+        showEmptyState('Scan a Participant QR Badge', 'Open this page by scanning the QR code on an official digital or printed participant ID card.');
+        return;
+      }
+
+      const cleanToken = String(qrToken || '').trim().toUpperCase();
+      if (!cleanToken) {
+        setBanner('invalid', 'QR Signature Required', 'This badge check only reveals participant details when opened via an official participant QR code.');
+        showEmptyState('QR Security Token Missing', 'Manual lookup is disabled. Please scan the QR code printed on the participant ID card.');
         return;
       }
 
@@ -498,29 +443,24 @@
         return;
       }
 
-      showEmptyState('Verifying Participant…', 'Checking live festival registration records and competition entries.');
+      showEmptyState('Verifying Participant…', 'Checking live festival registration records and security signature.');
 
       try {
-        const cleanToken = String(qrToken || '').trim().toUpperCase();
         const student = await findStudentRecord({ chest: cleanChest, ref, teamFilter, qrToken: cleanToken });
 
         if (!student) {
-          setBanner('not_found', 'Participant Not Found', 'No registered participant matched the scanned badge or entered chest number.');
-          showEmptyState('No Matching Participant', 'Double-check the chest number and team filter, or verify with the festival check-in desk.');
+          setBanner('not_found', 'Participant Not Found', 'No registered participant matched the scanned QR badge.');
+          showEmptyState('No Matching Participant', 'Verify that you scanned an official current festival participant QR badge.');
           return;
         }
 
-        if (cleanToken) {
-          const expectedToken = computeVerificationToken(student);
-          if (expectedToken !== cleanToken) {
-            setBanner('invalid', 'Invalid or Tampered QR Badge', 'The QR security signature does not match live participant records. This badge cannot be verified.');
-            showEmptyState('Verification Failed', 'Please scan the participant’s original digital or printed lanyard ID card, or look up their chest number directly.');
-            return;
-          }
-          setBanner('verified', 'Verified Original Participant', `Authentic badge confirmed for ${student.name} (Chest ${formatChestNumber(student.chestNo)}). Public read-only view.`);
-        } else {
-          setBanner('directory', 'Public Directory Record Found', `Matched Chest ${formatChestNumber(student.chestNo)} (${student.name}). Scan the participant’s QR code for signature verification.`);
+        if (student._signatureMismatch || computeVerificationToken(student) !== cleanToken) {
+          setBanner('invalid', 'Invalid or Tampered QR Badge', 'The QR security signature does not match live participant records. This badge cannot be verified.');
+          showEmptyState('Verification Failed', 'Please scan the participant’s original digital or printed lanyard ID card.');
+          return;
         }
+
+        setBanner('verified', 'Verified Original Participant', `Authentic badge confirmed for ${student.name} (Chest ${formatChestNumber(student.chestNo)}). Public read-only view.`);
 
         const [evRows, regSnap, reqSnap, resRows] = await Promise.all([
           cachedGetDocs('col:events', collection(db, 'events'), { ttlMs: 120_000 }),
@@ -592,22 +532,6 @@
       }
     }
 
-    $('manual-lookup-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const rawChest = formatChestNumber($('lookup-chest').value);
-      const teamFilter = $('lookup-team').value;
-      if (rawChest === '—') {
-        setBanner('not_found', 'Enter a Chest Number', 'Please enter a valid chest number to verify.');
-        return;
-      }
-      const nextUrl = new URL(window.location.href);
-      nextUrl.search = '';
-      nextUrl.searchParams.set('c', rawChest);
-      if (teamFilter) nextUrl.searchParams.set('team', teamFilter);
-      window.history.replaceState({}, '', nextUrl.toString());
-      await runVerification({ chest: rawChest, teamFilter, qrToken: '' });
-    });
-
     async function init() {
       applyBranding(readCachedBranding());
       const params = new URLSearchParams(window.location.search);
@@ -615,8 +539,6 @@
       const refParam = params.get('ref') || '';
       const teamParam = params.get('team') || '';
       const tokenParam = params.get('k') || '';
-
-      if (chestParam) $('lookup-chest').value = formatChestNumber(chestParam) === '—' ? '' : formatChestNumber(chestParam);
 
       if (isFirebaseConfigured) {
         try {
@@ -633,16 +555,12 @@
           teamDisplayNames = generalConfig.teamDisplayNames || {};
           categoryDisplayNames = generalConfig.categoryDisplayNames || {};
           scoringRules = normalizeScoringRules(rulesDoc || {});
-
-          const teams = generalConfig.teams || [];
-          $('lookup-team').innerHTML = '<option value="">All Teams</option>' + teams.map((t) => `<option value="${esc(t)}">${esc(teamDisplayNames[t] || t)}</option>`).join('');
-          if (teamParam && teams.includes(teamParam)) $('lookup-team').value = teamParam;
         } catch (err) {
           console.warn('Settings load warning:', err);
         }
       }
 
-      if (chestParam || refParam) {
+      if (chestParam || refParam || tokenParam) {
         await runVerification({ chest: chestParam, ref: refParam, teamFilter: teamParam, qrToken: tokenParam });
       }
       window.lucide?.createIcons?.();

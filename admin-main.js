@@ -30,6 +30,7 @@ import { createAdminExcelController } from './admin-excel.js';
 import { initCollapsibleSidebar } from './sidebar-shell.js';
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
 import { getAuth as getSecondaryAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as signOutSecondary } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-functions.js';
 import {
   addDoc,
   collection,
@@ -1479,6 +1480,13 @@ function resetStaffForm() {
     const el = byId(id);
     if (el) el.value = '';
   });
+  const passEl = byId('access-password');
+  if (passEl) {
+    passEl.type = 'password';
+    passEl.placeholder = '••••••';
+  }
+  if (byId('btn-toggle-access-pass')) byId('btn-toggle-access-pass').textContent = 'Show';
+  if (byId('access-password-label')) byId('access-password-label').textContent = 'Password (min 6 chars)';
   if (byId('access-role')) byId('access-role').value = 'teamLeader';
   if (byId('access-gender')) byId('access-gender').value = 'Both';
   if (byId('access-active')) byId('access-active').checked = true;
@@ -1496,10 +1504,18 @@ function loadStaffIntoForm(docId) {
   byId('access-uid').value = u.authUid || docId;
   byId('access-role').value = u.role || 'teamLeader';
   byId('access-name').value = u.displayName || u.username || '';
-  byId('access-identifier').value = u.email || u.username || '';
-  setFieldLockedStyle(byId('access-identifier'), true);
-  byId('access-password').value = '';
-  setFieldLockedStyle(byId('access-password'), true);
+  const isVirtualEmail = Boolean(u.email && String(u.email).toLowerCase().endsWith('@fest.local'));
+  byId('access-identifier').value = (isVirtualEmail && u.username) ? u.username : (u.email || u.username || '');
+  setFieldLockedStyle(byId('access-identifier'), false);
+  const passEl = byId('access-password');
+  if (passEl) {
+    passEl.value = '';
+    passEl.type = 'password';
+    passEl.placeholder = 'Leave blank to keep current';
+  }
+  setFieldLockedStyle(passEl, false);
+  if (byId('btn-toggle-access-pass')) byId('btn-toggle-access-pass').textContent = 'Show';
+  if (byId('access-password-label')) byId('access-password-label').textContent = 'New Password (optional, min 6 chars)';
   byId('access-team').value = u.team || '';
   byId('access-gender').value = u.genderScope || 'Both';
   byId('access-title').value = u.title || '';
@@ -1510,7 +1526,7 @@ function loadStaffIntoForm(docId) {
   byId('access-gender-wrap')?.classList.toggle('hidden', !isLeader);
   const banner = byId('access-edit-banner');
   if (banner) {
-    banner.textContent = `Editing staff account: ${u.displayName || u.username} (login email/password stays unchanged).`;
+    banner.textContent = `Editing staff account: ${u.displayName || u.username}. Edit username/email above or enter a new password (leave blank to keep current).`;
     banner.classList.remove('hidden');
   }
   byId('btn-cancel-access-edit')?.classList.remove('hidden');
@@ -1536,46 +1552,107 @@ async function saveStaffAccount() {
   if (editUid) {
     const existing = state.accessUsers.find((x) => (x.authUid || x.docId || x.id) === editUid);
     if (!existing) return showToast('Staff account not found', 'error');
+    if (!identifier) return showToast('Username or email is required', 'error');
+    if (password && password.length < 6) return showToast('New password must be at least 6 characters', 'error');
+
+    const nextEmail = identifier.includes('@') ? identifier.toLowerCase() : `${normalizeUsername(identifier)}@fest.local`;
+    const nextUsername = identifier.includes('@') ? normalizeUsername(identifier.split('@')[0]) : normalizeUsername(identifier);
+    if (!nextUsername) return showToast('Enter a valid username or email', 'error');
+
+    const prevUsername = normalizeUsername(existing.username || '');
+    const prevEmail = String(existing.email || '').trim().toLowerCase();
+    const credentialsChanged = nextUsername !== prevUsername || nextEmail !== prevEmail || Boolean(password);
+    const resolvedTitle = title || (role === 'teamLeader' ? 'Team Leader' : role);
     const now = Date.now();
     const prevRole = existing.role;
-    const username = normalizeUsername(existing.username || displayName);
-    const email = existing.email || '';
-    const emailKey = email ? `email_${normalizeUsername(email).replace(/[^a-z0-9_@.-]/g, '_')}` : '';
+
+    if (credentialsChanged) {
+      const saveBtn = byId('btn-save-access');
+      if (saveBtn) saveBtn.disabled = true;
+      try {
+        const updateStaffCall = httpsCallable(getFunctions(app), 'updateStaffCredentials');
+        const result = await updateStaffCall({
+          uid: editUid,
+          identifier,
+          password,
+          role,
+          displayName,
+          team,
+          genderScope,
+          title: resolvedTitle,
+          phone,
+          active
+        });
+        const updated = result?.data || {};
+        Object.assign(existing, {
+          username: updated.username || nextUsername,
+          email: updated.email || nextEmail,
+          role,
+          displayName,
+          phone,
+          team,
+          genderScope,
+          title: resolvedTitle,
+          active,
+          updatedAt: Date.now()
+        });
+        resetStaffForm();
+        renderAccessList();
+        renderResetCounts();
+        resultsController?.renderAll();
+        showToast(password ? `Updated login & password for ${displayName}` : `Updated staff credentials: ${displayName}`);
+      } catch (err) {
+        console.error('Staff credential update failed', err);
+        const code = String(err?.code || '');
+        if (code.includes('not-found') || code.includes('unavailable') || code.includes('internal')) {
+          showToast(err?.message || 'Unable to update login credentials. Ensure Cloud Functions (updateStaffCredentials) are deployed.', 'error');
+        } else {
+          showToast(err?.message || 'Failed to update staff credentials', 'error');
+        }
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
+      }
+      return;
+    }
+
+    const emailKey = prevEmail ? `email_${normalizeUsername(prevEmail).replace(/[^a-z0-9_@.-]/g, '_')}` : '';
     const patch = {
       role,
       displayName,
       phone,
       team,
       genderScope,
-      title: title || (role === 'teamLeader' ? 'Team Leader' : role),
+      title: resolvedTitle,
       active,
+      accessPassword: deleteField(),
       updatedAt: now
     };
     try {
       await setDoc(doc(db, 'accessUsers', editUid), patch, { merge: true });
-      if (username) await setDoc(doc(db, 'accessUsernames', username), { ...patch, accessDocId: editUid }, { merge: true }).catch(() => {});
-      if (emailKey) await setDoc(doc(db, 'accessUsernames', emailKey), { ...patch, accessDocId: editUid }, { merge: true }).catch(() => {});
+      const lookupPatch = { role, displayName, phone, team, genderScope, title: resolvedTitle, active, updatedAt: now };
+      if (prevUsername) await setDoc(doc(db, 'accessUsernames', prevUsername), { ...lookupPatch, accessDocId: editUid }, { merge: true }).catch(() => {});
+      if (emailKey) await setDoc(doc(db, 'accessUsernames', emailKey), { ...lookupPatch, accessDocId: editUid }, { merge: true }).catch(() => {});
 
       if (prevRole !== role) {
         if (prevRole === 'teamLeader') await deleteDoc(doc(db, 'teamLeaders', editUid)).catch(() => {});
         if (prevRole === 'judge') await deleteDoc(doc(db, 'judges', editUid)).catch(() => {});
         if (['admin', 'superAdmin'].includes(prevRole)) {
           await deleteDoc(doc(db, 'adminUsers', editUid)).catch(() => {});
-          if (username) await deleteDoc(doc(db, 'adminUsernames', username)).catch(() => {});
+          if (prevUsername) await deleteDoc(doc(db, 'adminUsernames', prevUsername)).catch(() => {});
         }
       }
       if (role === 'teamLeader') {
-        await setDoc(doc(db, 'teamLeaders', editUid), { uid: editUid, authUid: editUid, username, displayName, phone, team, genderScope: genderScope || 'Both', title: patch.title, active, updatedAt: now }, { merge: true });
+        await setDoc(doc(db, 'teamLeaders', editUid), { uid: editUid, authUid: editUid, username: prevUsername, displayName, phone, team, genderScope: genderScope || 'Both', title: resolvedTitle, active, updatedAt: now }, { merge: true });
       } else if (role === 'judge') {
-        await setDoc(doc(db, 'judges', editUid), { uid: editUid, authUid: editUid, username, name: displayName, phone, active, updatedAt: now }, { merge: true });
+        await setDoc(doc(db, 'judges', editUid), { uid: editUid, authUid: editUid, username: prevUsername, name: displayName, phone, active, updatedAt: now }, { merge: true });
       } else if (['admin', 'superAdmin'].includes(role)) {
-        await setDoc(doc(db, 'adminUsers', editUid), { username, email, displayName, role, active, updatedAt: now }, { merge: true });
-        if (username) {
-          await setDoc(doc(db, 'adminUsernames', username), { uid: editUid, username, email, role, active, updatedAt: now }, { merge: true }).catch(() => {});
+        await setDoc(doc(db, 'adminUsers', editUid), { username: prevUsername, email: prevEmail, displayName, role, active, updatedAt: now }, { merge: true });
+        if (prevUsername) {
+          await setDoc(doc(db, 'adminUsernames', prevUsername), { uid: editUid, username: prevUsername, email: prevEmail, role, active, updatedAt: now }, { merge: true }).catch(() => {});
         }
       }
 
-      Object.assign(existing, patch);
+      Object.assign(existing, { role, displayName, phone, team, genderScope, title: resolvedTitle, active, updatedAt: now });
       resetStaffForm();
       renderAccessList();
       renderResetCounts();

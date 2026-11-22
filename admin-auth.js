@@ -9,20 +9,11 @@ let adminAuthReady = false;
 const byId = (id) => document.getElementById(id);
 const setText = (id, text) => { const el = byId(id); if (el) el.textContent = text || ''; };
 
-function loginRedirectUrl(message = '') {
-  const currentPage = window.location.pathname.split('/').pop() || 'admin.html';
-  const next = currentPage === 'login.html' ? 'admin.html' : currentPage;
-  const url = new URL('login.html', window.location.href);
-  url.searchParams.set('next', next);
-  if (message) url.searchParams.set('message', message);
-  return url.href;
-}
-
-function redirectToLogin(message = '', includeNext = true) {
+function redirectToLogin(message = '') {
   if (adminAuthRedirecting) return;
   adminAuthRedirecting = true;
   if (message) sessionStorage.setItem('admin_login_message', message);
-  window.location.replace(includeNext ? loginRedirectUrl(message) : new URL('login.html', window.location.href).href);
+  window.location.replace(new URL('login.html', window.location.href).href);
 }
 
 async function loadAdminProfile(user) {
@@ -52,7 +43,7 @@ export function initAdminAuth({ onReady } = {}) {
     window.adminUnsubscribers?.forEach(unsub => unsub?.());
     window.adminUnsubscribers = [];
     window.dispatchEvent(new CustomEvent('admin-auth-logout'));
-    redirectToLogin('Logged out. Please login again.', false);
+    redirectToLogin('Logged out. Please login again.');
   });
 
   onAuthStateChanged(auth, async (user) => {

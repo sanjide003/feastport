@@ -101,19 +101,19 @@ function updatePageState() {
 
 const dataReady = () => requiredSources.every((key) => loadState[key] === 'ready');
 
-async function redirectToLogin(message = 'Please sign in as a judge to continue.', includeNext = true) {
+async function redirectToLogin(message = 'Please sign in as a judge to continue.') {
   if (judgeAuthRedirecting) return;
   judgeAuthRedirecting = true;
   sessionStorage.removeItem('judge_user');
   sessionStorage.removeItem('judge_access_uid');
   sessionStorage.setItem('admin_login_message', message);
   await signOut(auth).catch(() => {});
-  location.replace(includeNext ? `login.html?next=${encodeURIComponent('judge.html')}` : 'login.html');
+  location.replace('login.html');
 }
 
 async function logoutJudge() {
   if (!canLeaveWorkspace()) return;
-  await redirectToLogin('Judge signed out.', false);
+  await redirectToLogin('Judge signed out.');
 }
 
 function toggleMenu(open) {

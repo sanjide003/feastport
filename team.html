@@ -1207,7 +1207,7 @@
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        window.location.replace('login.html?next=team.html');
+        window.location.replace('login.html');
         return;
       }
       try {
@@ -1215,7 +1215,8 @@
         const profile = snap.exists() ? snap.data() : null;
         if (!profile || profile.active !== true || profile.role !== 'teamLeader' || !profile.team) {
           await signOut(auth).catch(() => {});
-          window.location.replace('login.html?message=' + encodeURIComponent('Team Leader access required.'));
+          sessionStorage.setItem('admin_login_message', 'Team Leader access required.');
+          window.location.replace('login.html');
           return;
         }
         currentUser = user;

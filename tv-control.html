@@ -406,11 +406,12 @@
     byId('btn-save-draft')?.addEventListener('click', () => saveControl(true));
 
     onAuthStateChanged(auth, async (user) => {
-      if (!user) return window.location.replace('login.html?next=tv-control.html');
+      if (!user) return window.location.replace('login.html');
       const snap = await getDoc(doc(db, 'adminUsers', user.uid));
       const profile = snap.exists() ? snap.data() : null;
       if (!profile || profile.active !== true || !['admin', 'superAdmin'].includes(profile.role)) {
-        return window.location.replace('login.html?next=tv-control.html');
+        sessionStorage.setItem('admin_login_message', 'Admin access required.');
+        return window.location.replace('login.html');
       }
       await loadData();
       window.lucide?.createIcons?.();

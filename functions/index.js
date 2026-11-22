@@ -1,6 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
+const { FieldValue, getFirestore } = require('firebase-admin/firestore');
 const crypto = require('crypto');
 
 initializeApp();
@@ -36,6 +37,208 @@ exports.completeFactoryReset = onCall({ timeoutSeconds: 540, memory: '1GiB' }, a
     await db.recursiveDelete(collection);
   }
   return { deleted, preserved: ['adminUsers', 'adminUsernames', 'admin/superAdmin access profiles'] };
+});
+
+const normalizeStaffUsername = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, '_');
+const staffEmailKey = (email) => `email_${normalizeStaffUsername(email).replace(/[^a-z0-9_@.-]/g, '_')}`;
+const ALLOWED_STAFF_ROLES = new Set(['teamLeader', 'judge', 'admin', 'superAdmin']);
+
+exports.updateStaffCredentials = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Admin authentication is required.');
+
+  const db = getFirestore();
+  const callerSnap = await db.doc(`adminUsers/${request.auth.uid}`).get();
+  if (!callerSnap.exists || callerSnap.data().active !== true || !ADMIN_ROLES.has(callerSnap.data().role)) {
+    throw new HttpsError('permission-denied', 'An active Admin or Super Admin account is required.');
+  }
+
+  const data = request.data || {};
+  const uid = String(data.uid || '').trim();
+  const identifier = String(data.identifier || '').trim();
+  const password = String(data.password || '');
+  const role = String(data.role || '').trim();
+  const displayName = String(data.displayName || '').trim();
+  const team = role === 'teamLeader' ? String(data.team || '').trim() : '';
+  const genderScope = role === 'teamLeader' ? (String(data.genderScope || 'Both').trim() || 'Both') : '';
+  const title = String(data.title || '').trim() || (role === 'teamLeader' ? 'Team Leader' : role);
+  const phone = String(data.phone || '').trim();
+  const active = data.active !== false;
+
+  if (!uid) throw new HttpsError('invalid-argument', 'Staff account UID is required.');
+  if (!identifier) throw new HttpsError('invalid-argument', 'Username or email is required.');
+  if (!displayName) throw new HttpsError('invalid-argument', 'Display name is required.');
+  if (!ALLOWED_STAFF_ROLES.has(role)) throw new HttpsError('invalid-argument', 'Invalid staff role.');
+  if (role === 'teamLeader' && !team) throw new HttpsError('invalid-argument', 'Select a team for Team Leader.');
+  if (password && password.length < 6) {
+    throw new HttpsError('invalid-argument', 'New password must be at least 6 characters.');
+  }
+
+  const nextEmail = identifier.includes('@')
+    ? identifier.toLowerCase()
+    : `${normalizeStaffUsername(identifier)}@fest.local`;
+  const nextUsername = identifier.includes('@')
+    ? normalizeStaffUsername(identifier.split('@')[0])
+    : normalizeStaffUsername(identifier);
+
+  if (!nextUsername || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) {
+    throw new HttpsError('invalid-argument', 'Enter a valid username or email address.');
+  }
+
+  const authAdmin = getAuth();
+  let authUser;
+  try {
+    authUser = await authAdmin.getUser(uid);
+  } catch (err) {
+    if (err?.code === 'auth/user-not-found') {
+      throw new HttpsError('not-found', 'Firebase Auth user for this staff account was not found.');
+    }
+    throw new HttpsError('internal', 'Failed to inspect Firebase Auth user.');
+  }
+
+  const nextEmailKey = staffEmailKey(nextEmail);
+  const [usernameSnap, emailKeySnap, adminUsernameSnap, existingAccessSnap] = await Promise.all([
+    db.doc(`accessUsernames/${nextUsername}`).get(),
+    db.doc(`accessUsernames/${nextEmailKey}`).get(),
+    db.doc(`adminUsernames/${nextUsername}`).get(),
+    db.doc(`accessUsers/${uid}`).get()
+  ]);
+
+  const conflictOwner = (snap) => {
+    if (!snap.exists) return '';
+    const d = snap.data() || {};
+    return String(d.authUid || d.accessDocId || d.uid || '');
+  };
+  const hasConflict = [usernameSnap, emailKeySnap, adminUsernameSnap].some((snap) => {
+    const owner = conflictOwner(snap);
+    return Boolean(owner && owner !== uid);
+  });
+  if (hasConflict) {
+    throw new HttpsError('already-exists', 'That username or email is already assigned to another staff account.');
+  }
+
+  const existing = existingAccessSnap.exists ? existingAccessSnap.data() : {};
+  const prevUsername = normalizeStaffUsername(existing.username || '');
+  const prevEmail = String(existing.email || authUser.email || '').trim().toLowerCase();
+  const prevEmailKey = prevEmail ? staffEmailKey(prevEmail) : '';
+  const prevRole = String(existing.role || '');
+
+  const authPatch = {};
+  if (nextEmail !== String(authUser.email || '').toLowerCase()) authPatch.email = nextEmail;
+  if (password) authPatch.password = password;
+  if (displayName && displayName !== authUser.displayName) authPatch.displayName = displayName;
+
+  if (Object.keys(authPatch).length) {
+    try {
+      await authAdmin.updateUser(uid, authPatch);
+    } catch (err) {
+      if (err?.code === 'auth/email-already-exists') {
+        throw new HttpsError('already-exists', 'Another Firebase Auth account already uses that email/username.');
+      }
+      if (err?.code === 'auth/invalid-password') {
+        throw new HttpsError('invalid-argument', 'New password must be at least 6 characters.');
+      }
+      throw new HttpsError('internal', err?.message || 'Failed to update Firebase Auth credentials.');
+    }
+  }
+
+  const now = Date.now();
+  const profilePatch = {
+    username: nextUsername,
+    email: nextEmail,
+    role,
+    displayName,
+    authUid: uid,
+    accessDocId: uid,
+    accessPassword: FieldValue.delete(),
+    phone,
+    team,
+    genderScope,
+    title,
+    active,
+    updatedAt: now
+  };
+
+  const batch = db.batch();
+  batch.set(db.doc(`accessUsers/${uid}`), profilePatch, { merge: true });
+
+  if (prevUsername && prevUsername !== nextUsername) {
+    batch.delete(db.doc(`accessUsernames/${prevUsername}`));
+    batch.delete(db.doc(`adminUsernames/${prevUsername}`));
+  }
+  if (prevEmailKey && prevEmailKey !== nextEmailKey) {
+    batch.delete(db.doc(`accessUsernames/${prevEmailKey}`));
+  }
+
+  const lookupPayload = {
+    username: nextUsername,
+    email: nextEmail,
+    role,
+    displayName,
+    authUid: uid,
+    accessDocId: uid,
+    team,
+    genderScope,
+    title,
+    phone,
+    active,
+    updatedAt: now
+  };
+  batch.set(db.doc(`accessUsernames/${nextUsername}`), lookupPayload, { merge: true });
+  batch.set(db.doc(`accessUsernames/${nextEmailKey}`), lookupPayload, { merge: true });
+
+  if (prevRole && prevRole !== role) {
+    if (prevRole === 'teamLeader') batch.delete(db.doc(`teamLeaders/${uid}`));
+    if (prevRole === 'judge') batch.delete(db.doc(`judges/${uid}`));
+    if (ADMIN_ROLES.has(prevRole)) {
+      batch.delete(db.doc(`adminUsers/${uid}`));
+      if (prevUsername) batch.delete(db.doc(`adminUsernames/${prevUsername}`));
+    }
+  }
+
+  if (role === 'teamLeader') {
+    batch.set(db.doc(`teamLeaders/${uid}`), {
+      uid,
+      authUid: uid,
+      username: nextUsername,
+      displayName,
+      phone,
+      team,
+      genderScope: genderScope || 'Both',
+      title,
+      active,
+      updatedAt: now
+    }, { merge: true });
+  } else if (role === 'judge') {
+    batch.set(db.doc(`judges/${uid}`), {
+      uid,
+      authUid: uid,
+      username: nextUsername,
+      name: displayName,
+      phone,
+      active,
+      updatedAt: now
+    }, { merge: true });
+  } else if (ADMIN_ROLES.has(role)) {
+    batch.set(db.doc(`adminUsers/${uid}`), {
+      username: nextUsername,
+      email: nextEmail,
+      displayName,
+      role,
+      active,
+      updatedAt: now
+    }, { merge: true });
+    batch.set(db.doc(`adminUsernames/${nextUsername}`), {
+      uid,
+      username: nextUsername,
+      email: nextEmail,
+      role,
+      active,
+      updatedAt: now
+    }, { merge: true });
+  }
+
+  await batch.commit();
+  return { ok: true, uid, username: nextUsername, email: nextEmail };
 });
 
 const normalizeText = value => String(value || '').trim();

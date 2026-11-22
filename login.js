@@ -9,7 +9,11 @@ const ROLE_REDIRECTS = { admin: 'admin.html', superAdmin: 'admin.html', teamLead
 const byId = (id) => document.getElementById(id);
 const setText = (id, text) => { const el = byId(id); if (el) el.textContent = text || ''; };
 const params = new URLSearchParams(window.location.search);
-const requestedNext = params.get('next') || '';
+if (params.has('next')) {
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.searchParams.delete('next');
+  window.history.replaceState({}, '', `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
+}
 const clearRoleSessions = () => ['team_access_uid', 'team_leader_team', 'judge_access_uid', 'judge_user', 'publisher_access_uid', 'media_access_uid'].forEach((key) => sessionStorage.removeItem(key));
 
 const normalizeUsername = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, '_');
@@ -113,11 +117,7 @@ function redirectForProfile(profile) {
     sessionStorage.setItem('team_leader_team', profile.team || '');
   }
   if (profile.role === 'judge') sessionStorage.setItem('judge_access_uid', profile.uid || '');
-  const roleTarget = ROLE_REDIRECTS[profile.role] || 'admin.html';
-  const requestedPage = requestedNext.split(/[?#]/)[0].split('/').pop() || '';
-  const allowedNextPages = ADMIN_ROLES.has(profile.role) ? new Set(['admin.html', 'tv-control.html']) : new Set([roleTarget]);
-  if (allowedNextPages.has(requestedPage)) return requestedPage;
-  return roleTarget;
+  return ROLE_REDIRECTS[profile.role] || 'admin.html';
 }
 
 function setBusy(isBusy) {
