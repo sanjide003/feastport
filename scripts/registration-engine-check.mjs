@@ -122,4 +122,20 @@ assert.equal(studentClassValue({ details: mergedDetails }), '10');
 assert.equal(studentDobValue({ details: mergedDetails }), '2010-05-14');
 assert.deepEqual(buildStudentDetailsPatch(mergedDetails, { classValue: '', dobValue: '' }), { guardianName: 'Parent' });
 
+// Category classification subtab & Excel workspace structure checks
+const adminHtml = readFileSync('admin.html', 'utf8');
+assert.ok(adminHtml.includes('data-subtab="classification"'), 'Festival Setup must include Category Classification subtab button');
+assert.ok(adminHtml.includes('id="setup-subview-classification"'), 'Festival Setup must include dedicated classification subview');
+const categoriesEndIdx = adminHtml.indexOf('id="setup-subview-classification"');
+const classificationCardIdx = adminHtml.indexOf('id="category-classification-card"');
+assert.ok(categoriesEndIdx > 0 && classificationCardIdx > categoriesEndIdx, 'Category Classification card must reside inside setup-subview-classification');
+
+const adminExcelSrc = readFileSync('admin-excel.js', 'utf8');
+assert.ok(adminExcelSrc.includes('buildTemplateSampleRows'), 'Excel module must populate 4 sample rows in templates');
+assert.ok(adminExcelSrc.includes('data-excel-action="start-blank-sheet"'), 'Excel workspace must provide Start Blank Sheet button');
+assert.ok(adminExcelSrc.includes('data-excel-map="${scope}"'), 'Excel header must render column mapping dropdowns when Edit Mode is ON');
+assert.ok(adminExcelSrc.includes('data-cell-msg="${h(f.key)}"'), 'Excel table cells must render inline validation messages');
+assert.equal(adminExcelSrc.includes('>Status</th>'), false, 'Excel table must omit Status column');
+assert.equal(adminExcelSrc.includes('>Validation Check</th>'), false, 'Excel table must omit Validation Check column');
+
 console.log('Advanced registration engine checks passed');
