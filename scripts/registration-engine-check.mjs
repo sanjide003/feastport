@@ -3,6 +3,16 @@ import { readFileSync } from 'node:fs';
 import { applicationDecision, capacityState, eventCapacity, normalizeRegistrationConfig, participantEligibleForEvent, participationLimitDecision, participationUsage, registrationPhase, registrationWindowOpen, selfRegistrationAllowed, studentEligibleForEvent } from '../registration-utils.js';
 import { buildVerificationUrl, computeVerificationToken, formatChestNumber, renderParticipantIdCardHtml } from '../id-card-renderer.js';
 import { encodeQrMatrix } from '../qr-svg.js';
+import {
+  DEFAULT_CLASS_LIST,
+  buildStudentDetailsPatch,
+  getStudentFieldVisibility,
+  normalizeCategoryClassificationConfig,
+  normalizeClassValue,
+  resolveCategoryFromStudentInputs,
+  studentClassValue,
+  studentDobValue
+} from '../admin-students.js';
 const student={id:'s1',name:'Student',team:'Blue',category:'Junior',gender:'Girls',details:{class:'7'}};
 const event={id:'e1',name:'Event',limit:3,type:'Single',category:'Junior',gender:'Girls',allowedParticipantTypes:['student'],allowedRegistrationChannels:['self'],eligibleClasses:['7']};
 assert.equal(studentEligibleForEvent(student,event,{registrationChannels:['self']}),true);
@@ -61,4 +71,55 @@ assert.ok(cardHtml.indexOf('R104') < cardHtml.indexOf('PARTICIPANT'), 'PARTICIPA
 assert.ok(cardHtml.indexOf('PARTICIPANT') < cardHtml.indexOf('Kalotsavam Arts Fest'), 'Fest name must appear in the bottom footer below body content');
 const verifyHtml = readFileSync('verify.html', 'utf8');
 assert.equal(verifyHtml.includes('studentRegistrationSession'), false, 'verify.html must never access or create studentRegistrationSession');
+
+// Category classification & optional student fields checks
+assert.deepEqual(getStudentFieldVisibility({ mode: 'manual', showClassInManual: false, showDobInManual: false }), { mode: 'manual', showClass: false, showDob: false });
+assert.deepEqual(getStudentFieldVisibility({ mode: 'manual', showClassInManual: true, showDobInManual: true }), { mode: 'manual', showClass: true, showDob: true });
+assert.deepEqual(getStudentFieldVisibility({ mode: 'class' }), { mode: 'class', showClass: true, showDob: false });
+assert.deepEqual(getStudentFieldVisibility({ mode: 'dob' }), { mode: 'dob', showClass: false, showDob: true });
+
+assert.equal(normalizeClassValue('Class 7', DEFAULT_CLASS_LIST), '7');
+assert.equal(normalizeClassValue('+2', ['1', '2', '+1', '+2']), '+2');
+assert.equal(normalizeClassValue('Degree 1', ['Degree 1', 'Degree 2']), 'Degree 1');
+
+const classRulesCfg = normalizeCategoryClassificationConfig({
+  mode: 'class',
+  classes: ['LKG', '1', '2', '8', '+1', '+2'],
+  classRules: { sub_junior: ['LKG', '1', '2'], senior: ['+1', '+2'] }
+});
+assert.deepEqual(
+  resolveCategoryFromStudentInputs({ config: classRulesCfg, categories: ['sub_junior', 'junior', 'senior'], classValue: 'Class 2' }),
+  { matched: true, category: 'sub_junior', mode: 'class' }
+);
+assert.deepEqual(
+  resolveCategoryFromStudentInputs({ config: classRulesCfg, categories: ['sub_junior', 'junior', 'senior'], classValue: '+2' }),
+  { matched: true, category: 'senior', mode: 'class' }
+);
+assert.deepEqual(
+  resolveCategoryFromStudentInputs({ config: classRulesCfg, categories: ['sub_junior', 'junior', 'senior'], classValue: '8' }),
+  { matched: false, category: '', mode: 'class' }
+);
+
+const dobRulesCfg = normalizeCategoryClassificationConfig({
+  mode: 'dob',
+  dobRules: {
+    sub_junior: { from: '2014-01-01', to: '2016-12-31' },
+    senior: { from: '2008-01-01', to: '2010-12-31' }
+  }
+});
+assert.deepEqual(
+  resolveCategoryFromStudentInputs({ config: dobRulesCfg, categories: ['sub_junior', 'senior'], dobValue: '2014-01-01' }),
+  { matched: true, category: 'sub_junior', mode: 'dob' }
+);
+assert.deepEqual(
+  resolveCategoryFromStudentInputs({ config: dobRulesCfg, categories: ['sub_junior', 'senior'], dobValue: '2012-06-15' }),
+  { matched: false, category: '', mode: 'dob' }
+);
+
+const mergedDetails = buildStudentDetailsPatch({ guardianName: 'Parent' }, { classValue: '10', dobValue: '2010-05-14' });
+assert.deepEqual(mergedDetails, { guardianName: 'Parent', class: '10', dob: '2010-05-14' });
+assert.equal(studentClassValue({ details: mergedDetails }), '10');
+assert.equal(studentDobValue({ details: mergedDetails }), '2010-05-14');
+assert.deepEqual(buildStudentDetailsPatch(mergedDetails, { classValue: '', dobValue: '' }), { guardianName: 'Parent' });
+
 console.log('Advanced registration engine checks passed');

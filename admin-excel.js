@@ -13,8 +13,16 @@ import {
   validateEvent
 } from './event-utils.js';
 import {
+  DEFAULT_CLASS_LIST,
+  buildStudentDetailsPatch,
+  getStudentFieldVisibility,
+  normalizeCategoryClassificationConfig,
   normalizeChestConfig,
+  normalizeClassValue,
+  resolveCategoryFromStudentInputs,
   resolveNextAutoChestNo,
+  studentClassValue,
+  studentDobValue,
   validateManualChestNo
 } from './admin-students.js';
 
@@ -27,6 +35,12 @@ const BATCH_LIMIT = 350;
 
 const isAutoChestActive = (state) =>
   normalizeChestConfig(state?.chestNumberConfig || state?.generalConfig?.chestNumberConfig || {}).enabled;
+
+const getClassificationConfig = (state) =>
+  normalizeCategoryClassificationConfig(
+    state?.categoryClassification || state?.generalConfig?.categoryClassification || {},
+    state?.festSetup?.eligibleClasses
+  );
 
 const METHOD_OPTIONS = [
   { value: 'criteria', label: 'Criteria Scoring' },
@@ -90,6 +104,35 @@ const SCHEMAS = {
   }
 };
 
+const STUDENT_OPTIONAL_FIELDS = {
+  class: { key: 'class', label: 'Class', required: false, width: 'w-28', aliases: ['class', 'std', 'standard', 'gradelevel', 'classname'] },
+  dob: { key: 'dob', label: 'Date of Birth (YYYY-MM-DD)', required: false, width: 'w-36', aliases: ['dob', 'dateofbirth', 'birthdate', 'birthday'] }
+};
+
+function getAllMappableFields(scope) {
+  if (scope !== 'students') return SCHEMAS[scope].fields;
+  const base = SCHEMAS.students.fields;
+  return [base[0], base[1], base[2], STUDENT_OPTIONAL_FIELDS.class, STUDENT_OPTIONAL_FIELDS.dob, base[3], base[4]];
+}
+
+function getScopeFields(scope, state, { rows = [], columnMap = {}, includeExistingStudentMeta = false } = {}) {
+  const base = SCHEMAS[scope].fields;
+  if (scope !== 'students') return base;
+  const clsCfg = getClassificationConfig(state);
+  const vis = getStudentFieldVisibility(clsCfg);
+  const hasClassData = Boolean(columnMap?.class)
+    || rows.some((r) => clean(r?.data?.class))
+    || (includeExistingStudentMeta && (state?.students || []).some((s) => Boolean(studentClassValue(s))));
+  const hasDobData = Boolean(columnMap?.dob)
+    || rows.some((r) => clean(r?.data?.dob))
+    || (includeExistingStudentMeta && (state?.students || []).some((s) => Boolean(studentDobValue(s))));
+  const fields = [base[0], base[1], base[2]];
+  if (vis.showClass || hasClassData) fields.push(STUDENT_OPTIONAL_FIELDS.class);
+  if (vis.showDob || hasDobData) fields.push(STUDENT_OPTIONAL_FIELDS.dob);
+  fields.push(base[3], base[4]);
+  return fields;
+}
+
 async function ensureXlsx() {
   if (window.XLSX) return window.XLSX;
   if (window.ensureAdminDependencies) {
@@ -103,11 +146,14 @@ async function ensureXlsx() {
 
 function makeBlankRow(scope, state) {
   if (scope === 'students') {
+    const clsCfg = getClassificationConfig(state);
     return {
       chestNo: '',
       name: '',
       team: state.teams?.[0] || '',
-      category: state.categories?.[0] || '',
+      class: '',
+      dob: '',
+      category: clsCfg.mode === 'manual' ? (state.categories?.[0] || '') : '',
       gender: 'Boys'
     };
   }
@@ -229,10 +275,11 @@ function timeToMinutes(hhmm) {
   return Number(m[1]) * 60 + Number(m[2]);
 }
 
-function autoMapHeaders(headers, schema) {
+function autoMapHeaders(headers, scope) {
+  const fields = getAllMappableFields(scope);
   const mapping = {};
   const usedHeaders = new Set();
-  for (const field of schema.fields) {
+  for (const field of fields) {
     const exactMatch = headers.find((hdr) => !usedHeaders.has(hdr) && normKey(hdr) === normKey(field.label));
     if (exactMatch) {
       mapping[field.key] = exactMatch;
@@ -259,12 +306,38 @@ export function validateScopeRows(scope, rows, state) {
 
   if (scope === 'students') {
     const chestCfg = normalizeChestConfig(state.chestNumberConfig || state.generalConfig?.chestNumberConfig || {});
+    const clsCfg = getClassificationConfig(state);
     const existingByChest = new Map();
     (state.students || []).forEach((s) => {
       const k = clean(s.chestNo).toLowerCase();
       if (k) existingByChest.set(k, s);
     });
     const sheetChestFirstRow = new Map();
+
+    // First pass: normalize Class & DOB, and resolve blank/auto Category from active classification rules
+    rows.forEach((row) => {
+      if (row.skip) return;
+      const normClass = normalizeClassValue(row.data.class, clsCfg.classes);
+      if (normClass) row.data.class = normClass;
+      const parsedDob = parseExcelDateCell(row.data.dob);
+      if (clean(row.data.dob)) row.data.dob = parsedDob;
+
+      if (clsCfg.mode !== 'manual' && (!clean(row.data.category) || row._autoCat)) {
+        const autoCat = resolveCategoryFromStudentInputs({
+          config: clsCfg,
+          categories: state.categories,
+          classValue: normClass,
+          dobValue: parsedDob
+        });
+        if (autoCat.matched && (!(state.categories || []).length || state.categories.includes(autoCat.category))) {
+          row.data.category = autoCat.category;
+          row._autoCat = true;
+        } else if (row._autoCat) {
+          row.data.category = '';
+          row._autoCat = false;
+        }
+      }
+    });
 
     // Reserve all explicit (non-blank) Chest Nos in the sheet first so blank auto-assigned rows never collide with them.
     const autoPool = [...(state.students || [])];
@@ -294,16 +367,28 @@ export function validateScopeRows(scope, rows, state) {
 
       const chestNo = clean(row.data.chestNo);
       const name = clean(row.data.name);
+      const classValue = normalizeClassValue(row.data.class, clsCfg.classes);
+      const dobRaw = clean(row.data.dob);
+      const dobParsed = parseExcelDateCell(dobRaw);
+      const dobValid = !dobParsed || (DATE_REGEX.test(dobParsed) && !Number.isNaN(new Date(`${dobParsed}T00:00:00Z`).getTime()));
       const teamRes = resolveConfiguredOption(row.data.team, state.teams, state.teamDisplayNames);
       const catRes = resolveConfiguredOption(row.data.category, state.categories, state.categoryDisplayNames);
       const genderRes = normalizeStudentGenderStrict(row.data.gender);
+
+      const details = buildStudentDetailsPatch({}, {
+        classValue,
+        dobValue: dobValid ? dobParsed : ''
+      });
 
       row.normalized = {
         chestNo,
         name,
         team: teamRes.value,
         category: catRes.value,
-        gender: genderRes.value
+        gender: genderRes.value,
+        class: classValue,
+        dob: dobValid ? dobParsed : '',
+        details
       };
       if (teamRes.matched) row.data.team = teamRes.value;
       if (catRes.matched) row.data.category = catRes.value;
@@ -315,6 +400,10 @@ export function validateScopeRows(scope, rows, state) {
         row.errors.name = 'Full Name must be 140 characters or fewer';
       }
 
+      if (dobParsed && !dobValid) {
+        row.errors.dob = 'Invalid Date of Birth — use YYYY-MM-DD';
+      }
+
       if (!clean(row.data.team)) {
         row.errors.team = 'Team is required';
       } else if ((state.teams || []).length && !teamRes.matched) {
@@ -322,7 +411,11 @@ export function validateScopeRows(scope, rows, state) {
       }
 
       if (!clean(row.data.category)) {
-        row.errors.category = 'Category is required';
+        row.errors.category = clsCfg.mode === 'class'
+          ? 'Category required (select Class to auto-assign or choose Category)'
+          : clsCfg.mode === 'dob'
+            ? 'Category required (enter DOB to auto-assign or choose Category)'
+            : 'Category is required';
       } else if ((state.categories || []).length && !catRes.matched) {
         row.errors.category = `Unknown category "${row.data.category}"`;
       }
@@ -702,6 +795,14 @@ function buildReferenceRows(state) {
     rows.push(['Category', c, resolveDisplayName(state.categoryDisplayNames, c, c)]);
   });
   rows.push(['Student Gender', 'Boys / Girls', 'Exact allowed values for Students']);
+  const clsCfg = getClassificationConfig(state);
+  const vis = getStudentFieldVisibility(clsCfg);
+  if (vis.showClass) {
+    rows.push(['Student Class', (clsCfg.classes || DEFAULT_CLASS_LIST).join(', '), clsCfg.mode === 'class' ? 'Auto-assigns Category when Category cell is left blank' : 'Optional student Class field']);
+  }
+  if (vis.showDob) {
+    rows.push(['Student DOB', 'YYYY-MM-DD (e.g. 2012-05-14)', clsCfg.mode === 'dob' ? 'Auto-assigns Category from DOB range when Category cell is left blank' : 'Optional student Date of Birth']);
+  }
   if (isAutoChestActive(state)) {
     rows.push(['Chest No (Auto)', 'Optional / Leave Blank', 'Automated chest numbering is ON — blank Chest No cells auto-assign sequentially']);
   }
@@ -719,8 +820,8 @@ function buildReferenceRows(state) {
 }
 
 function buildExportAoA(scope, state, templateOnly = false) {
-  const schema = SCHEMAS[scope];
-  const headers = schema.fields.map((f) => f.label);
+  const fields = getScopeFields(scope, state, { includeExistingStudentMeta: !templateOnly });
+  const headers = fields.map((f) => f.label);
   const rows = [headers];
 
   if (scope === 'students' && !templateOnly) {
@@ -728,7 +829,16 @@ function buildExportAoA(scope, state, templateOnly = false) {
       String(a.chestNo || '').localeCompare(String(b.chestNo || ''), undefined, { numeric: true })
     );
     sorted.forEach((s) => {
-      rows.push([s.chestNo || '', s.name || '', s.team || '', s.category || '', s.gender || 'Boys']);
+      const valueMap = {
+        chestNo: s.chestNo || '',
+        name: s.name || '',
+        team: s.team || '',
+        class: studentClassValue(s),
+        dob: studentDobValue(s),
+        category: s.category || '',
+        gender: s.gender || 'Boys'
+      };
+      rows.push(fields.map((f) => valueMap[f.key] ?? ''));
     });
   } else if (scope === 'events' && !templateOnly) {
     const sorted = [...(state.events || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
@@ -829,6 +939,7 @@ export function createAdminExcelController(getState, handlers = {}) {
     try {
       const state = getState();
       const schema = SCHEMAS[scope];
+      const exportFields = getScopeFields(scope, state, { includeExistingStudentMeta: !templateOnly });
       const aoa = buildExportAoA(scope, state, templateOnly);
       const stamp = new Date().toISOString().slice(0, 10);
       const suffix = templateOnly ? 'template' : 'export';
@@ -846,7 +957,7 @@ export function createAdminExcelController(getState, handlers = {}) {
       const XLSX = await ensureXlsx();
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(aoa);
-      ws['!cols'] = schema.fields.map((f) => ({ wch: Math.max(f.label.length + 4, 18) }));
+      ws['!cols'] = exportFields.map((f) => ({ wch: Math.max(f.label.length + 4, 18) }));
       XLSX.utils.book_append_sheet(wb, ws, schema.sheetName);
 
       const refSheet = XLSX.utils.aoa_to_sheet(buildReferenceRows(state));
@@ -863,16 +974,20 @@ export function createAdminExcelController(getState, handlers = {}) {
 
   function applyMappingAndValidate(scope) {
     const sc = scopeState[scope];
-    const schema = SCHEMAS[scope];
+    const allFields = getAllMappableFields(scope);
     const state = getState();
     sc.rows = sc.rawRecords.map((record, i) => {
       const data = {};
-      schema.fields.forEach((f) => {
+      allFields.forEach((f) => {
         const colName = sc.columnMap[f.key];
         const rawVal = colName ? record[colName] : '';
-        if (scope === 'schedule' && f.key === 'scheduleDate') data[f.key] = parseExcelDateCell(rawVal);
-        else if (scope === 'schedule' && f.key === 'time') data[f.key] = parseExcelTimeCell(rawVal);
-        else data[f.key] = rawVal === undefined || rawVal === null ? '' : String(rawVal).trim();
+        if ((scope === 'schedule' && f.key === 'scheduleDate') || (scope === 'students' && f.key === 'dob')) {
+          data[f.key] = parseExcelDateCell(rawVal);
+        } else if (scope === 'schedule' && f.key === 'time') {
+          data[f.key] = parseExcelTimeCell(rawVal);
+        } else {
+          data[f.key] = rawVal === undefined || rawVal === null ? '' : String(rawVal).trim();
+        }
       });
       return {
         id: `${scope}-row-${Date.now()}-${i}`,
@@ -921,11 +1036,14 @@ export function createAdminExcelController(getState, handlers = {}) {
     sc.rawHeaders = rawHeaderRow;
     sc.rawRecords = records;
     const schema = SCHEMAS[scope];
-    sc.columnMap = autoMapHeaders(rawHeaderRow, schema);
+    sc.columnMap = autoMapHeaders(rawHeaderRow, scope);
     const autoChest = scope === 'students' && isAutoChestActive(getState());
+    const clsCfg = scope === 'students' ? getClassificationConfig(getState()) : null;
     const missingRequired = schema.fields.some((f) => {
-      const req = scope === 'students' && f.key === 'chestNo' ? !autoChest : f.required;
-      return req && !sc.columnMap[f.key];
+      if (scope === 'students' && f.key === 'chestNo' && autoChest) return false;
+      if (scope === 'students' && f.key === 'category' && clsCfg?.mode === 'class' && sc.columnMap.class) return false;
+      if (scope === 'students' && f.key === 'category' && clsCfg?.mode === 'dob' && sc.columnMap.dob) return false;
+      return f.required && !sc.columnMap[f.key];
     });
     sc.showMapper = missingRequired;
     applyMappingAndValidate(scope);
@@ -1070,6 +1188,9 @@ export function createAdminExcelController(getState, handlers = {}) {
         else if (warn) input.classList.add(...CELL_WARN_CLASSES);
         else input.classList.add(...CELL_DEFAULT_CLASSES);
         input.title = err || warn || '';
+        if (scope === 'students' && field === 'category' && input.value !== (row.data?.category || '')) {
+          input.value = row.data?.category || '';
+        }
         if (scope === 'students' && field === 'chestNo') {
           input.placeholder = row.normalized?.chestNo && !clean(row.data?.chestNo)
             ? `Auto: ${row.normalized.chestNo}`
@@ -1100,7 +1221,7 @@ export function createAdminExcelController(getState, handlers = {}) {
       } else if (field === 'category' && raw && state.categoryDisplayNames?.[raw]) {
         displayVal = `${state.categoryDisplayNames[raw]} (${raw})`;
       }
-      return `<span class="${cls} ${['chestNo', 'limit', 'groupSize', 'maximumMark', 'scheduleDate', 'time', 'scheduleDuration'].includes(field) ? 'font-mono-num' : ''}">${h(displayVal)}</span>`;
+      return `<span class="${cls} ${['chestNo', 'dob', 'limit', 'groupSize', 'maximumMark', 'scheduleDate', 'time', 'scheduleDuration'].includes(field) ? 'font-mono-num' : ''}">${h(displayVal)}</span>`;
     }
 
     const teamOpts = (state.teams || []).map((t) => ({ value: t, label: `${resolveDisplayName(state.teamDisplayNames, t, t)} (${t})` }));
@@ -1108,6 +1229,20 @@ export function createAdminExcelController(getState, handlers = {}) {
 
     if (scope === 'students') {
       if (field === 'team') return renderSelectControl(scope, row, field, teamOpts, raw);
+      if (field === 'class') {
+        const clsCfg = getClassificationConfig(state);
+        const clsList = clsCfg.classes?.length ? clsCfg.classes : DEFAULT_CLASS_LIST;
+        const opts = [...clsList];
+        if (raw && !opts.some((c) => c.toLowerCase() === String(raw).toLowerCase())) opts.push(raw);
+        return `
+          <select data-excel-input="1" data-excel-scope="${scope}" data-row-id="${h(row.id)}" data-field="class"
+            class="w-full min-w-[96px] rounded border px-2 py-1 text-xs focus:border-blue-500 focus:outline-none ${CELL_DEFAULT_CLASSES.join(' ')}">
+            <option value="">Optional…</option>
+            ${opts.map((c) => `<option value="${h(c)}" ${c === raw ? 'selected' : ''}>${h(c)}</option>`).join('')}
+          </select>
+        `;
+      }
+      if (field === 'dob') return renderInputControl(scope, row, field, { type: 'date' });
       if (field === 'category') return renderSelectControl(scope, row, field, catOpts, raw);
       if (field === 'gender') return renderSelectControl(scope, row, field, [{ value: 'Boys', label: 'Boys' }, { value: 'Girls', label: 'Girls' }], raw);
       if (field === 'chestNo' && autoChest) {
@@ -1167,7 +1302,8 @@ export function createAdminExcelController(getState, handlers = {}) {
 
     const visibleFields = scope === 'schedule'
       ? schema.fields.filter((f) => f.key !== 'eventId')
-      : schema.fields;
+      : getScopeFields(scope, state, { rows: sc.rows, columnMap: sc.columnMap });
+    const mapperFields = getAllMappableFields(scope);
     const filteredRows = sc.errorsOnly ? sc.rows.filter((r) => !r.skip && (r.status === 'error' || r.status === 'warning')) : sc.rows;
     const hasRows = sc.rows.length > 0;
     const dayDatalist = scope === 'schedule'
@@ -1273,7 +1409,7 @@ export function createAdminExcelController(getState, handlers = {}) {
                 class="rounded-lg bg-blue-700 dark:bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 dark:hover:bg-blue-500">Apply Mapping</button>
             </div>
             <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-xs">
-              ${schema.fields.map((f) => {
+              ${mapperFields.map((f) => {
                 const isReq = scope === 'students' && f.key === 'chestNo' ? !isAutoChestActive(state) : f.required;
                 return `
                 <label class="font-semibold text-slate-700 dark:text-slate-300">${h(f.label)}${isReq ? ' *' : ''}
@@ -1427,6 +1563,7 @@ export function createAdminExcelController(getState, handlers = {}) {
           const batch = writeBatch(db);
           chunk.forEach((row) => {
             const ref = doc(collection(db, 'students'));
+            const details = row.normalized.details || {};
             const payload = {
               name: row.normalized.name,
               chestNo: row.normalized.chestNo,
@@ -1434,6 +1571,7 @@ export function createAdminExcelController(getState, handlers = {}) {
               category: row.normalized.category,
               gender: row.normalized.gender,
               photoData: '',
+              ...(Object.keys(details).length ? { details } : {}),
               importedAt: now,
               updatedAt: now
             };
@@ -1680,6 +1818,9 @@ export function createAdminExcelController(getState, handlers = {}) {
         const row = sc?.rows.find((r) => r.id === rowId);
         if (!row) return;
         row.data[field] = sel.value;
+        if (scope === 'students' && field === 'category') {
+          row._autoCat = false;
+        }
         if (scope === 'schedule' && field === 'eventId') {
           const ev = (getState().events || []).find((x) => x.id === sel.value);
           row.data.eventName = ev?.name || '';
@@ -1701,6 +1842,11 @@ export function createAdminExcelController(getState, handlers = {}) {
       const row = sc?.rows.find((r) => r.id === rowId);
       if (!row) return;
       row.data[field] = inp.value;
+      if (scope === 'students' && field === 'dob') {
+        if (getClassificationConfig(getState()).mode === 'dob' && !row._autoCat && !clean(row.data.category)) {
+          row._autoCat = true;
+        }
+      }
       sc.summary = validateScopeRows(scope, sc.rows, getState());
       patchLiveValidationDom(scope);
     });

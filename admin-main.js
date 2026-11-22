@@ -14,7 +14,16 @@ import {
   chestSeriesKey,
   parseChestSeed,
   resolveNextAutoChestNo,
-  validateManualChestNo
+  validateManualChestNo,
+  DEFAULT_CLASS_LIST,
+  defaultCategoryClassificationConfig,
+  normalizeCategoryClassificationConfig,
+  getStudentFieldVisibility,
+  normalizeClassValue,
+  resolveCategoryFromStudentInputs,
+  studentClassValue,
+  studentDobValue,
+  buildStudentDetailsPatch
 } from './admin-students.js';
 import { createAdminResultsController } from './admin-results.js';
 import { createAdminExcelController } from './admin-excel.js';
@@ -46,6 +55,8 @@ let state = {
   scoringRules: defaultScoringRules(),
   chestNumberConfig: defaultChestConfig(),
   chestDraftConfig: defaultChestConfig(),
+  categoryClassification: defaultCategoryClassificationConfig(),
+  categoryClassificationDraft: defaultCategoryClassificationConfig(),
   teams: [],
   teamColors: {},
   teamDisplayNames: {},
@@ -359,6 +370,11 @@ async function loadAllAdminData(force = false) {
   state.scoringRules = normalizeScoringRules(scoringDoc || {});
   state.chestNumberConfig = normalizeChestConfig(state.generalConfig.chestNumberConfig || {});
   state.chestDraftConfig = normalizeChestConfig(state.chestNumberConfig);
+  state.categoryClassification = normalizeCategoryClassificationConfig(
+    state.generalConfig.categoryClassification || {},
+    state.festSetup.eligibleClasses
+  );
+  state.categoryClassificationDraft = normalizeCategoryClassificationConfig(state.categoryClassification);
   state.teams = state.generalConfig.teams || [];
   state.teamColors = state.generalConfig.teamColors || {};
   state.teamDisplayNames = state.generalConfig.teamDisplayNames || {};
@@ -394,6 +410,20 @@ function populateSelectOptions() {
   document.querySelectorAll('.select-team-filter').forEach((el) => { const v = el.value; el.innerHTML = teamFilterOpts; if (v) el.value = v; });
   document.querySelectorAll('.select-cat').forEach((el) => { const v = el.value; el.innerHTML = catOpts; if (v) el.value = v; });
   document.querySelectorAll('.select-cat-filter').forEach((el) => { const v = el.value; el.innerHTML = catFilterOpts; if (v) el.value = v; });
+
+  const clsList = state.categoryClassification?.classes?.length ? state.categoryClassification.classes : DEFAULT_CLASS_LIST;
+  const populateClassSelect = (el) => {
+    if (!el) return;
+    const prev = el.value;
+    const opts = ['<option value="">Select Class</option>', ...clsList.map((c) => `<option value="${h(c)}">${h(c)}</option>`)];
+    if (prev && !clsList.some((c) => c.toLowerCase() === prev.toLowerCase())) {
+      opts.push(`<option value="${h(prev)}">${h(prev)}</option>`);
+    }
+    el.innerHTML = opts.join('');
+    if (prev) el.value = prev;
+  };
+  populateClassSelect(byId('inp-std-class'));
+  populateClassSelect(byId('edit-std-class'));
 
   const notifTeam = byId('notif-team');
   if (notifTeam) {
@@ -552,7 +582,155 @@ function renderSetupLists() {
     `).join('')}
   ` : '<p class="text-xs text-slate-400 dark:text-slate-500">No stages or festival days added yet.</p>';
 
+  renderCategoryClassificationSetup();
   renderChestNumberSetup();
+}
+
+function captureCategoryClassificationDraftFromDom() {
+  const draft = state.categoryClassificationDraft || normalizeCategoryClassificationConfig(state.categoryClassification);
+  const checkedRadio = document.querySelector('input[name="cat-cls-mode"]:checked');
+  if (checkedRadio && ['manual', 'class', 'dob'].includes(checkedRadio.value)) {
+    draft.mode = checkedRadio.value;
+  }
+  const showClsEl = byId('cat-cls-show-class');
+  const showDobEl = byId('cat-cls-show-dob');
+  if (showClsEl) draft.showClassInManual = Boolean(showClsEl.checked);
+  if (showDobEl) draft.showDobInManual = Boolean(showDobEl.checked);
+
+  draft.dobRules = draft.dobRules && typeof draft.dobRules === 'object' ? draft.dobRules : {};
+  document.querySelectorAll('#cat-cls-mapping-list input[data-dob-cat]').forEach((inp) => {
+    const cat = inp.dataset.dobCat;
+    const bound = inp.dataset.dobBound;
+    if (!cat || !['from', 'to'].includes(bound)) return;
+    if (!draft.dobRules[cat]) draft.dobRules[cat] = { from: '', to: '' };
+    draft.dobRules[cat][bound] = inp.value.trim();
+  });
+
+  state.categoryClassificationDraft = draft;
+  return draft;
+}
+
+function renderCategoryClassificationSetup() {
+  const card = byId('category-classification-card');
+  if (!card) return;
+
+  const draft = state.categoryClassificationDraft || normalizeCategoryClassificationConfig(state.categoryClassification);
+  document.querySelectorAll('input[name="cat-cls-mode"]').forEach((r) => {
+    r.checked = r.value === draft.mode;
+  });
+
+  const showClassEl = byId('cat-cls-show-class');
+  const showDobEl = byId('cat-cls-show-dob');
+  if (showClassEl) showClassEl.checked = Boolean(draft.showClassInManual);
+  if (showDobEl) showDobEl.checked = Boolean(draft.showDobInManual);
+
+  byId('cat-cls-manual-options')?.classList.toggle('hidden', draft.mode !== 'manual');
+  const showClassEditor = draft.mode === 'class' || (draft.mode === 'manual' && draft.showClassInManual);
+  byId('cat-cls-classes-card')?.classList.toggle('hidden', !showClassEditor);
+
+  const classesListEl = byId('cat-cls-classes-list');
+  if (classesListEl) {
+    const classes = draft.classes || [...DEFAULT_CLASS_LIST];
+    classesListEl.innerHTML = classes.length
+      ? classes.map((cls) => `
+          <span class="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+            <span>${h(cls)}</span>
+            <button type="button" data-remove-class="${h(cls)}" title="Remove class ${h(cls)}" class="ml-0.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400">✕</button>
+          </span>
+        `).join('')
+      : '<p class="text-[11px] text-slate-400 dark:text-slate-500">No classes added. Click "Reset Default (1–+2)" or add a custom class above.</p>';
+  }
+
+  const mappingWrap = byId('cat-cls-mapping-wrap');
+  const mappingTitle = byId('cat-cls-mapping-title');
+  const mappingSub = byId('cat-cls-mapping-sub');
+  const mappingList = byId('cat-cls-mapping-list');
+  if (!mappingWrap || !mappingList) return;
+
+  if (draft.mode === 'manual') {
+    mappingWrap.classList.add('hidden');
+    mappingList.innerHTML = '';
+    return;
+  }
+
+  mappingWrap.classList.remove('hidden');
+  if (!state.categories.length) {
+    if (mappingTitle) mappingTitle.textContent = draft.mode === 'class' ? 'Class → Category Mapping' : 'Date of Birth → Category Mapping';
+    if (mappingSub) mappingSub.textContent = '';
+    mappingList.innerHTML = '<div class="rounded-lg border border-dashed border-amber-300 bg-amber-50/70 p-4 text-xs text-amber-800 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-300">Add at least one Category above before configuring automatic classification rules.</div>';
+    return;
+  }
+
+  if (draft.mode === 'class') {
+    if (mappingTitle) mappingTitle.textContent = 'Class → Category Mapping';
+    if (mappingSub) mappingSub.textContent = 'Select which Classes belong to each Category. Clicking a class already assigned to another Category moves it cleanly here.';
+
+    const ownerByClass = new Map();
+    state.categories.forEach((c) => {
+      (draft.classRules?.[c] || []).forEach((cls) => ownerByClass.set(cls.toLowerCase(), c));
+    });
+
+    const classes = draft.classes || [];
+    mappingList.innerHTML = state.categories.map((catKey) => {
+      const assigned = new Set((draft.classRules?.[catKey] || []).map((c) => c.toLowerCase()));
+      return `
+        <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-3.5 space-y-2.5 dark:border-slate-800 dark:bg-slate-800/40">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="font-bold text-slate-900 dark:text-slate-100">${h(categoryName(catKey))}</span>
+              <span class="font-mono-num text-[11px] text-slate-400">(${h(catKey)})</span>
+            </div>
+            <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">${assigned.size} class(es) selected</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            ${classes.map((cls) => {
+              const clsLower = cls.toLowerCase();
+              const isSelected = assigned.has(clsLower);
+              const otherOwner = !isSelected ? ownerByClass.get(clsLower) : '';
+              const btnCls = isSelected
+                ? 'border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-600'
+                : otherOwner
+                  ? 'border-slate-200 bg-white/60 text-slate-400 hover:border-blue-400 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-500 dark:hover:text-slate-200'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-blue-500 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500';
+              return `
+                <button type="button" data-map-cat="${h(catKey)}" data-map-class="${h(cls)}"
+                  title="${otherOwner ? `Currently assigned to ${h(categoryName(otherOwner))} — click to move here` : ''}"
+                  class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-semibold transition ${btnCls}">
+                  <span>${h(cls)}</span>
+                  ${otherOwner ? `<span class="text-[10px] opacity-75">(${h(categoryName(otherOwner))})</span>` : ''}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+    return;
+  }
+
+  // mode === 'dob'
+  if (mappingTitle) mappingTitle.textContent = 'Date of Birth (DOB) → Category Mapping';
+  if (mappingSub) mappingSub.textContent = 'Set inclusive From Date and To Date boundaries for each Category. Leave a boundary blank for an open-ended side.';
+  mappingList.innerHTML = state.categories.map((catKey) => {
+    const rule = draft.dobRules?.[catKey] || { from: '', to: '' };
+    return `
+      <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
+        <div class="grid items-end gap-3 sm:grid-cols-[180px_1fr_1fr_auto]">
+          <div class="pb-1">
+            <span class="block text-xs font-bold text-slate-900 dark:text-slate-100">${h(categoryName(catKey))}</span>
+            <span class="font-mono-num text-[11px] text-slate-400">Key: ${h(catKey)}</span>
+          </div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300">From Date (Inclusive)
+            <input type="date" data-dob-cat="${h(catKey)}" data-dob-bound="from" value="${h(rule.from || '')}" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono-num text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+          </label>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300">To Date (Inclusive)
+            <input type="date" data-dob-cat="${h(catKey)}" data-dob-bound="to" value="${h(rule.to || '')}" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono-num text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+          </label>
+          <button type="button" data-dob-clear="${h(catKey)}" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">Clear</button>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function captureChestDraftFromDom() {
@@ -726,27 +904,42 @@ function renderStudents() {
   const team = byId('filter-std-team')?.value || '';
   const cat = byId('filter-std-cat')?.value || '';
 
+  const vis = getStudentFieldVisibility(state.categoryClassification);
+  const showMetaCol = vis.showClass || vis.showDob || state.students.some((s) => studentClassValue(s) || studentDobValue(s));
+  byId('th-std-meta')?.classList.toggle('hidden', !showMetaCol);
+
   const filtered = state.students.filter((s) => {
     if (team && s.team !== team) return false;
     if (cat && s.category !== cat) return false;
-    if (search && !`${s.name || ''} ${s.chestNo || ''}`.toLowerCase().includes(search)) return false;
+    if (search && !`${s.name || ''} ${s.chestNo || ''} ${studentClassValue(s)} ${studentDobValue(s)}`.toLowerCase().includes(search)) return false;
     return true;
   }).sort((a, b) => String(a.chestNo || '').localeCompare(String(b.chestNo || ''), undefined, { numeric: true }));
 
   byId('std-count-label').textContent = `${filtered.length} students`;
-  byId('students-tbody').innerHTML = filtered.length ? filtered.map((s) => `
-    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-      <td class="px-3 py-2.5 font-mono-num font-bold text-slate-900 dark:text-slate-100">${h(s.chestNo || '—')}</td>
-      <td class="px-3 py-2.5 font-semibold text-slate-900 dark:text-slate-100">${h(s.name)}</td>
-      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(teamName(s.team))}</td>
-      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(categoryName(s.category))}</td>
-      <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(s.gender || 'Boys')}</td>
-      <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
-        <button type="button" data-admin-action="edit-student" data-id="${h(s.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
-        <button type="button" data-admin-action="delete-student" data-id="${h(s.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Delete</button>
-      </td>
-    </tr>
-  `).join('') : '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">No students match this filter.</td></tr>';
+  byId('students-tbody').innerHTML = filtered.length ? filtered.map((s) => {
+    const clsVal = studentClassValue(s);
+    const dobVal = studentDobValue(s);
+    const metaParts = [];
+    if (clsVal) metaParts.push(`<span class="font-semibold text-slate-800 dark:text-slate-200">${h(clsVal)}</span>`);
+    if (dobVal) metaParts.push(`<span class="font-mono-num text-[11px] text-slate-500 dark:text-slate-400">${h(dobVal)}</span>`);
+    const metaCell = showMetaCol
+      ? `<td class="px-3 py-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap">${metaParts.length ? metaParts.join('<span class="mx-1 text-slate-300 dark:text-slate-600">•</span>') : '—'}</td>`
+      : '';
+    return `
+      <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+        <td class="px-3 py-2.5 font-mono-num font-bold text-slate-900 dark:text-slate-100">${h(s.chestNo || '—')}</td>
+        <td class="px-3 py-2.5 font-semibold text-slate-900 dark:text-slate-100">${h(s.name)}</td>
+        ${metaCell}
+        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(teamName(s.team))}</td>
+        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(categoryName(s.category))}</td>
+        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">${h(s.gender || 'Boys')}</td>
+        <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
+          <button type="button" data-admin-action="edit-student" data-id="${h(s.id)}" class="rounded border border-slate-200 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800">Edit</button>
+          <button type="button" data-admin-action="delete-student" data-id="${h(s.id)}" class="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950/80">Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join('') : `<tr><td colspan="${showMetaCol ? 7 : 6}" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">No students match this filter.</td></tr>`;
 }
 
 function renderEvents() {
@@ -899,6 +1092,7 @@ function renderAccessList() {
 function renderAll() {
   renderOverview();
   renderSetupLists();
+  syncStudentFieldVisibility();
   renderStudents();
   syncStudentChestInput();
   renderEvents();
@@ -1025,6 +1219,63 @@ function syncStudentChestInput() {
       hintEl.textContent = res.reason;
       hintEl.className = 'text-[11px] font-medium text-amber-700 dark:text-amber-400';
     }
+  }
+}
+
+function syncStudentFieldVisibility() {
+  const cfg = state.categoryClassification || defaultCategoryClassificationConfig();
+  const { showClass, showDob } = getStudentFieldVisibility(cfg);
+  byId('wrap-std-class')?.classList.toggle('hidden', !showClass);
+  byId('wrap-std-dob')?.classList.toggle('hidden', !showDob);
+  byId('wrap-edit-std-class')?.classList.toggle('hidden', !showClass);
+  byId('wrap-edit-std-dob')?.classList.toggle('hidden', !showDob);
+  if (!showClass && byId('inp-std-class')) byId('inp-std-class').value = '';
+  if (!showDob && byId('inp-std-dob')) byId('inp-std-dob').value = '';
+  if (cfg.mode === 'manual') {
+    const addHint = byId('std-cat-auto-hint');
+    if (addHint) { addHint.textContent = ''; addHint.classList.add('hidden'); }
+    const editHint = byId('edit-std-cat-auto-hint');
+    if (editHint) { editHint.textContent = ''; editHint.classList.add('hidden'); }
+  }
+}
+
+function applyAutoCategoryForForm(prefix = 'inp') {
+  const cfg = state.categoryClassification || defaultCategoryClassificationConfig();
+  const isEdit = prefix === 'edit';
+  const classEl = byId(isEdit ? 'edit-std-class' : 'inp-std-class');
+  const dobEl = byId(isEdit ? 'edit-std-dob' : 'inp-std-dob');
+  const catEl = byId(isEdit ? 'edit-std-cat' : 'inp-std-cat');
+  const hintEl = byId(isEdit ? 'edit-std-cat-auto-hint' : 'std-cat-auto-hint');
+  if (!catEl || !hintEl) return;
+
+  if (cfg.mode === 'manual') {
+    hintEl.textContent = '';
+    hintEl.classList.add('hidden');
+    return;
+  }
+
+  const classValue = classEl?.value || '';
+  const dobValue = dobEl?.value || '';
+  const res = resolveCategoryFromStudentInputs({
+    config: cfg,
+    categories: state.categories,
+    classValue,
+    dobValue
+  });
+
+  if (res.matched && state.categories.includes(res.category)) {
+    catEl.value = res.category;
+    hintEl.textContent = `Auto-selected "${categoryName(res.category)}" from ${cfg.mode === 'class' ? `Class ${classValue}` : `DOB ${dobValue}`}. You can change Category manually if needed.`;
+    hintEl.className = 'text-[11px] font-medium text-blue-700 dark:text-blue-400';
+    hintEl.classList.remove('hidden');
+    if (!isEdit) syncStudentChestInput();
+  } else if ((cfg.mode === 'class' && classValue) || (cfg.mode === 'dob' && dobValue)) {
+    hintEl.textContent = `No ${cfg.mode === 'class' ? 'Class' : 'DOB'} rule matched this input — please select Category manually.`;
+    hintEl.className = 'text-[11px] font-medium text-amber-700 dark:text-amber-400';
+    hintEl.classList.remove('hidden');
+  } else {
+    hintEl.textContent = '';
+    hintEl.classList.add('hidden');
   }
 }
 
@@ -1384,6 +1635,131 @@ function bindEvents() {
     );
   });
 
+  // Category Classification & Student Fields setup events
+  byId('category-classification-card')?.addEventListener('change', (e) => {
+    if (e.target.matches('input[name="cat-cls-mode"], #cat-cls-show-class, #cat-cls-show-dob')) {
+      captureCategoryClassificationDraftFromDom();
+      renderCategoryClassificationSetup();
+      return;
+    }
+    if (e.target.matches('input[data-dob-cat]')) {
+      captureCategoryClassificationDraftFromDom();
+    }
+  });
+
+  const addNewClassToDraft = () => {
+    const inp = byId('inp-new-class-label');
+    const raw = (inp?.value || '').trim();
+    if (!raw) return showToast('Enter a Class label (e.g. 11, +1, LKG)', 'error');
+    const draft = captureCategoryClassificationDraftFromDom();
+    if (draft.classes.some((c) => c.toLowerCase() === raw.toLowerCase())) {
+      return showToast(`Class "${raw}" is already in the list.`, 'error');
+    }
+    draft.classes.push(raw);
+    if (inp) inp.value = '';
+    renderCategoryClassificationSetup();
+  };
+
+  byId('btn-add-class-item')?.addEventListener('click', addNewClassToDraft);
+  byId('inp-new-class-label')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addNewClassToDraft();
+    }
+  });
+
+  byId('btn-reset-class-list')?.addEventListener('click', () => {
+    const draft = captureCategoryClassificationDraftFromDom();
+    draft.classes = [...DEFAULT_CLASS_LIST];
+    const allowedSet = new Set(draft.classes.map((c) => c.toLowerCase()));
+    if (draft.classRules && typeof draft.classRules === 'object') {
+      Object.keys(draft.classRules).forEach((cat) => {
+        draft.classRules[cat] = (draft.classRules[cat] || []).filter((c) => allowedSet.has(c.toLowerCase()));
+        if (!draft.classRules[cat].length) delete draft.classRules[cat];
+      });
+    }
+    renderCategoryClassificationSetup();
+    showToast('Class list reset to default (1–+2). Click Save Category Rules to persist.');
+  });
+
+  byId('category-classification-card')?.addEventListener('click', (e) => {
+    const removeClsBtn = e.target.closest('button[data-remove-class]');
+    if (removeClsBtn) {
+      const target = removeClsBtn.dataset.removeClass;
+      const draft = captureCategoryClassificationDraftFromDom();
+      draft.classes = draft.classes.filter((c) => c !== target);
+      if (draft.classRules && typeof draft.classRules === 'object') {
+        Object.keys(draft.classRules).forEach((cat) => {
+          draft.classRules[cat] = (draft.classRules[cat] || []).filter((c) => c.toLowerCase() !== target.toLowerCase());
+          if (!draft.classRules[cat].length) delete draft.classRules[cat];
+        });
+      }
+      renderCategoryClassificationSetup();
+      return;
+    }
+
+    const mapBtn = e.target.closest('button[data-map-cat][data-map-class]');
+    if (mapBtn) {
+      const catKey = mapBtn.dataset.mapCat;
+      const clsVal = mapBtn.dataset.mapClass;
+      const clsLower = clsVal.toLowerCase();
+      const draft = captureCategoryClassificationDraftFromDom();
+      draft.classRules = draft.classRules && typeof draft.classRules === 'object' ? draft.classRules : {};
+      const currentList = draft.classRules[catKey] || [];
+      const alreadyHere = currentList.some((c) => c.toLowerCase() === clsLower);
+
+      Object.keys(draft.classRules).forEach((k) => {
+        draft.classRules[k] = (draft.classRules[k] || []).filter((c) => c.toLowerCase() !== clsLower);
+        if (!draft.classRules[k].length) delete draft.classRules[k];
+      });
+
+      if (!alreadyHere) {
+        draft.classRules[catKey] = [...(draft.classRules[catKey] || []), clsVal];
+      }
+      renderCategoryClassificationSetup();
+      return;
+    }
+
+    const clearDobBtn = e.target.closest('button[data-dob-clear]');
+    if (clearDobBtn) {
+      const catKey = clearDobBtn.dataset.dobClear;
+      const draft = captureCategoryClassificationDraftFromDom();
+      if (draft.dobRules) delete draft.dobRules[catKey];
+      renderCategoryClassificationSetup();
+    }
+  });
+
+  byId('btn-save-category-rules')?.addEventListener('click', async () => {
+    const draft = captureCategoryClassificationDraftFromDom();
+    if (draft.mode === 'dob') {
+      for (const catKey of state.categories) {
+        const rule = draft.dobRules?.[catKey];
+        if (rule?.from && rule?.to && rule.from > rule.to) {
+          return showToast(`"${categoryName(catKey)}": From Date must be on or before To Date.`, 'error');
+        }
+      }
+    }
+    const nextCfg = normalizeCategoryClassificationConfig(draft, draft.classes);
+    state.categoryClassification = nextCfg;
+    state.categoryClassificationDraft = normalizeCategoryClassificationConfig(nextCfg);
+
+    const updatedFields = Array.isArray(state.festSetup.studentFields)
+      ? state.festSetup.studentFields.map((f) => (f.key === 'class' ? { ...f, options: [...nextCfg.classes] } : { ...f }))
+      : [];
+    const nextFestSetup = normalizeFestSetup({
+      ...state.festSetup,
+      eligibleClasses: [...nextCfg.classes],
+      studentFields: updatedFields
+    });
+    state.festSetup = nextFestSetup;
+
+    const modeLabel = nextCfg.mode === 'class' ? 'Auto by Class' : nextCfg.mode === 'dob' ? 'Auto by DOB' : 'Manual Selection';
+    await saveGeneral(
+      { categoryClassification: nextCfg, festSetup: nextFestSetup },
+      `Category rules saved (${modeLabel})`
+    );
+  });
+
   bindAutoSlugKey('inp-new-team-label', 'inp-new-team');
   bindAutoSlugKey('inp-new-category-label', 'inp-new-category');
 
@@ -1605,8 +1981,47 @@ function bindEvents() {
   });
 
   // Students
-  ['inp-std-team', 'inp-std-cat', 'inp-std-gender'].forEach((id) => {
+  ['inp-std-team', 'inp-std-gender'].forEach((id) => {
     byId(id)?.addEventListener('change', syncStudentChestInput);
+  });
+  byId('inp-std-cat')?.addEventListener('change', () => {
+    const cfg = state.categoryClassification;
+    const hintEl = byId('std-cat-auto-hint');
+    if (cfg?.mode !== 'manual' && hintEl) {
+      const auto = resolveCategoryFromStudentInputs({
+        config: cfg,
+        categories: state.categories,
+        classValue: byId('inp-std-class')?.value || '',
+        dobValue: byId('inp-std-dob')?.value || ''
+      });
+      if (auto.matched && byId('inp-std-cat')?.value !== auto.category) {
+        hintEl.textContent = `Manual override: "${categoryName(byId('inp-std-cat').value)}" selected instead of "${categoryName(auto.category)}".`;
+        hintEl.className = 'text-[11px] font-medium text-slate-600 dark:text-slate-300';
+        hintEl.classList.remove('hidden');
+      }
+    }
+    syncStudentChestInput();
+  });
+  byId('inp-std-class')?.addEventListener('change', () => applyAutoCategoryForForm('inp'));
+  byId('inp-std-dob')?.addEventListener('change', () => applyAutoCategoryForForm('inp'));
+  byId('edit-std-class')?.addEventListener('change', () => applyAutoCategoryForForm('edit'));
+  byId('edit-std-dob')?.addEventListener('change', () => applyAutoCategoryForForm('edit'));
+  byId('edit-std-cat')?.addEventListener('change', () => {
+    const cfg = state.categoryClassification;
+    const hintEl = byId('edit-std-cat-auto-hint');
+    if (cfg?.mode !== 'manual' && hintEl) {
+      const auto = resolveCategoryFromStudentInputs({
+        config: cfg,
+        categories: state.categories,
+        classValue: byId('edit-std-class')?.value || '',
+        dobValue: byId('edit-std-dob')?.value || ''
+      });
+      if (auto.matched && byId('edit-std-cat')?.value !== auto.category) {
+        hintEl.textContent = `Manual override: "${categoryName(byId('edit-std-cat').value)}" selected instead of "${categoryName(auto.category)}".`;
+        hintEl.className = 'text-[11px] font-medium text-slate-600 dark:text-slate-300';
+        hintEl.classList.remove('hidden');
+      }
+    }
   });
 
   byId('btn-gen-chest')?.addEventListener('click', () => {
@@ -1624,6 +2039,8 @@ function bindEvents() {
     const team = byId('inp-std-team').value;
     const category = byId('inp-std-cat').value;
     const gender = byId('inp-std-gender').value;
+    const classValue = normalizeClassValue(byId('inp-std-class')?.value || '', state.categoryClassification?.classes);
+    const dobValue = byId('inp-std-dob')?.value?.trim() || '';
     const photoData = byId('inp-std-photo-data').value.trim();
 
     let chestNo = byId('inp-std-chest').value.trim();
@@ -1643,7 +2060,17 @@ function bindEvents() {
     if (!chestCheck.ok) return showToast(chestCheck.error, 'error');
     chestNo = chestCheck.chestNo;
 
-    const payload = { name, chestNo, team, category, gender, photoData, updatedAt: Date.now() };
+    const details = buildStudentDetailsPatch({}, { classValue, dobValue });
+    const payload = {
+      name,
+      chestNo,
+      team,
+      category,
+      gender,
+      photoData,
+      ...(Object.keys(details).length ? { details } : {}),
+      updatedAt: Date.now()
+    };
     const docRef = await addDoc(collection(db, 'students'), payload);
     state.students.push({ id: docRef.id, ...payload });
     if (state.chestNumberConfig?.enabled) {
@@ -1652,6 +2079,10 @@ function bindEvents() {
     } else {
       e.target.reset();
     }
+    if (byId('inp-std-class')) byId('inp-std-class').value = '';
+    if (byId('inp-std-dob')) byId('inp-std-dob').value = '';
+    const addHint = byId('std-cat-auto-hint');
+    if (addHint) { addHint.textContent = ''; addHint.classList.add('hidden'); }
     byId('inp-std-photo-data').value = '';
     window.refreshImageUploadPreviews?.();
     renderStudents();
@@ -1666,10 +2097,14 @@ function bindEvents() {
   byId('edit-student-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = byId('edit-std-id').value;
+    const existing = state.students.find((s) => s.id === id);
     const name = byId('edit-std-name').value.trim();
     const chestCheck = validateManualChestNo(byId('edit-std-chest').value, state.students, id);
     if (!chestCheck.ok) return showToast(chestCheck.error, 'error');
     const chestNo = chestCheck.chestNo;
+    const classValue = normalizeClassValue(byId('edit-std-class')?.value || '', state.categoryClassification?.classes);
+    const dobValue = byId('edit-std-dob')?.value?.trim() || '';
+    const details = buildStudentDetailsPatch(existing?.details, { classValue, dobValue });
     const patch = {
       name,
       chestNo,
@@ -1678,6 +2113,7 @@ function bindEvents() {
       gender: byId('edit-std-gender').value,
       photoData: byId('edit-std-photo-data')?.value.trim() || '',
       showPhotoInResults: byId('edit-std-show-photo')?.checked !== false,
+      details,
       updatedAt: Date.now()
     };
     await updateDoc(doc(db, 'students', id), patch);
@@ -1952,12 +2388,27 @@ function bindEvents() {
     if (action === 'edit-student') {
       const s = state.students.find((x) => x.id === actBtn.dataset.id);
       if (!s) return;
+      const vis = getStudentFieldVisibility(state.categoryClassification);
+      const clsVal = studentClassValue(s);
+      const dobVal = studentDobValue(s);
       byId('edit-std-id').value = s.id;
       byId('edit-std-name').value = s.name || '';
       byId('edit-std-chest').value = s.chestNo || '';
       byId('edit-std-team').value = s.team || '';
       byId('edit-std-cat').value = s.category || '';
       byId('edit-std-gender').value = s.gender || 'Boys';
+      const editClsEl = byId('edit-std-class');
+      if (editClsEl) {
+        if (clsVal && ![...editClsEl.options].some((o) => o.value === clsVal)) {
+          editClsEl.insertAdjacentHTML('beforeend', `<option value="${h(clsVal)}">${h(clsVal)}</option>`);
+        }
+        editClsEl.value = clsVal;
+      }
+      if (byId('edit-std-dob')) byId('edit-std-dob').value = dobVal;
+      byId('wrap-edit-std-class')?.classList.toggle('hidden', !(vis.showClass || Boolean(clsVal)));
+      byId('wrap-edit-std-dob')?.classList.toggle('hidden', !(vis.showDob || Boolean(dobVal)));
+      const editHint = byId('edit-std-cat-auto-hint');
+      if (editHint) { editHint.textContent = ''; editHint.classList.add('hidden'); }
       if (byId('edit-std-photo-data')) byId('edit-std-photo-data').value = s.photoData || '';
       if (byId('edit-std-photo-file')) byId('edit-std-photo-file').value = '';
       if (byId('edit-std-show-photo')) byId('edit-std-show-photo').checked = s.showPhotoInResults !== false;
