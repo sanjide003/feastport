@@ -1,0 +1,176 @@
+/* Feastport's shared modern visual layer. Loaded after portal.css. */
+:root {
+  --festival-ink: #19152b;
+  --festival-muted: #675f78;
+  --festival-accent: #6d43d6;
+  --festival-accent-strong: #4d2aa7;
+  --festival-coral: #f46f4e;
+  --festival-mint: #168c7b;
+  --festival-sun: #f4b942;
+  --festival-canvas: #f7f5fa;
+  --festival-paper: #fffdf9;
+  --festival-line: #e5e0ec;
+  --festival-shadow: 0 20px 60px rgb(44 32 70 / 10%);
+  --festival-radius: 1.25rem;
+}
+
+html { color-scheme: light; scroll-behavior: smooth; }
+
+body {
+  font-family: "Instrument Sans", "Noto Sans Malayalam", sans-serif !important;
+  background: var(--festival-canvas);
+  color: var(--festival-ink);
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: "Bricolage Grotesque", "Instrument Sans", sans-serif !important;
+  letter-spacing: -.025em;
+}
+
+.font-mono-num {
+  font-family: "IBM Plex Mono", monospace !important;
+  font-variant-numeric: tabular-nums;
+}
+
+body.portal-public {
+  background:
+    radial-gradient(circle at 8% 18%, rgb(244 111 78 / 8%), transparent 22rem),
+    var(--festival-canvas);
+}
+
+.portal-public > header {
+  border-bottom-color: rgb(229 224 236 / 85%);
+  background: rgb(255 253 249 / 88%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 70%);
+}
+
+.portal-public > header > div { min-height: 4.5rem; }
+.portal-public > header nav a { border-radius: 999px; padding-inline: .85rem; }
+.portal-public > header nav a:hover { background: rgb(109 67 214 / 7%); }
+.portal-public .bg-blue-700 { background-color: var(--festival-accent); }
+.portal-public .bg-blue-700:hover { background-color: var(--festival-accent-strong); }
+
+.portal-public :is(a, button, input, select, textarea) {
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease,
+    box-shadow 160ms ease, transform 160ms ease;
+}
+
+.portal-public :is(button, a).bg-blue-700 {
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgb(109 67 214 / 18%);
+}
+
+.portal-public :is(button, a).bg-blue-700:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgb(109 67 214 / 24%);
+}
+
+.portal-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 84% 10%, rgb(244 185 66 / 40%), transparent 22rem),
+    radial-gradient(circle at 58% 108%, rgb(202 184 255 / 55%), transparent 35rem),
+    linear-gradient(135deg, #fffaf0 0%, #fff7f2 50%, #f4efff 100%);
+  color: var(--festival-ink);
+}
+
+.portal-hero::before,
+.portal-hero::after {
+  position: absolute;
+  z-index: -1;
+  border: 1px solid rgb(109 67 214 / 15%);
+  border-radius: 999px;
+  content: "";
+  pointer-events: none;
+}
+
+.portal-hero::before { width: 24rem; height: 24rem; right: -10rem; top: -12rem; }
+.portal-hero::after { width: 12rem; height: 12rem; right: 24%; bottom: -8rem; }
+
+.portal-hero #hero-title {
+  max-width: 11ch;
+  font-size: clamp(2.75rem, 6vw, 5.8rem);
+  line-height: .96;
+  letter-spacing: -.06em;
+  overflow-wrap: anywhere;
+}
+
+.portal-hero #next-program-card {
+  border-color: rgb(255 255 255 / 13%);
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(circle at 90% 0, rgb(244 111 78 / 35%), transparent 14rem),
+    linear-gradient(145deg, #211a3c, #3c245c);
+  box-shadow: 0 2rem 5rem rgb(44 27 75 / 22%);
+}
+
+.portal-public main > section:not(.portal-hero) .rounded-xl.border {
+  border-color: var(--festival-line);
+  border-radius: var(--festival-radius);
+  background-color: rgb(255 253 249 / 92%);
+  box-shadow: 0 10px 30px rgb(35 24 57 / 4%);
+}
+
+.portal-public :is(input, select, textarea) {
+  border-color: #dcd5e6;
+  border-radius: .85rem;
+  background-color: var(--festival-paper);
+}
+
+.portal-public :is(input, select, textarea):focus {
+  border-color: var(--festival-accent);
+  box-shadow: 0 0 0 4px rgb(109 67 214 / 10%);
+}
+
+@media screen {
+  .portal-login main {
+    background:
+      radial-gradient(circle at 8% 0, rgb(255 203 155 / 75%), transparent 35rem),
+      radial-gradient(circle at 100% 100%, rgb(205 191 255 / 75%), transparent 36rem),
+      #fbf8f4;
+  }
+
+  .portal-login main > section {
+    border-color: rgb(255 255 255 / 75%);
+    border-radius: 1.75rem;
+    background: rgb(255 253 249 / 88%);
+    box-shadow: var(--festival-shadow);
+    backdrop-filter: blur(18px);
+  }
+
+  .portal-workspace { background: #f5f3f7; }
+
+  .portal-workspace [data-app-sidebar] {
+    border-color: #e4dfea;
+    background: #fffdf9;
+  }
+
+  .portal-workspace [data-app-sidebar] > :first-child {
+    box-shadow: inset 0 3px var(--festival-coral);
+  }
+
+  .portal-workspace [data-sidebar-item]:is([aria-selected="true"], .active) {
+    border-color: rgb(109 67 214 / 16%);
+    background: rgb(109 67 214 / 9%);
+    color: var(--festival-accent-strong);
+    box-shadow: inset 3px 0 var(--festival-accent);
+  }
+
+  .portal-workspace main .rounded-xl.border {
+    border-color: #e3deea;
+    border-radius: 1.1rem;
+    box-shadow: 0 8px 24px rgb(40 28 62 / 4%);
+  }
+
+  .portal-workspace :is(input, select, textarea) { border-radius: .75rem; }
+  .portal-workspace main h2, .portal-workspace main h3 { text-wrap: balance; }
+  .portal-stage #tv-title { font-size: clamp(2rem, 3.7vw, 5.25rem); line-height: 1.08; }
+  .portal-stage #tv-header { border-image: linear-gradient(90deg, #ba95fb, #ffbd94, transparent) 1; }
+}
+
+@media (max-width: 767px) {
+  .portal-hero #hero-title { font-size: clamp(2.55rem, 14vw, 4rem); }
+  .portal-public main > section:not(.portal-hero) .rounded-xl.border { border-radius: 1rem; }
+}

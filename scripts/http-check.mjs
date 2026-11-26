@@ -26,7 +26,7 @@ try {
     assert.match(html, /<html lang="en"/, page);
     assert.match(html, /href="portal.css"/, page);
   }
-  for (const path of ['/portal.css', '/styles/festival.css']) {
+  for (const path of ['/portal.css', '/portal-modern.css', '/styles/festival.css']) {
     const css = await fetch(base + path);
     assert.equal(css.status, 200, path);
     assert.match(css.headers.get('content-type'), /text\/css/, path);
