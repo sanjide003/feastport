@@ -100,6 +100,6 @@ app.get('/firebase-runtime-config.js', async (req, res) => {
 
 app.use(express.static(rootDir, { extensions: ['html'] }));
 
-app.listen(PORT, HOST, () => {
-  console.log(`Fest Portal server running at http://${HOST}:${PORT}`);
+const server = app.listen(PORT, HOST, () => {
+  console.log(`Fest Portal server running at http://${HOST}:${server.address().port}`);
 });
