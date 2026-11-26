@@ -14,5 +14,6 @@ jobs:
         with:
           bun-version: 1.4.5
       - run: bun install --frozen-lockfile
+      - run: npm run styles && git diff --exit-code -- styles/festival.css
       - run: npm run check
       - run: node scripts/http-check.mjs

@@ -2,9 +2,10 @@
 // Centralized Firebase Configuration File
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, disableNetwork } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+import { getFirestore, connectFirestoreEmulator, enableIndexedDbPersistence, disableNetwork } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { getAuth, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { getStorage, connectStorageEmulator } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+import { getFunctions, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-functions.js";
 import { firebaseConfig as runtimeConfig } from "./firebase-runtime-config.js";
 import { OperationType, handleFirestoreError, testFirestoreConnection } from "./data-cache.js";
 
@@ -20,11 +21,22 @@ const firebaseConfig = isFirebaseConfigured
 
 const app = initializeApp(firebaseConfig);
 
-const auth = getAuth(app);
+const demo = firebaseConfig.projectId === 'demo-feastport' && ['localhost', '127.0.0.1'].includes(location.hostname);
+export function portalAuth(instance) {
+  const service = getAuth(instance);
+  if (demo) connectAuthEmulator(service, 'http://127.0.0.1:9099', { disableWarnings: true });
+  return service;
+}
+const auth = portalAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-if (isFirebaseConfigured) {
+const functions = getFunctions(app);
+if (demo) {
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectStorageEmulator(storage, '127.0.0.1', 9199);
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+} else if (isFirebaseConfigured) {
   enableIndexedDbPersistence(db)
     .catch((err) => {
       if (err.code === 'failed-precondition') {
@@ -38,4 +50,4 @@ if (isFirebaseConfigured) {
   disableNetwork(db).catch(() => {});
 }
 
-export { app, auth, db, storage, isFirebaseConfigured, OperationType, handleFirestoreError, testFirestoreConnection };
+export { app, auth, db, storage, functions, isFirebaseConfigured, OperationType, handleFirestoreError, testFirestoreConnection };

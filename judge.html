@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Judge Desk — Festival Portal</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/festival.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
   </style>
   <link rel="stylesheet" href="portal.css">
 </head>
-<body class="min-h-screen flex flex-col lg:flex-row bg-[#F8FAFC] text-[#0F172A] antialiased">
+<body class="portal-workspace min-h-screen flex flex-col lg:flex-row bg-[#F8FAFC] text-[#0F172A] antialiased">
   <a class="portal-skip" href="#portal-main">Skip to content</a>
   <div id="judge-overlay" data-app-sidebar-backdrop class="hidden"></div>
 

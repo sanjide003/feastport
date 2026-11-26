@@ -60,7 +60,8 @@ async function loadFirebaseConfig() {
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
-const HOST = '0.0.0.0';
+const demo = process.env.FEASTPORT_DEMO === '1';
+const HOST = demo ? '127.0.0.1' : '0.0.0.0';
 
 const blockedPrefixes = ['/functions', '/scripts', '/node_modules', '/.git'];
 const blockedFiles = new Set([
@@ -82,7 +83,7 @@ const blockedFiles = new Set([
 app.use((req, res, next) => {
   const reqPath = req.path.toLowerCase();
   if (
-    reqPath.startsWith('/.env') ||
+    reqPath.startsWith('/.env') || reqPath.endsWith('.log') ||
     blockedFiles.has(reqPath) ||
     blockedPrefixes.some((prefix) => reqPath === prefix || reqPath.startsWith(prefix + '/'))
   ) {
@@ -92,11 +93,24 @@ app.use((req, res, next) => {
 });
 
 app.get('/firebase-runtime-config.js', async (req, res) => {
-  const config = await loadFirebaseConfig();
+  const config = demo ? {
+    projectId: 'demo-feastport', apiKey: 'demo-feastport', authDomain: 'localhost',
+    storageBucket: 'demo-feastport.appspot.com', appId: '1:123:web:demo'
+  } : await loadFirebaseConfig();
   res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   res.send(`export const firebaseConfig = ${JSON.stringify(config)};\n`);
 });
+
+if (demo) {
+  // The page CSP allows the local emulators only on the loopback demo server.
+  app.get(/^\/(?:([a-z-]+?)(?:\.html)?)?$/, (req, res, next) => {
+    const page = join(rootDir, (req.params[0] || 'index') + '.html');
+    if (!existsSync(page)) return next();
+    const hosts = [9099, 8080, 5001, 9199].map(port => 'http://127.0.0.1:' + port);
+    res.type('html').send(readFileSync(page, 'utf8').replace("connect-src 'self'", "connect-src 'self' " + hosts.join(' ')));
+  });
+}
 
 app.use(express.static(rootDir, { extensions: ['html'] }));
 

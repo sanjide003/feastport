@@ -26,9 +26,11 @@ try {
     assert.match(html, /<html lang="en"/, page);
     assert.match(html, /href="portal.css"/, page);
   }
-  const css = await fetch(base + '/portal.css');
-  assert.equal(css.status, 200);
-  assert.match(css.headers.get('content-type'), /text\/css/);
+  for (const path of ['/portal.css', '/styles/festival.css']) {
+    const css = await fetch(base + path);
+    assert.equal(css.status, 200, path);
+    assert.match(css.headers.get('content-type'), /text\/css/, path);
+  }
   assert.equal((await fetch(base + '/firebase-runtime-config.js')).headers.get('cache-control'), 'no-store');
   console.log('All ten portal pages, shared styles and runtime configuration passed.');
 } finally {

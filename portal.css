@@ -37,3 +37,24 @@ body.portal-public { background-color: #f8f7fb; }
   html { scroll-behavior: auto !important; }
   .animate-pulse, .animate-bounce { animation: none !important; }
 }
+
+@media screen {
+  .portal-login main {
+    background: radial-gradient(ellipse at 10% 0, #ffe0c2, transparent 48%),
+                radial-gradient(ellipse at 95% 100%, #ddd5fa, transparent 50%), #f9f7f4;
+  }
+  .portal-login main > section {
+    border-radius: 1.4rem;
+    box-shadow: 0 1.2rem 4rem #30234716;
+  }
+  .portal-workspace [data-app-sidebar] > :first-child {
+    box-shadow: inset 0 3px var(--festival-accent);
+  }
+  .portal-workspace [data-sidebar-item]:is([aria-selected="true"], .active) {
+    box-shadow: inset 3px 0 #9b76df;
+  }
+  .portal-workspace main h2, .portal-workspace main h3 { text-wrap: balance; }
+  .portal-public :is(input, select, textarea):focus-visible { outline-color: var(--festival-accent); }
+  .portal-stage #tv-title { font-size: clamp(2rem, 3.7vw, 5.25rem); line-height: 1.08; }
+  .portal-stage #tv-header { border-image: linear-gradient(90deg, #ba95fb, #ffbd94, transparent) 1; }
+}

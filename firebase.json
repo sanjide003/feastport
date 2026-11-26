@@ -13,7 +13,20 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "functions/**",
+      "scripts/**",
+      "*-debug.log*",
+      "*.md",
+      "*.rules",
+      "server.js",
+      "package*.json",
+      "bun.lock",
+      "tailwind.config.cjs",
+      "styles/utilities.css",
+      "firebase-blueprint.json",
+      "firebase-applet-config.json",
+      "vercel.json"
     ],
     "headers": [
       {
@@ -42,5 +55,23 @@
         ]
       }
     ]
+  },
+  "emulators": {
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9099
+    },
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8080
+    },
+    "functions": {
+      "host": "127.0.0.1",
+      "port": 5001
+    },
+    "storage": {
+      "host": "127.0.0.1",
+      "port": 9199
+    }
   }
 }

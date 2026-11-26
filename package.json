@@ -5,10 +5,12 @@
     "start": "node server.js",
     "build": "node scripts/build-check.mjs",
     "lint": "for f in server.js firebase-runtime-config.js firebase-config.js admin-theme.js admin-tailwind-config.js sidebar-shell.js data-cache.js dependency-loader.js branding-config.js image-upload.js fest-config.js event-utils.js registration-utils.js qr-svg.js id-card-renderer.js admin-utils.js admin-dashboard.js admin-students.js admin-events.js admin-excel.js admin-auth.js admin-results.js admin-main.js judge.js score-utils.js login.js; do node --input-type=module --check < \"$f\"; done",
-    "check": "for f in server.js firebase-runtime-config.js firebase-config.js admin-theme.js admin-tailwind-config.js sidebar-shell.js data-cache.js dependency-loader.js branding-config.js image-upload.js fest-config.js event-utils.js registration-utils.js qr-svg.js id-card-renderer.js admin-utils.js admin-dashboard.js admin-students.js admin-events.js admin-excel.js admin-auth.js admin-results.js admin-main.js judge.js score-utils.js login.js; do node --input-type=module --check < \"$f\"; done && node --check functions/index.js && node scripts/event-engine-check.mjs && node scripts/scoring-engine-check.mjs && node scripts/registration-engine-check.mjs && node scripts/build-check.mjs && node scripts/smoke-check.mjs && node scripts/role-access-check.mjs"
+    "check": "set -e; for f in public-navigation.js server.js firebase-runtime-config.js firebase-config.js admin-theme.js admin-tailwind-config.js sidebar-shell.js data-cache.js dependency-loader.js branding-config.js image-upload.js fest-config.js event-utils.js registration-utils.js qr-svg.js id-card-renderer.js admin-utils.js admin-dashboard.js admin-students.js admin-events.js admin-excel.js admin-auth.js admin-results.js admin-main.js judge.js score-utils.js login.js; do node --input-type=module --check < \"$f\"; done && node --check functions/index.js && node scripts/event-engine-check.mjs && node scripts/scoring-engine-check.mjs && node scripts/registration-engine-check.mjs && node scripts/build-check.mjs && node scripts/smoke-check.mjs && node scripts/role-access-check.mjs",
+    "styles": "tailwindcss -i styles/utilities.css -o styles/festival.css --minify",
+    "demo": "FEASTPORT_DEMO=1 node server.js",
+    "seed:demo": "node scripts/seed-demo.mjs"
   },
   "browserDependencies": {
-    "@tailwindcss/browser": "4.3.3",
     "lucide": "1.25.0",
     "xlsx": "0.18.5",
     "html2canvas": "1.4.1",
@@ -16,5 +18,8 @@
   },
   "dependencies": {
     "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
   }
 }
