@@ -61,7 +61,25 @@ export function initAdminAuth({ onReady } = {}) {
       return;
     }
     showAdminApp(profile, user);
-    onReady?.(user, profile);
+    try {
+      await onReady?.(user, profile);
+    } catch (error) {
+      console.error('Admin workspace could not load', error);
+      const loader = byId('app-loader');
+      loader?.classList.remove('hide');
+      const message = loader?.querySelector('p:last-of-type');
+      if (message) message.textContent = 'Unable to load the workspace. Check your connection and retry.';
+      if (loader && !byId('admin-load-retry')) {
+        const retry = document.createElement('button');
+        retry.id = 'admin-load-retry';
+        retry.type = 'button';
+        retry.className = 'mt-4 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white';
+        retry.textContent = 'Retry';
+        retry.addEventListener('click', () => window.location.reload());
+        loader.append(retry);
+      }
+      return;
+    }
     window.dispatchEvent(new CustomEvent('admin-auth-ready', { detail: { user, profile } }));
   });
 }

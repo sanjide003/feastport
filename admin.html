@@ -5,15 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#F8FAFC">
   <meta name="color-scheme" content="light dark">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.cloudfunctions.net https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Admin Console — Feastport</title>
   <script src="./admin-theme.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="./admin-tailwind-config.js"></script>
+  <link rel="stylesheet" href="styles/festival.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Malayalam:wght@400;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest" defer></script>
   <style>
     :root {
@@ -53,8 +52,11 @@
       body, html.dark body { background: #FFF !important; color: #0F172A !important; }
     }
   </style>
+  <link rel="stylesheet" href="portal.css">
+  <link rel="stylesheet" href="portal-modern.css">
 </head>
-<body class="min-h-screen antialiased bg-[#F8FAFC] text-slate-900 dark:bg-[#0B1120] dark:text-slate-100">
+<body class="portal-workspace min-h-screen antialiased bg-[#F8FAFC] text-slate-900 dark:bg-[#0B1120] dark:text-slate-100">
+  <a class="portal-skip" href="#portal-main">Skip to content</a>
   <div id="toast" class="fixed bottom-5 right-5 z-[110] hidden rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></div>
 
   <!-- Branded Admin Loader -->
@@ -165,7 +167,7 @@
         </div>
       </header>
 
-      <main class="flex-1 p-4 lg:p-6">
+      <main id="portal-main" tabindex="-1" class="flex-1 p-4 lg:p-6">
         <div class="mx-auto max-w-6xl space-y-6">
 
           <!-- TAB 1: OVERVIEW -->

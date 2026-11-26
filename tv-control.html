@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https: wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https: wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
   <title>TV Control Room — Feastport</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/festival.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Malayalam:wght@400;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest" defer></script>
   <style>
     body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: #F8FAFC; color: #0F172A; }
@@ -17,8 +17,11 @@
     .nav-item[aria-selected="true"] { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
     .panel[hidden] { display: none; }
   </style>
+  <link rel="stylesheet" href="portal.css">
+  <link rel="stylesheet" href="portal-modern.css">
 </head>
-<body class="min-h-screen antialiased">
+<body class="portal-workspace min-h-screen antialiased">
+  <a class="portal-skip" href="#portal-main">Skip to content</a>
   <div id="toast" class="fixed bottom-5 right-5 z-[100] hidden rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-lg"></div>
 
   <div class="flex min-h-screen flex-col lg:flex-row">
@@ -72,7 +75,7 @@
       </div>
     </aside>
 
-    <main class="flex-1 min-w-0">
+    <main id="portal-main" tabindex="-1" class="flex-1 min-w-0">
       <header class="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:px-6">
         <div class="flex items-center gap-3 min-w-0">
           <button type="button" data-sidebar-toggle class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" aria-label="Toggle sidebar">

@@ -14,3 +14,7 @@ storage.rules
 .firebaserc
 metadata.json
 *.md
+*-debug.log*
+styles/utilities.css
+tailwind.config.cjs
+bun.lock

@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Staff Login — Festival Portal</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/festival.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
@@ -15,8 +15,11 @@
     body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: #F8FAFC; color: #0F172A; }
     h1, h2, .font-display { font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif; }
   </style>
+  <link rel="stylesheet" href="portal.css">
+  <link rel="stylesheet" href="portal-modern.css">
 </head>
-<body class="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] antialiased">
+<body class="portal-login portal-public min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] antialiased">
+  <a class="portal-skip" href="#portal-main">Skip to content</a>
   <header class="border-b border-slate-200 bg-white">
     <div class="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
       <a href="index.html" class="flex items-center gap-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 whitespace-nowrap">
@@ -27,7 +30,7 @@
     </div>
   </header>
 
-  <main class="flex flex-1 items-center justify-center px-4 py-10">
+  <main id="portal-main" tabindex="-1" class="flex flex-1 items-center justify-center px-4 py-10">
     <section class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
       <div class="flex items-center gap-3 pb-6 border-b border-slate-100">
         <div class="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
@@ -35,14 +38,13 @@
           <span data-logo-fallback class="font-display text-sm font-bold text-blue-700">FM</span>
         </div>
         <div class="min-w-0">
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-blue-700">Institutional Portal</p>
           <h1 id="login-fest-name" class="truncate text-xl font-bold tracking-tight text-slate-900">Fest Management</h1>
         </div>
       </div>
 
       <div class="mt-6">
-        <h2 class="text-lg font-bold text-slate-900">Staff &amp; Role Sign In</h2>
-        <p class="mt-1 text-sm text-slate-500">Sign in with your assigned username or email for Admin, Team Leader, or Judge access.</p>
+        <h2 class="text-lg font-bold text-slate-900">Staff sign-in</h2>
+        <p class="mt-1 text-sm text-slate-500">For administrators, team leaders and judges.</p>
       </div>
 
       <form id="standalone-login-form" class="mt-6 space-y-4">

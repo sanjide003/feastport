@@ -4,21 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#F8FAFC">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://unpkg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Official Results — Festival Portal</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/festival.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@1.25.0" defer></script>
   <style>
     body { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; background: #F8FAFC; color: #0F172A; }
     h1, h2, h3, .font-display { font-family: 'Outfit', 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif; }
     .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
   </style>
+  <link rel="stylesheet" href="portal.css">
+  <link rel="stylesheet" href="portal-modern.css">
+  <script src="public-navigation.js" defer></script>
 </head>
-<body class="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] antialiased">
+<body class="portal-public min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] antialiased">
+  <a class="portal-skip" href="#portal-main">Skip to content</a>
   <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
       <a href="index.html" class="flex min-w-0 items-center gap-2.5 whitespace-nowrap shrink-0">
@@ -54,13 +58,17 @@
     </nav>
   </header>
 
-  <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+  <main id="portal-main" tabindex="-1" class="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
     <!-- Page Header & View Switcher -->
     <div class="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <p class="text-xs font-semibold uppercase tracking-wider text-blue-700">Official Announcements</p>
         <h1 id="res-page-title" class="mt-1 font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl text-balance">Competition Results</h1>
         <p id="res-page-subtitle" class="mt-1 text-sm text-slate-500">Verified winners, grades, and live team championship standings.</p>
+        <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-700"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Official published results</span>
+          <span id="results-updated-label">Waiting for results…</span>
+        </div>
       </div>
       <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
         <div class="inline-flex rounded-lg border border-slate-200 bg-white p-1">
@@ -76,21 +84,34 @@
 
     <!-- Event Results View -->
     <section id="panel-event-results" class="mt-6 space-y-6">
-      <div class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div class="sticky top-[4.5rem] z-20 grid gap-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur sm:grid-cols-2 lg:grid-cols-8">
         <div class="lg:col-span-2 relative">
           <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
-          <input id="filter-search" type="search" placeholder="Search event, winner, chest no, or team..." class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none">
+          <input id="filter-search" aria-label="Search results" type="search" placeholder="Search event, winner, chest no, or team..." class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none">
         </div>
-        <select id="filter-category" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+        <select id="filter-category" aria-label="Category" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
           <option value="">All Categories</option>
         </select>
-        <select id="filter-stage" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+        <select id="filter-team" aria-label="Team" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+          <option value="">All Teams</option>
+        </select>
+        <select id="filter-stage" aria-label="Stage" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
           <option value="">All Stages</option>
           <option value="On-Stage">On-Stage</option>
           <option value="Off-Stage">Off-Stage</option>
         </select>
+        <select id="filter-type" aria-label="Event type" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+          <option value="">Single &amp; Group</option>
+          <option value="Single">Single</option>
+          <option value="Group">Group</option>
+        </select>
+        <select id="filter-sort" aria-label="Sort results" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+          <option value="latest">Latest Published</option>
+          <option value="event">Event Name</option>
+          <option value="schedule">Schedule Order</option>
+        </select>
         <div class="flex gap-2">
-          <select id="filter-gender" class="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+          <select id="filter-gender" aria-label="Gender" class="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
             <option value="">All Genders</option>
             <option value="Boys">Boys</option>
             <option value="Girls">Girls</option>
@@ -100,8 +121,11 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-between text-xs text-slate-500">
-        <span id="results-count-label">Loading results…</span>
+      <div id="active-filter-chips" class="hidden flex-wrap gap-2" aria-label="Active filters"></div>
+
+      <div class="flex items-center justify-between gap-3 text-xs text-slate-500">
+        <span id="results-count-label" aria-live="polite">Loading results…</span>
+        <button id="copy-results-link" type="button" class="inline-flex items-center gap-1.5 font-semibold text-violet-700 hover:text-violet-900"><i data-lucide="link" class="h-3.5 w-3.5"></i>Copy filtered link</button>
       </div>
 
       <div id="results-grid" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -136,8 +160,46 @@
       </div>
 
       <div id="team-breakdown-sections" class="grid gap-6 lg:grid-cols-2"></div>
+
+      <div class="rounded-xl border border-slate-200 bg-white p-5">
+        <div class="mb-5">
+          <h2 class="font-display text-base font-bold text-slate-900">Team Score Progress</h2>
+          <p class="text-xs text-slate-500">Cumulative points after each published team-scoring result</p>
+        </div>
+        <div id="team-progress-chart" class="min-h-52 overflow-x-auto"></div>
+      </div>
     </section>
   </main>
+
+  <div id="result-detail-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="result-detail-title">
+    <button type="button" data-close-result-detail class="absolute inset-0" aria-label="Close result details"></button>
+    <article class="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-7">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p id="result-detail-eyebrow" class="text-xs font-bold uppercase tracking-wider text-violet-700"></p>
+          <h2 id="result-detail-title" class="mt-1 font-display text-2xl font-bold text-slate-950"></h2>
+          <p id="result-detail-meta" class="mt-1 text-sm text-slate-500"></p>
+        </div>
+        <button type="button" data-close-result-detail class="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-slate-50" aria-label="Close result details"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+      <div id="result-detail-body" class="mt-6 space-y-4"></div>
+    </article>
+  </div>
+
+  <div id="team-detail-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="team-detail-title">
+    <button type="button" data-close-team-detail class="absolute inset-0" aria-label="Close team details"></button>
+    <article class="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-7">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p id="team-detail-rank" class="text-xs font-bold uppercase tracking-wider text-violet-700"></p>
+          <h2 id="team-detail-title" class="mt-1 font-display text-2xl font-bold text-slate-950"></h2>
+          <p id="team-detail-points" class="mt-1 font-mono-num text-sm font-semibold text-slate-600"></p>
+        </div>
+        <button type="button" data-close-team-detail class="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-slate-50" aria-label="Close team details"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+      <div id="team-detail-body" class="mt-6 space-y-3"></div>
+    </article>
+  </div>
 
   <footer class="border-t border-slate-200 bg-white">
     <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:px-6 lg:px-8">
@@ -163,16 +225,6 @@
     import { buildTeamScoreLedger, normalizeScoringRules } from './score-utils.js';
 
     const $ = (id) => document.getElementById(id);
-    const mobileToggle = $('mobile-nav-toggle');
-    const mobileDrawer = $('mobile-nav-drawer');
-    const setMobileNav = (open) => {
-      if (!mobileDrawer || !mobileToggle) return;
-      mobileDrawer.classList.toggle('hidden', !open);
-      mobileToggle.setAttribute('aria-expanded', String(open));
-    };
-    mobileToggle?.addEventListener('click', () => setMobileNav(mobileDrawer?.classList.contains('hidden')));
-    mobileDrawer?.addEventListener('click', (e) => { if (e.target.closest('a')) setMobileNav(false); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMobileNav(false); });
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const catName = (k) => (generalConfig.categoryDisplayNames?.[k] || k || 'General');
     const params = new URLSearchParams(window.location.search);
@@ -184,12 +236,19 @@
     let events = [];
     let publishedResults = [];
     let activeTab = params.get('tab') === 'team' ? 'team' : 'result';
+    let teamStandingRows = [];
+    let teamLedger = [];
+    let filtersHydrated = false;
 
     document.querySelectorAll('[data-current-year]').forEach((el) => (el.textContent = currentYear()));
     if (params.get('search')) $('filter-search').value = params.get('search');
 
     function setTab(tab) {
       activeTab = tab === 'team' ? 'team' : 'result';
+      const url = new URL(window.location.href);
+      if (activeTab === 'team') url.searchParams.set('tab', 'team');
+      else url.searchParams.delete('tab');
+      window.history.replaceState({}, '', url);
       document.querySelectorAll('[data-res-tab]').forEach((btn) => {
         const active = btn.dataset.resTab === activeTab;
         btn.className = active
@@ -215,6 +274,74 @@
       if (publicConfig.resultsSubtitle) $('res-page-subtitle').textContent = publicConfig.resultsSubtitle;
     }
 
+    function winningTeams(result) {
+      const awards = [...(result.places || []), ...(result.gradeAwards || [])];
+      return awards.flatMap((award) => (award.winners || []).map((winner) => winner.team)).filter(Boolean);
+    }
+
+    const numericTime = (value) => {
+      if (typeof value?.toMillis === 'function') return value.toMillis();
+      if (Number.isFinite(Number(value?.seconds))) return Number(value.seconds) * 1000 + Number(value.nanoseconds || 0) / 1_000_000;
+      return Number(value || 0);
+    };
+    const formatUpdatedTime = (value) => {
+      const time = numericTime(value);
+      return time ? new Date(time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Publication time unavailable';
+    };
+
+    function hydrateFilterParams() {
+      if (filtersHydrated) return;
+      const mapping = {
+        search: 'filter-search',
+        category: 'filter-category',
+        team: 'filter-team',
+        stage: 'filter-stage',
+        gender: 'filter-gender',
+        type: 'filter-type',
+        sort: 'filter-sort'
+      };
+      Object.entries(mapping).forEach(([key, id]) => {
+        const value = params.get(key);
+        if (value && $(id)) $(id).value = value;
+      });
+      filtersHydrated = true;
+    }
+
+    function syncFilterUrl() {
+      const url = new URL(window.location.href);
+      const mapping = {
+        search: 'filter-search',
+        category: 'filter-category',
+        team: 'filter-team',
+        stage: 'filter-stage',
+        gender: 'filter-gender',
+        type: 'filter-type',
+        sort: 'filter-sort'
+      };
+      Object.entries(mapping).forEach(([key, id]) => {
+        const value = $(id)?.value?.trim() || '';
+        if (value && !(key === 'sort' && value === 'latest')) url.searchParams.set(key, value);
+        else url.searchParams.delete(key);
+      });
+      window.history.replaceState({}, '', url);
+    }
+
+    function renderActiveFilters() {
+      const names = generalConfig.teamDisplayNames || {};
+      const values = [
+        ['search', $('filter-search').value, `Search: ${$('filter-search').value}`],
+        ['category', $('filter-category').value, catName($('filter-category').value)],
+        ['team', $('filter-team').value, names[$('filter-team').value] || $('filter-team').value],
+        ['stage', $('filter-stage').value, $('filter-stage').value],
+        ['gender', $('filter-gender').value, $('filter-gender').value],
+        ['type', $('filter-type').value, $('filter-type').value]
+      ].filter(([, value]) => value);
+      const root = $('active-filter-chips');
+      root.classList.toggle('hidden', !values.length);
+      root.classList.toggle('flex', Boolean(values.length));
+      root.innerHTML = values.map(([key, , label]) => `<button type="button" data-clear-filter="${key}" class="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-800">${esc(label)}<i data-lucide="x" class="h-3 w-3"></i></button>`).join('');
+    }
+
     function renderFilters() {
       const normalized = publishedResults.map((r) => normalizeResultData(r, { events }));
       const cats = [...new Set(normalized.map((r) => r.category).filter(Boolean))].sort();
@@ -222,26 +349,46 @@
       const cur = catSel.value;
       catSel.innerHTML = '<option value="">All Categories</option>' + cats.map((c) => `<option value="${esc(c)}">${esc(catName(c))}</option>`).join('');
       if (cats.includes(cur)) catSel.value = cur;
+      const teamSelect = $('filter-team');
+      const selectedTeam = teamSelect.value;
+      const names = generalConfig.teamDisplayNames || {};
+      const teams = [...new Set(normalized.flatMap(winningTeams))];
+      teams.sort((a, b) => (names[a] || a).localeCompare(names[b] || b));
+      teamSelect.replaceChildren(new Option('All Teams', ''), ...teams.map((team) => new Option(names[team] || team, team)));
+      if (teams.includes(selectedTeam)) teamSelect.value = selectedTeam;
+      hydrateFilterParams();
     }
 
     function renderEventResults() {
       const search = $('filter-search').value.trim().toLowerCase();
       const category = $('filter-category').value;
+      const team = $('filter-team').value;
       const stage = $('filter-stage').value;
       const gender = $('filter-gender').value;
+      const type = $('filter-type').value;
+      const sort = $('filter-sort').value;
       const colors = generalConfig.teamColors || {};
       const teamNames = generalConfig.teamDisplayNames || {};
       const showPoints = scoringRules.display?.showPointsPublicly !== false;
       const showGrades = scoringRules.display?.showGradesPublicly !== false && scoringRules.enabled?.grades;
 
-      const normalized = publishedResults
-        .map((r) => normalizeResultData(r, { events }))
-        .sort((a, b) => Number(b.publishedAt || b.updatedAt || 0) - Number(a.publishedAt || a.updatedAt || 0));
+      const normalized = publishedResults.map((r) => normalizeResultData(r, { events }));
+      normalized.sort((a, b) => {
+        if (sort === 'event') return a.eventName.localeCompare(b.eventName);
+        if (sort === 'schedule') {
+          const aEvent = events.find((event) => event.id === a.eventId) || {};
+          const bEvent = events.find((event) => event.id === b.eventId) || {};
+          return `${aEvent.scheduleDate || ''} ${aEvent.time || ''}`.localeCompare(`${bEvent.scheduleDate || ''} ${bEvent.time || ''}`);
+        }
+        return numericTime(b.publishedAt || b.updatedAt) - numericTime(a.publishedAt || a.updatedAt);
+      });
 
       const filtered = normalized.filter((res) => {
+        if (team && !winningTeams(res).includes(team)) return false;
         if (category && res.category !== category) return false;
         if (stage && res.stage !== stage) return false;
         if (gender && res.gender !== gender) return false;
+        if (type && res.type !== type) return false;
         if (search) {
           const winnerText = [
             ...(res.places || []).flatMap((p) => (p.winners || []).map((w) => `${w.name} ${w.team} ${teamNames[w.team] || ''} ${w.chestNo}`)),
@@ -254,6 +401,8 @@
       });
 
       $('results-count-label').textContent = `Showing ${filtered.length} of ${normalized.length} published event${normalized.length === 1 ? '' : 's'}`;
+      syncFilterUrl();
+      renderActiveFilters();
 
       $('results-grid').innerHTML = filtered.length
         ? filtered.map((res) => {
@@ -320,16 +469,59 @@
                 </div>`
               : '';
 
+            const event = events.find((item) => item.id === res.eventId) || {};
+            const schedule = [event.scheduleDate, event.time, event.scheduleStage].filter(Boolean).join(' · ');
             return `<article class="flex flex-col rounded-xl border border-slate-200 bg-white p-5">
               <div class="border-b border-slate-100 pb-3">
-                <h2 class="font-display text-base font-bold text-slate-900">${esc(res.eventName)}</h2>
+                <div class="flex items-start justify-between gap-3">
+                  <h2 class="font-display text-base font-bold text-slate-900">${esc(res.eventName)}</h2>
+                  <span class="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Published</span>
+                </div>
                 <p class="mt-1 text-xs text-slate-500">${esc(catName(res.category))} · ${esc(res.stage)} · ${esc(res.gender)} · ${esc(res.type)}</p>
+                ${schedule ? `<p class="mt-1 font-mono-num text-[11px] text-violet-700">${esc(schedule)}</p>` : ''}
               </div>
               <div class="mt-2 divide-y divide-slate-100 flex-1">${placesHtml || '<p class="py-4 text-xs text-slate-400">No position awards listed.</p>'}</div>
               ${gradesHtml}
+              <button type="button" data-result-detail="${esc(res.eventId)}" class="mt-4 flex w-full items-center justify-between border-t border-slate-100 pt-3 text-xs font-bold text-violet-700 hover:text-violet-900"><span>View full result</span><i data-lucide="arrow-up-right" class="h-4 w-4"></i></button>
             </article>`;
           }).join('')
         : '<div class="col-span-full rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No published results match the selected filters.</div>';
+      window.lucide?.createIcons?.();
+    }
+
+    function setModal(id, open) {
+      const modal = $(id);
+      modal.classList.toggle('hidden', !open);
+      modal.classList.toggle('flex', open);
+      document.body.classList.toggle('overflow-hidden', open);
+    }
+
+    function openResultDetail(eventId) {
+      const raw = publishedResults.find((item) => (item.eventId || item.id) === eventId);
+      if (!raw) return;
+      const result = normalizeResultData(raw, { events });
+      const event = events.find((item) => item.id === eventId) || {};
+      const teamNames = generalConfig.teamDisplayNames || {};
+      const colors = generalConfig.teamColors || {};
+      const showPoints = scoringRules.display?.showPointsPublicly !== false;
+      const placeSections = (result.places || []).map((place, index) => {
+        const rows = (place.winners || []).map((winner) => `<div class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white font-bold text-slate-600">${winner.photoUrl ? `<img src="${esc(winner.photoUrl)}" alt="${esc(winner.name)}" class="h-full w-full object-cover" referrerpolicy="no-referrer">` : esc(String(winner.name || '?')[0].toUpperCase())}</span>
+            <div class="min-w-0"><p class="truncate text-sm font-bold text-slate-900">${esc(winner.name)}</p><p class="flex items-center gap-1.5 text-xs text-slate-500"><span class="h-2 w-2 rounded-full" style="background:${esc(teamColor(winner.team, colors))}"></span>${esc(teamNames[winner.team] || winner.team || 'Independent')}${winner.chestNo ? ` · #${esc(winner.chestNo)}` : ''}</p></div>
+          </div>
+          ${showPoints ? `<span class="shrink-0 font-mono-num text-xs font-bold text-violet-700">${Number(place.earnedValue ?? place.value ?? 0)} pts</span>` : ''}
+        </div>`).join('');
+        return `<section><div class="mb-2 flex items-center justify-between"><h3 class="font-display text-sm font-bold text-slate-900">${esc(place.label || `Place ${index + 1}`)}</h3><span class="text-xs text-slate-400">${(place.winners || []).length} winner${(place.winners || []).length === 1 ? '' : 's'}</span></div><div class="space-y-2">${rows || '<p class="text-sm text-slate-400">No winner details available.</p>'}</div></section>`;
+      }).join('');
+      const grades = (result.gradeAwards || []).map((grade) => `<div class="flex items-start justify-between gap-4 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3"><div><p class="text-xs font-bold text-indigo-800">${esc(grade.label)}</p><p class="mt-1 text-xs text-slate-600">${(grade.winners || []).map((winner) => esc(winner.name)).join(', ') || 'No recipients listed'}</p></div>${showPoints ? `<span class="font-mono-num text-xs font-bold text-indigo-700">+${Number(grade.value || 0)} pts</span>` : ''}</div>`).join('');
+      const schedule = [event.scheduleDate, event.time, event.scheduleStage].filter(Boolean).join(' · ');
+      $('result-detail-eyebrow').textContent = `${catName(result.category)} · ${result.type || 'Event'}`;
+      $('result-detail-title').textContent = result.eventName;
+      $('result-detail-meta').textContent = [result.stage, result.gender, schedule].filter(Boolean).join(' · ');
+      $('result-detail-body').innerHTML = `${placeSections || '<p class="text-sm text-slate-500">No position awards listed.</p>'}${grades ? `<section><h3 class="mb-2 font-display text-sm font-bold text-slate-900">Grade Awards</h3><div class="space-y-2">${grades}</div></section>` : ''}<div class="border-t border-slate-100 pt-4 text-xs text-slate-500"><p>Published ${esc(formatUpdatedTime(result.publishedAt || result.updatedAt))}${result.revision ? ` · Revision ${esc(result.revision)}` : ''}</p><p class="mt-1">Only officially published entries are included in team totals.</p></div>`;
+      setModal('result-detail-modal', true);
+      window.lucide?.createIcons?.();
     }
 
     function renderTeamStandings() {
@@ -344,6 +536,7 @@
         (winnerId, type, res) => res?.winnerDetails?.[winnerId]?.team || '',
         scoringEvents
       );
+      teamLedger = ledger;
 
       const totals = new Map(teams.map((t) => [t, { team: t, points: 0, first: 0, second: 0, third: 0 }]));
       const ensureTeam = (t) => {
@@ -374,10 +567,11 @@
       });
 
       const ranked = [...totals.values()].sort((a, b) => b.points - a.points || b.first - a.first || b.second - a.second);
+      teamStandingRows = ranked;
 
       $('team-standings-summary').innerHTML = ranked.slice(0, 4).map((row, idx) => {
         const color = teamColor(row.team, colors);
-        return `<div class="rounded-xl border border-slate-200 bg-white p-5">
+        return `<button type="button" data-team-detail="${esc(row.team)}" class="rounded-xl border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md">
           <div class="flex items-center justify-between">
             <span class="font-mono-num text-xs font-bold text-slate-400">Rank #${idx + 1}</span>
             <span class="h-3 w-3 rounded-full" style="background:${esc(color)}"></span>
@@ -385,13 +579,14 @@
           <h3 class="mt-2 truncate font-display text-lg font-bold text-slate-900">${esc(teamNames[row.team] || row.team)}</h3>
           <p class="mt-1 font-mono-num text-2xl font-bold text-blue-700">${row.points} pts</p>
           <p class="mt-1 text-xs text-slate-500">1st: ${row.first} · 2nd: ${row.second} · 3rd: ${row.third}</p>
-        </div>`;
+          <span class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-violet-700">View score details <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i></span>
+        </button>`;
       }).join('');
 
       $('team-points-table').innerHTML = ranked.length
         ? ranked.map((row, idx) => {
             const color = teamColor(row.team, colors);
-            return `<tr>
+            return `<tr data-team-detail="${esc(row.team)}" tabindex="0" role="button" class="cursor-pointer hover:bg-violet-50/50">
               <td class="px-5 py-3.5 font-mono-num font-bold text-slate-500">#${idx + 1}</td>
               <td class="px-5 py-3.5">
                 <div class="flex items-center gap-2.5">
@@ -429,18 +624,126 @@
             </div>`).join('')}
           </div>
         </div>`;
-      }).join('');
+      }).join('') || '<div class="lg:col-span-2 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">Category breakdowns appear when published results begin contributing points.</div>';
+
+      renderTeamProgress();
+      window.lucide?.createIcons?.();
     }
 
-    ['filter-search', 'filter-category', 'filter-stage', 'filter-gender'].forEach((id) => {
+    function renderTeamProgress() {
+      const root = $('team-progress-chart');
+      if (!teamLedger.length || !teamStandingRows.length) {
+        root.innerHTML = '<div class="flex min-h-48 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">Progress appears after the first team-scoring result is published.</div>';
+        return;
+      }
+      const colors = generalConfig.teamColors || {};
+      const names = generalConfig.teamDisplayNames || {};
+      const resultOrder = [...new Set(teamLedger.map((entry) => entry.eventId))].sort((a, b) => {
+        const ra = publishedResults.find((result) => (result.eventId || result.id) === a) || {};
+        const rb = publishedResults.find((result) => (result.eventId || result.id) === b) || {};
+        return numericTime(ra.publishedAt || ra.updatedAt) - numericTime(rb.publishedAt || rb.updatedAt);
+      });
+      const cumulative = new Map(teamStandingRows.map((row) => [row.team, 0]));
+      const series = teamStandingRows.map((row) => ({ team: row.team, values: [0] }));
+      resultOrder.forEach((eventId) => {
+        teamLedger.filter((entry) => entry.eventId === eventId).forEach((entry) => cumulative.set(entry.team, (cumulative.get(entry.team) || 0) + Number(entry.points || 0)));
+        series.forEach((item) => item.values.push(cumulative.get(item.team) || 0));
+      });
+      const width = Math.max(620, resultOrder.length * 92);
+      const height = 240;
+      const pad = { left: 42, right: 18, top: 16, bottom: 38 };
+      const max = Math.max(1, ...series.flatMap((item) => item.values));
+      const x = (index) => pad.left + (index / Math.max(1, resultOrder.length)) * (width - pad.left - pad.right);
+      const y = (value) => pad.top + (1 - value / max) * (height - pad.top - pad.bottom);
+      const lines = series.map((item) => {
+        const color = teamColor(item.team, colors);
+        const points = item.values.map((value, index) => `${x(index)},${y(value)}`).join(' ');
+        return `<polyline points="${points}" fill="none" stroke="${esc(color)}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${item.values.map((value, index) => `<circle cx="${x(index)}" cy="${y(value)}" r="3.5" fill="white" stroke="${esc(color)}" stroke-width="2"><title>${esc(names[item.team] || item.team)}: ${value} points</title></circle>`).join('')}`;
+      }).join('');
+      const labels = resultOrder.map((eventId, index) => {
+        const event = events.find((item) => item.id === eventId) || {};
+        const result = publishedResults.find((item) => (item.eventId || item.id) === eventId) || {};
+        const label = event.name || event.eventName || result.eventName || `Result ${index + 1}`;
+        return `<text x="${x(index + 1)}" y="${height - 12}" text-anchor="middle" fill="#64748b" font-size="10">${esc(label.length > 13 ? `${label.slice(0, 12)}…` : label)}</text>`;
+      }).join('');
+      const grid = [0, .25, .5, .75, 1].map((step) => `<line x1="${pad.left}" x2="${width - pad.right}" y1="${y(max * step)}" y2="${y(max * step)}" stroke="#e2e8f0" stroke-width="1"/><text x="${pad.left - 8}" y="${y(max * step) + 3}" text-anchor="end" fill="#94a3b8" font-size="10">${Math.round(max * step)}</text>`).join('');
+      root.innerHTML = `<div class="mb-3 flex flex-wrap gap-4">${series.map((item) => `<span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600"><span class="h-2.5 w-2.5 rounded-full" style="background:${esc(teamColor(item.team, colors))}"></span>${esc(names[item.team] || item.team)}</span>`).join('')}</div><svg class="min-w-full" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Cumulative team score progression chart">${grid}${lines}${labels}</svg>`;
+    }
+
+    function openTeamDetail(team) {
+      const row = teamStandingRows.find((item) => item.team === team);
+      if (!row) return;
+      const names = generalConfig.teamDisplayNames || {};
+      const entries = teamLedger.filter((entry) => entry.team === team).sort((a, b) => b.points - a.points);
+      const categoryTotals = new Map();
+      entries.forEach((entry) => {
+        const event = events.find((item) => item.id === entry.eventId) || {};
+        const key = event.category || 'General';
+        categoryTotals.set(key, (categoryTotals.get(key) || 0) + Number(entry.points || 0));
+      });
+      const rank = teamStandingRows.indexOf(row) + 1;
+      $('team-detail-rank').textContent = `Championship rank #${rank}`;
+      $('team-detail-title').textContent = names[team] || team;
+      $('team-detail-points').textContent = `${row.points} points · ${row.first} first · ${row.second} second · ${row.third} third`;
+      $('team-detail-body').innerHTML = `<div class="grid gap-2 sm:grid-cols-2">${[...categoryTotals.entries()].map(([category, points]) => `<div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm"><span class="font-semibold text-slate-700">${esc(catName(category))}</span><span class="font-mono-num font-bold text-violet-700">${points} pts</span></div>`).join('')}</div><section><h3 class="mb-2 font-display text-sm font-bold text-slate-900">Point Contributions</h3><div class="divide-y divide-slate-100 rounded-xl border border-slate-200">${entries.map((entry) => {
+        const event = events.find((item) => item.id === entry.eventId) || {};
+        const result = publishedResults.find((item) => (item.eventId || item.id) === entry.eventId) || {};
+        return `<div class="flex items-center justify-between gap-4 p-3"><div><p class="text-sm font-semibold text-slate-800">${esc(event.name || event.eventName || result.eventName || 'Published event')}</p><p class="text-xs capitalize text-slate-500">${esc(entry.kind)} award · ${esc(catName(event.category || result.category))}</p></div><span class="font-mono-num text-sm font-bold text-violet-700">+${Number(entry.points || 0)}</span></div>`;
+      }).join('') || '<p class="p-4 text-sm text-slate-500">No point contributions yet.</p>'}</div></section>`;
+      setModal('team-detail-modal', true);
+    }
+
+    ['filter-search', 'filter-category', 'filter-stage', 'filter-gender', 'filter-team', 'filter-type', 'filter-sort'].forEach((id) => {
       $(id)?.addEventListener(id === 'filter-search' ? 'input' : 'change', renderEventResults);
     });
     $('clear-filters-btn')?.addEventListener('click', () => {
-      $('filter-search').value = '';
-      $('filter-category').value = '';
-      $('filter-stage').value = '';
-      $('filter-gender').value = '';
+      ['filter-search', 'filter-category', 'filter-team', 'filter-stage', 'filter-gender', 'filter-type'].forEach((id) => ($(id).value = ''));
+      $('filter-sort').value = 'latest';
       renderEventResults();
+    });
+    $('active-filter-chips')?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-clear-filter]');
+      if (!button) return;
+      const target = $(`filter-${button.dataset.clearFilter}`);
+      if (target) target.value = '';
+      renderEventResults();
+    });
+    $('results-grid')?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-result-detail]');
+      if (button) openResultDetail(button.dataset.resultDetail);
+    });
+    $('panel-team-standings')?.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-team-detail]');
+      if (target) openTeamDetail(target.dataset.teamDetail);
+    });
+    $('panel-team-standings')?.addEventListener('keydown', (event) => {
+      const target = event.target.closest('[data-team-detail]');
+      if (target && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        openTeamDetail(target.dataset.teamDetail);
+      }
+    });
+    document.querySelectorAll('[data-close-result-detail]').forEach((button) => button.addEventListener('click', () => setModal('result-detail-modal', false)));
+    document.querySelectorAll('[data-close-team-detail]').forEach((button) => button.addEventListener('click', () => setModal('team-detail-modal', false)));
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      setModal('result-detail-modal', false);
+      setModal('team-detail-modal', false);
+    });
+    $('copy-results-link')?.addEventListener('click', async () => {
+      syncFilterUrl();
+      const button = $('copy-results-link');
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        button.innerHTML = '<i data-lucide="check" class="h-3.5 w-3.5"></i>Link copied';
+      } catch {
+        window.prompt('Copy this filtered results link:', window.location.href);
+      }
+      window.lucide?.createIcons?.();
+      window.setTimeout(() => {
+        button.innerHTML = '<i data-lucide="link" class="h-3.5 w-3.5"></i>Copy filtered link';
+        window.lucide?.createIcons?.();
+      }, 1800);
     });
 
     async function loadResultsData(forceRefresh = false) {
@@ -474,8 +777,13 @@
         events = evList || [];
         publishedResults = resList || [];
         applyBranding(homeDoc || {});
+        const latest = publishedResults.reduce((value, result) => Math.max(value, numericTime(result.publishedAt || result.updatedAt)), 0);
+        $('results-updated-label').textContent = publishedResults.length
+          ? `Last published ${formatUpdatedTime(latest)}`
+          : 'No results have been published yet';
       } catch (err) {
         console.warn('Results load fallback:', err);
+        $('results-updated-label').textContent = 'Unable to refresh — showing available data';
       }
 
       renderFilters();

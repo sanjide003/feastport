@@ -194,6 +194,10 @@ if (isFirebaseConfigured) {
       accessLoginInProgress = true;
       try {
         await completeLogin(user);
+      } catch (error) {
+        console.error('Unable to restore staff session', error);
+        setText('login-error', loginError(error));
+        setBusy(false);
       } finally {
         if (!navigationStarted) accessLoginInProgress = false;
       }

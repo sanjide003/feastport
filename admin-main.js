@@ -1,4 +1,4 @@
-import { app, auth, db } from './firebase-config.js';
+import { app, auth, db, functions, portalAuth } from './firebase-config.js';
 import { initAdminAuth } from './admin-auth.js';
 import { cachedGetDoc, invalidateCache } from './data-cache.js';
 import { initImageUploads, assertPayloadSize, normalizeGallerySlots } from './image-upload.js';
@@ -29,8 +29,8 @@ import { createAdminResultsController } from './admin-results.js';
 import { createAdminExcelController } from './admin-excel.js';
 import { initCollapsibleSidebar } from './sidebar-shell.js';
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
-import { getAuth as getSecondaryAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as signOutSecondary } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
-import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-functions.js';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as signOutSecondary } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-functions.js';
 import {
   addDoc,
   collection,
@@ -1330,7 +1330,7 @@ function switchTab(tab) {
 const normalizeUsername = (v) => String(v || '').trim().toLowerCase().replace(/\s+/g, '_');
 async function createAccessAuthUser(email, password) {
   const secApp = initializeApp(app.options, `access-${Date.now()}-${Math.random().toString(16).slice(2)}`);
-  const secAuth = getSecondaryAuth(secApp);
+  const secAuth = portalAuth(secApp);
   try {
     const cred = await createUserWithEmailAndPassword(secAuth, email, password);
     await signOutSecondary(secAuth).catch(() => {});
@@ -1570,7 +1570,7 @@ async function saveStaffAccount() {
       const saveBtn = byId('btn-save-access');
       if (saveBtn) saveBtn.disabled = true;
       try {
-        const updateStaffCall = httpsCallable(getFunctions(app), 'updateStaffCredentials');
+        const updateStaffCall = httpsCallable(functions, 'updateStaffCredentials');
         const result = await updateStaffCall({
           uid: editUid,
           identifier,

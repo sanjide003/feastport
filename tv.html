@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https: wss://*.firebaseio.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https: wss://*.firebaseio.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Live Stage TV — Feastport</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/festival.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700&family=Noto+Sans+Malayalam:wght@400;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -29,15 +29,18 @@
     .fullscreen-zone:hover .fullscreen-control, .fullscreen-zone:focus-within .fullscreen-control { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
     .tv-section-hidden { display: none !important; }
   </style>
+  <link rel="stylesheet" href="portal.css">
+  <link rel="stylesheet" href="portal-modern.css">
 </head>
-<body>
+<body class="portal-stage">
+  <a class="portal-skip" href="#portal-main">Skip to content</a>
   <div id="fullscreen-shell" class="relative flex h-screen w-screen flex-col overflow-hidden bg-[#0B1120]">
     <div id="bg" class="fixed inset-0 bg-[#0B1120] transition-all duration-700"></div>
     <video id="bg-video" class="fixed inset-0 hidden h-full w-full object-cover opacity-40" autoplay muted playsinline></video>
     <iframe id="bg-youtube" class="pointer-events-none fixed inset-0 hidden h-full w-full scale-[1.18] opacity-40" title="Stage Background Video" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
     <div id="tv-overlay" class="fixed inset-0 bg-slate-950/65"></div>
 
-    <main class="relative z-10 flex h-full flex-col p-6 lg:p-8">
+    <main id="portal-main" tabindex="-1" class="relative z-10 flex h-full flex-col p-6 lg:p-8">
       <!-- Top Broadcast Bar -->
       <header id="tv-header" class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
         <div class="flex items-center gap-4 min-w-0">

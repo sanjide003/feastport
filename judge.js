@@ -584,9 +584,9 @@ async function persistScores(id, status) {
         {
           assignmentId: id,
           judgeId: currentJudge.id,
-          judgeName: currentJudge.name,
+          judgeName: currentJudge.name || 'Judge',
           eventId: assignment.eventId,
-          eventName: assignment.eventName,
+          eventName: event.name || assignment.eventName || assignment.eventId,
           marks,
           status,
           participantSignature: openedParticipantSignature,
@@ -606,7 +606,7 @@ async function persistScores(id, status) {
     toast(status === 'submitted' ? 'Score sheet submitted and locked' : 'Draft saved');
     if (status === 'submitted') {
       activeJudgeTab = 'submitted';
-      closeSubmit();
+      dismissSubmit();
     }
     render();
     return true;
@@ -662,7 +662,10 @@ function closeModal(id) {
 }
 
 function closeSubmit() {
-  if (saving) return;
+  if (!saving) dismissSubmit();
+}
+
+function dismissSubmit() {
   closeModal('judge-submit-modal');
   pendingSubmitId = '';
   showSubmitError('');
